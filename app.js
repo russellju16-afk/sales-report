@@ -100,6 +100,7 @@ async function bootstrap(){
 let currentSeg='total';
 const tabState={};
 const sortState={};
+const TABLE_RANGE={};
 
 function fmtWan(x){const n=Number(x); if(!isFinite(n)) return ''; return (n/10000).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' 万';}
 function fmtYi(x){const n=Number(x); if(!isFinite(n)) return ''; return (n/1e8).toFixed(3)+' 亿';}
@@ -107,6 +108,34 @@ function fmtNum(x){const n=Number(x); if(!isFinite(n)) return ''; return n.toLoc
 function fmtPct(x){const n=Number(x); if(!isFinite(n)) return ''; return n.toFixed(2)+'%';}
 function parseNumber(s){if(s===null||s===undefined) return NaN; const t=String(s).replace(/,/g,'').replace(/%/g,'').trim(); const v=parseFloat(t); return isNaN(v)?NaN:v;}
 function monthInRange(m,start,end){if(!start||!end) return true; return (m>=start && m<=end);}
+function dateInRange(d,start,end){if(!start||!end) return true; return (d>=start && d<=end);}
+function _toDateStart(s){return s? new Date(s+'T00:00:00'):null;}
+function _toDateEnd(s){return s? new Date(s+'T23:59:59'):null;}
+function getMonthWeight(month,startDate,endDate){
+  if(!startDate || !endDate) return 1;
+  const s=_toDateStart(startDate);
+  const e=_toDateEnd(endDate);
+  if(!s || !e) return 1;
+  const ms=new Date(month+'-01T00:00:00');
+  const me=new Date(month+'-01T23:59:59');
+  me.setMonth(me.getMonth()+1);
+  me.setDate(0);
+  me.setHours(23,59,59,999);
+  if(e < ms || s > me) return 0;
+  const overlapStart=Math.max(s.getTime(), ms.getTime());
+  const overlapEnd=Math.min(e.getTime(), me.getTime());
+  if(overlapEnd < overlapStart) return 0;
+  const overlapDays=Math.floor((overlapEnd - overlapStart) / 86400000) + 1;
+  const daysInMonth=me.getDate();
+  return Math.max(0, Math.min(1, overlapDays / daysInMonth));
+}
+function getMonthWeights(startDate,endDate,months){
+  const map=new Map();
+  months.forEach(m=>{
+    if(!map.has(m)) map.set(m, getMonthWeight(m,startDate,endDate));
+  });
+  return map;
+}
 
 function formatTooltipValue(name, value){
   if(value===null || value===undefined || value==='') return '';
@@ -118,11 +147,14 @@ function makeSegHTML(segKey){
   return `
     <div class="seg-title">
       <div>维度：${segKey==='total'?'全部':(segKey==='store'?'超群门店':'非超群门店')}（含品类 + 新增/流失）</div>
-      <div class="timebox">
-        <span class="chip">时间范围筛选</span>
-        <label class="ctl">开始月：<select id="${segKey}_m_start" onchange="onSegTimeChange('${segKey}')"></select></label>
-        <label class="ctl">结束月：<select id="${segKey}_m_end" onchange="onSegTimeChange('${segKey}')"></select></label>
-        <button class="btn" onclick="resetSegTime('${segKey}')">重置时间</button>
+      <div class="timebox-wrap">
+        <div class="timebox">
+          <span class="chip">时间范围筛选</span>
+          <label class="ctl">开始日：<input id="${segKey}_d_start" type="date" onchange="onSegTimeChange('${segKey}')"/></label>
+          <label class="ctl">结束日：<input id="${segKey}_d_end" type="date" onchange="onSegTimeChange('${segKey}')"/></label>
+          <button class="btn" onclick="resetSegTime('${segKey}')">重置时间</button>
+        </div>
+        <div class="time-hint">全局时间影响指标/图表等（列表除外）；按月数据按天比例估算。</div>
       </div>
     </div>
 
@@ -197,6 +229,9 @@ function makeSegHTML(segKey){
         <div class="table-wrap" style="margin-top:12px;box-shadow:none;border:1px solid #eee;">
           <div class="controls">
             <input class="search" id="${segKey}_catton_search" placeholder="搜索周期/品类..." oninput="filterCatTonTable('${segKey}')"/>
+            <label class="ctl table-time">表内开始日：<input id="${segKey}_catton_d_start" type="date" onchange="onTableTimeChange('${segKey}','catton')"/></label>
+            <label class="ctl table-time">表内结束日：<input id="${segKey}_catton_d_end" type="date" onchange="onTableTimeChange('${segKey}','catton')"/></label>
+            <span class="table-hint">仅作用本表，不影响图表/指标</span>
             <button class="btn" onclick="resetCatTonTable('${segKey}')">重置</button>
             <button class="btn" onclick="exportCatTonCSV('${segKey}')">导出CSV(当前过滤)</button>
             <span class="count">显示：<b id="${segKey}_catton_count">0</b></span>
@@ -223,7 +258,7 @@ function makeSegHTML(segKey){
     <div class="section" id="${segKey}_product">
       <div class="grid2">
         <div class="card"><div id="${segKey}_chart_prod_top" class="plot"></div></div>
-        <div class="card"><div id="${segKey}_chart_prod_scatter" class="plot"></div></div>
+        <div class="card"><div id="${segKey}_chart_prod_margin" class="plot"></div></div>
       </div>
       ${makeTableShell(segKey,'product')}
     </div>
@@ -231,7 +266,7 @@ function makeSegHTML(segKey){
     <div class="section" id="${segKey}_customer">
       <div class="grid2">
         <div class="card"><div id="${segKey}_chart_cust_top" class="plot"></div></div>
-        <div class="card"><div id="${segKey}_chart_cust_scatter" class="plot"></div></div>
+        <div class="card"><div id="${segKey}_chart_cust_margin" class="plot"></div></div>
       </div>
       ${makeTableShell(segKey,'customer')}
     </div>
@@ -282,6 +317,9 @@ function makeTableShell(segKey,type){
     <div class="table-wrap" style="margin-top:12px;">
       <div class="controls">
         <input class="search" id="${segKey}_category_search" placeholder="搜索品类..." oninput="filterTable('${segKey}','category')"/>
+        <label class="ctl table-time">表内开始日：<input id="${segKey}_category_d_start" type="date" onchange="onTableTimeChange('${segKey}','category')"/></label>
+        <label class="ctl table-time">表内结束日：<input id="${segKey}_category_d_end" type="date" onchange="onTableTimeChange('${segKey}','category')"/></label>
+        <span class="table-hint">仅作用本表，不影响图表/指标</span>
         <button class="btn" onclick="resetTable('${segKey}','category')">重置</button>
         <button class="btn" onclick="exportTableCSV('${segKey}','category')">导出CSV(当前过滤)</button>
         <span class="count">显示：<b id="${segKey}_category_count">0</b></span>
@@ -314,6 +352,9 @@ function makeTableShell(segKey,type){
         </label>
         <label class="ctl">销售额≥(元)：<input id="${segKey}_product_min_sales" type="number" placeholder="例如 50000" oninput="filterTable('${segKey}','product')"/></label>
         <label class="ctl">毛利率≥(%): <input id="${segKey}_product_min_gm" type="number" step="0.01" placeholder="例如 5" oninput="filterTable('${segKey}','product')"/></label>
+        <label class="ctl table-time">表内开始日：<input id="${segKey}_product_d_start" type="date" onchange="onTableTimeChange('${segKey}','product')"/></label>
+        <label class="ctl table-time">表内结束日：<input id="${segKey}_product_d_end" type="date" onchange="onTableTimeChange('${segKey}','product')"/></label>
+        <span class="table-hint">仅作用本表，不影响图表/指标</span>
         <button class="btn" onclick="resetTable('${segKey}','product')">重置</button>
         <button class="btn" onclick="exportTableCSV('${segKey}','product')">导出CSV(当前过滤)</button>
         <span class="count">显示：<b id="${segKey}_product_count">0</b></span>
@@ -349,6 +390,9 @@ function makeTableShell(segKey,type){
         </label>
         <label class="ctl">销售额≥(元)：<input id="${segKey}_customer_min_sales" type="number" placeholder="例如 50000" oninput="filterTable('${segKey}','customer')"/></label>
         <label class="ctl">毛利率≥(%): <input id="${segKey}_customer_min_gm" type="number" step="0.01" placeholder="例如 5" oninput="filterTable('${segKey}','customer')"/></label>
+        <label class="ctl table-time">表内开始日：<input id="${segKey}_customer_d_start" type="date" onchange="onTableTimeChange('${segKey}','customer')"/></label>
+        <label class="ctl table-time">表内结束日：<input id="${segKey}_customer_d_end" type="date" onchange="onTableTimeChange('${segKey}','customer')"/></label>
+        <span class="table-hint">仅作用本表，不影响图表/指标</span>
         <button class="btn" onclick="resetTable('${segKey}','customer')">重置</button>
         <button class="btn" onclick="exportTableCSV('${segKey}','customer')">导出CSV(当前过滤)</button>
         <span class="count">显示：<b id="${segKey}_customer_count">0</b></span>
@@ -381,6 +425,9 @@ function makeTableShell(segKey,type){
         <label class="ctl">月份：<select id="${segKey}_${type}_month" onchange="filterTable('${segKey}','${type}')"><option value="">全部</option></select></label>
         <label class="ctl">客户分类：<select id="${segKey}_${type}_class" onchange="filterTable('${segKey}','${type}')"><option value="">全部</option></select></label>
         <input class="search" id="${segKey}_${type}_search" placeholder="搜索客户..." oninput="filterTable('${segKey}','${type}')"/>
+        <label class="ctl table-time">表内开始日：<input id="${segKey}_${type}_d_start" type="date" onchange="onTableTimeChange('${segKey}','${type}')"/></label>
+        <label class="ctl table-time">表内结束日：<input id="${segKey}_${type}_d_end" type="date" onchange="onTableTimeChange('${segKey}','${type}')"/></label>
+        <span class="table-hint">仅作用本表，不影响图表/指标</span>
         <button class="btn" onclick="resetTable('${segKey}','${type}')">重置</button>
         <button class="btn" onclick="exportTableCSV('${segKey}','${type}')">导出CSV(当前过滤)</button>
         <span class="count">显示：<b id="${segKey}_${type}_count">0</b></span>
@@ -411,6 +458,9 @@ function makeTableShell(segKey,type){
         <label class="ctl">销售额≥(元)：<input id="${segKey}_abnormal_min_sales" type="number" placeholder="例如 50000" oninput="filterTable('${segKey}','abnormal')"/></label>
         <label class="ctl">原因包含：<input id="${segKey}_abnormal_reason" placeholder="例如 倒挂/亏损" oninput="filterTable('${segKey}','abnormal')"/></label>
         <label class="ctl">异常原因：<select id="${segKey}_abnormal_reason_sel" onchange="filterTable('${segKey}','abnormal')"><option value="">全部</option></select></label>
+        <label class="ctl table-time">表内开始日：<input id="${segKey}_abnormal_d_start" type="date" onchange="onTableTimeChange('${segKey}','abnormal')"/></label>
+        <label class="ctl table-time">表内结束日：<input id="${segKey}_abnormal_d_end" type="date" onchange="onTableTimeChange('${segKey}','abnormal')"/></label>
+        <span class="table-hint">仅作用本表，不影响图表/指标</span>
         <button class="btn" onclick="resetTable('${segKey}','abnormal')">重置</button>
         <button class="btn" onclick="exportTableCSV('${segKey}','abnormal')">导出CSV(当前过滤)</button>
         <span class="count">显示：<b id="${segKey}_abnormal_count">0</b></span>
@@ -441,7 +491,7 @@ function init(){
   ['total','store','nonstore'].forEach(segKey=>{
     const segEl = document.getElementById('seg_'+segKey);
     if(segEl) segEl.innerHTML = makeSegHTML(segKey);
-    initMonthSelect(segKey);
+    initDateRange(segKey);
   });
   showSeg('total');
   const reloadBtn = document.getElementById('reload_btn');
@@ -450,40 +500,109 @@ function init(){
   }
 }
 
-function initMonthSelect(segKey){
+function monthEndDate(month){
+  if(!month) return '';
+  const parts=month.split('-');
+  if(parts.length<2) return '';
+  const y=Number(parts[0]);
+  const m=Number(parts[1]);
+  if(!y || !m) return '';
+  const d=new Date(y, m, 0).getDate();
+  return month+'-'+String(d).padStart(2,'0');
+}
+
+function initDateRange(segKey){
   const months=DATA[segKey].months||[];
-  const s=document.getElementById(segKey+'_m_start');
-  const e=document.getElementById(segKey+'_m_end');
-  if(!s || !e) return;
-  s.innerHTML=''; e.innerHTML='';
-  for(const m of months){
-    const o1=document.createElement('option'); o1.value=m; o1.text=m; s.appendChild(o1);
-    const o2=document.createElement('option'); o2.value=m; o2.text=m; e.appendChild(o2);
-  }
-  s.value=months[0]||'';
-  e.value=months[months.length-1]||'';
+  const s=document.getElementById(segKey+'_d_start');
+  const e=document.getElementById(segKey+'_d_end');
+  if(!s || !e || !months.length) return;
+  const startDate=months[0]+'-01';
+  const endDate=monthEndDate(months[months.length-1]);
+  s.min=startDate; s.max=endDate;
+  e.min=startDate; e.max=endDate;
+  s.value=startDate; e.value=endDate;
 }
 
 function getRange(segKey){
-  const start=document.getElementById(segKey+'_m_start').value;
-  const end=document.getElementById(segKey+'_m_end').value;
-  return {start,end};
+  const startDate=document.getElementById(segKey+'_d_start').value;
+  const endDate=document.getElementById(segKey+'_d_end').value;
+  const startMonth=startDate ? startDate.slice(0,7) : '';
+  const endMonth=endDate ? endDate.slice(0,7) : '';
+  return {startDate,endDate,startMonth,endMonth};
+}
+
+function getDefaultDateRange(segKey){
+  const months=DATA[segKey].months||[];
+  if(!months.length) return {startDate:'',endDate:''};
+  return {startDate:months[0]+'-01', endDate:monthEndDate(months[months.length-1])};
+}
+
+function getTableRange(segKey,type){
+  const def=getDefaultDateRange(segKey);
+  const st=(TABLE_RANGE[segKey]&&TABLE_RANGE[segKey][type])||{};
+  const startDate=st.startDate||def.startDate;
+  const endDate=st.endDate||def.endDate;
+  return {startDate,endDate,startMonth:startDate.slice(0,7),endMonth:endDate.slice(0,7)};
+}
+
+function syncTableRangeInputs(segKey,type){
+  const def=getDefaultDateRange(segKey);
+  if(!def.startDate || !def.endDate) return;
+  const range=getTableRange(segKey,type);
+  const s=document.getElementById(segKey+'_'+type+'_d_start');
+  const e=document.getElementById(segKey+'_'+type+'_d_end');
+  if(!s || !e) return;
+  s.min=def.startDate; s.max=def.endDate;
+  e.min=def.startDate; e.max=def.endDate;
+  s.value=range.startDate; e.value=range.endDate;
+}
+
+function setTableRange(segKey,type,startDate,endDate){
+  if(!TABLE_RANGE[segKey]) TABLE_RANGE[segKey]={};
+  TABLE_RANGE[segKey][type]={startDate,endDate};
+}
+
+function rerenderTable(segKey,type){
+  if(type==='category') return renderCategory(segKey);
+  if(type==='product') return renderProducts(segKey);
+  if(type==='customer') return renderCustomers(segKey);
+  if(type==='new' || type==='lost') return renderLifecycle(segKey);
+  if(type==='abnormal') return renderAbnormal(segKey);
+  if(type==='catton') return renderCatTon(segKey);
+}
+
+function onTableTimeChange(segKey,type){
+  const sEl=document.getElementById(segKey+'_'+type+'_d_start');
+  const eEl=document.getElementById(segKey+'_'+type+'_d_end');
+  if(!sEl || !eEl) return;
+  let s=sEl.value, e=eEl.value;
+  if(s && e && s>e){ const t=s; s=e; e=t; sEl.value=s; eEl.value=e; }
+  if(!s || !e) return;
+  setTableRange(segKey,type,s,e);
+  try{ rerenderTable(segKey,type); }catch(err){ console.error(err); }
+}
+
+function resetTableRange(segKey,type){
+  const def=getDefaultDateRange(segKey);
+  if(!def.startDate || !def.endDate) return;
+  setTableRange(segKey,type,def.startDate,def.endDate);
+  syncTableRangeInputs(segKey,type);
 }
 
 function resetSegTime(segKey){
   const months=DATA[segKey].months||[];
   if(!months.length) return;
-  document.getElementById(segKey+'_m_start').value=months[0];
-  document.getElementById(segKey+'_m_end').value=months[months.length-1];
+  document.getElementById(segKey+'_d_start').value=months[0]+'-01';
+  document.getElementById(segKey+'_d_end').value=monthEndDate(months[months.length-1]);
   try{ updateSeg(segKey); }catch(e){ console.error(e); }
 }
 
 function onSegTimeChange(segKey){
-  const s=document.getElementById(segKey+'_m_start').value;
-  const e=document.getElementById(segKey+'_m_end').value;
+  const s=document.getElementById(segKey+'_d_start').value;
+  const e=document.getElementById(segKey+'_d_end').value;
   if(s && e && s>e){
-    document.getElementById(segKey+'_m_start').value=e;
-    document.getElementById(segKey+'_m_end').value=s;
+    document.getElementById(segKey+'_d_start').value=e;
+    document.getElementById(segKey+'_d_end').value=s;
   }
   try{ updateSeg(segKey); }catch(e){ console.error(e); }
 }
@@ -530,12 +649,14 @@ function updateSeg(segKey){
 }
 
 function renderKPIs(segKey){
-  const {start,end}=getRange(segKey);
-  const rows=(DATA[segKey].monthly||[]).filter(r=>monthInRange(r[0],start,end));
-  const sales=rows.reduce((a,r)=>a+r[1],0);
-  const gp=rows.reduce((a,r)=>a+r[3],0);
-  const fee=rows.reduce((a,r)=>a+r[4],0);
-  const gpAdj=rows.reduce((a,r)=>a+r[5],0);
+  const {startDate,endDate,startMonth,endMonth}=getRange(segKey);
+  const rows=(DATA[segKey].monthly||[]).filter(r=>monthInRange(r[0],startMonth,endMonth));
+  let sales=0,gp=0,fee=0,gpAdj=0;
+  rows.forEach(r=>{
+    const w=getMonthWeight(r[0],startDate,endDate);
+    if(!w) return;
+    sales+=r[1]*w; gp+=r[3]*w; fee+=r[4]*w; gpAdj+=r[5]*w;
+  });
   const gm=sales? gp/sales*100 : NaN;
   const gmAdj=sales? gpAdj/sales*100 : NaN;
   document.getElementById(segKey+'_kpis').innerHTML = `
@@ -549,21 +670,34 @@ function renderKPIs(segKey){
 }
 
 function renderOverview(segKey){
-  const {start,end}=getRange(segKey);
-  const rows=(DATA[segKey].monthly||[]).filter(r=>monthInRange(r[0],start,end));
-  const months=rows.map(r=>r[0]);
+  const {startDate,endDate,startMonth,endMonth}=getRange(segKey);
+  const rows=(DATA[segKey].monthly||[]).filter(r=>monthInRange(r[0],startMonth,endMonth));
+  const weightMap=getMonthWeights(startDate,endDate,rows.map(r=>r[0]));
+  const months=[];
+  const cost=[],gp=[],fee=[],gpAdj=[],gm=[],gmAdj=[],active=[];
+  rows.forEach(r=>{
+    const m=r[0];
+    const w=weightMap.get(m) || 0;
+    if(!w) return;
+    const sales=r[1]*w;
+    const costW=r[2]*w;
+    const gpW=r[3]*w;
+    const feeW=r[4]*w;
+    const gpAdjW=r[5]*w;
+    months.push(m);
+    cost.push(costW);
+    gp.push(gpW);
+    fee.push(feeW);
+    gpAdj.push(gpAdjW);
+    gm.push(sales? gpW/sales*100:null);
+    gmAdj.push(sales? gpAdjW/sales*100:null);
+    active.push((r[7]||0)*w);
+  });
   if(!months.length){
     ChartManager.setEmpty(segKey+'_chart_sales', '暂无数据');
     ChartManager.setEmpty(segKey+'_chart_fee', '暂无数据');
     return;
   }
-  const cost=rows.map(r=>r[2]);
-  const gp=rows.map(r=>r[3]);
-  const fee=rows.map(r=>r[4]);
-  const gpAdj=rows.map(r=>r[5]);
-  const gm=rows.map(r=>r[1]? r[3]/r[1]*100:null);
-  const gmAdj=rows.map(r=>r[1]? r[5]/r[1]*100:null);
-  const active=rows.map(r=>r[7]);
 
   ChartManager.setOption(segKey+'_chart_sales',{
     tooltip:{
@@ -617,12 +751,14 @@ function renderOverview(segKey){
     ]
   });
 
-  document.getElementById(segKey+'_insights').innerHTML = computeGrowthInsights(segKey,start,end);
-  document.getElementById(segKey+'_structure').innerHTML = computeStructureHints(segKey,start,end);
+  document.getElementById(segKey+'_insights').innerHTML = computeGrowthInsights(segKey,startDate,endDate);
+  document.getElementById(segKey+'_structure').innerHTML = computeStructureHints(segKey,startDate,endDate);
 }
 
-function computeGrowthInsights(segKey,start,end){
-  const first=start, last=end;
+function computeGrowthInsights(segKey,startDate,endDate){
+  const monthsAll=DATA[segKey].months||[];
+  const first=startDate? startDate.slice(0,7):(monthsAll[0]||'');
+  const last=endDate? endDate.slice(0,7):(monthsAll[monthsAll.length-1]||'');
   function sumBy(arr, keyFn, valIdx, monthIdx){
     const map=new Map();
     for(const r of arr){
@@ -631,8 +767,9 @@ function computeGrowthInsights(segKey,start,end){
       const k=keyFn(r);
       if(!map.has(k)) map.set(k,{first:0,last:0});
       const o=map.get(k);
-      if(m===first) o.first+=r[valIdx];
-      if(m===last) o.last+=r[valIdx];
+      const w=getMonthWeight(m,startDate,endDate);
+      if(m===first) o.first+=r[valIdx]*w;
+      if(m===last) o.last+=r[valIdx]*w;
     }
     return map;
   }
@@ -656,14 +793,18 @@ function computeGrowthInsights(segKey,start,end){
   `;
 }
 
-function computeStructureHints(segKey,start,end){
-  const cats=DATA[segKey].cat_monthly.filter(r=>monthInRange(r[0],start,end));
+function computeStructureHints(segKey,startDate,endDate){
+  const startMonth=startDate? startDate.slice(0,7):'';
+  const endMonth=endDate? endDate.slice(0,7):'';
+  const cats=DATA[segKey].cat_monthly.filter(r=>monthInRange(r[0],startMonth,endMonth));
   const map=new Map();
   for(const r of cats){
     const k=r[1];
     if(!map.has(k)) map.set(k,{sales:0,gpAdj:0});
     const o=map.get(k);
-    o.sales+=r[2]; o.gpAdj+=r[6];
+    const w=getMonthWeight(r[0],startDate,endDate);
+    if(!w) continue;
+    o.sales+=r[2]*w; o.gpAdj+=r[6]*w;
   }
   const arr=[...map.entries()].map(([k,v])=>({k,sales:v.sales,gpAdj:v.gpAdj,gm:v.sales? v.gpAdj/v.sales*100:null}));
   arr.sort((a,b)=>b.gpAdj-a.gpAdj);
@@ -675,9 +816,11 @@ function computeStructureHints(segKey,start,end){
 }
 
 function renderCategory(segKey){
-  const {start,end}=getRange(segKey);
-  const rows=DATA[segKey].cat_monthly.filter(r=>monthInRange(r[0],start,end));
-  const months=[...new Set(rows.map(r=>r[0]))].sort();
+  const global=getRange(segKey);
+  const rows=DATA[segKey].cat_monthly.filter(r=>monthInRange(r[0],global.startMonth,global.endMonth));
+  const monthsAll=[...new Set(rows.map(r=>r[0]))].sort();
+  const weightMap=getMonthWeights(global.startDate,global.endDate,monthsAll);
+  const months=monthsAll.filter(m=>(weightMap.get(m)||0)>0);
   const cats=[...new Set(rows.map(r=>r[1]))].sort();
   if(!months.length){
     ChartManager.setEmpty(segKey+'_chart_cat_sales', '暂无数据');
@@ -688,9 +831,12 @@ function renderCategory(segKey){
     const by={};
     cats.forEach(c=>by[c]={sales:Array(months.length).fill(0), gpAdj:Array(months.length).fill(0)});
     for(const r of rows){
+      const w=weightMap.get(r[0])||0;
+      if(!w) continue;
       const idx=mi.get(r[0]);
-      by[r[1]].sales[idx]+=r[2];
-      by[r[1]].gpAdj[idx]+=r[6];
+      if(idx===undefined) continue;
+      by[r[1]].sales[idx]+=r[2]*w;
+      by[r[1]].gpAdj[idx]+=r[6]*w;
     }
 
     ChartManager.setOption(segKey+'_chart_cat_sales',{
@@ -724,21 +870,28 @@ function renderCategory(segKey){
     });
   }
 
+  syncTableRangeInputs(segKey,'category');
+  const tableRange=getTableRange(segKey,'category');
+  const tableRows=DATA[segKey].cat_monthly.filter(r=>monthInRange(r[0],tableRange.startMonth,tableRange.endMonth));
+  const tableWeight=getMonthWeights(tableRange.startDate,tableRange.endDate,[...new Set(tableRows.map(r=>r[0]))]);
+
   const tbody=document.querySelector('#'+segKey+'_category_table tbody');
   if(tbody){
     tbody.innerHTML='';
     const map2=new Map();
-    for(const r of rows){
+    for(const r of tableRows){
+      const w=tableWeight.get(r[0])||0;
+      if(!w) continue;
       const k=r[1];
       if(!map2.has(k)) map2.set(k,{sales:0,cost:0,gp:0,fee:0,gpAdj:0,qty:0,orders:0});
       const o=map2.get(k);
-      o.sales+=r[2]; o.cost+=r[3]; o.gp+=r[4]; o.fee+=r[5]; o.gpAdj+=r[6]; o.qty+=r[7]; o.orders+=r[8];
+      o.sales+=r[2]*w; o.cost+=r[3]*w; o.gp+=r[4]*w; o.fee+=r[5]*w; o.gpAdj+=r[6]*w; o.qty+=r[7]*w; o.orders+=r[8]*w;
     }
     const list=[...map2.entries()].map(([k,v])=>({k,...v,gm:v.sales? v.gp/v.sales*100:null,gm2:v.sales? v.gpAdj/v.sales*100:null}));
     list.sort((a,b)=>b.gpAdj-a.gpAdj);
     for(const o of list){
       const tr=document.createElement('tr');
-      const cells=[o.k,fmtNum(o.sales),fmtNum(o.gp),fmtPct(o.gm),fmtNum(o.fee),fmtNum(o.gpAdj),fmtPct(o.gm2),fmtNum(o.qty),String(o.orders)];
+      const cells=[o.k,fmtNum(o.sales),fmtNum(o.gp),fmtPct(o.gm),fmtNum(o.fee),fmtNum(o.gpAdj),fmtPct(o.gm2),fmtNum(o.qty),fmtNum(o.orders)];
       cells.forEach((c,i)=>{const td=document.createElement('td');
         if(i===8){td.appendChild(createOrderLink(segKey,'category',`品类｜${o.k}`,{cat:o.k},c));}
         else{td.textContent=c;}
@@ -762,48 +915,115 @@ function _monthEndDate(m){
   return d;
 }
 function _toDate(s){
-  return new Date(s+'T00:00:00');
+  return _toDateStart(s);
 }
 
 const CATTON_STATE = {};
+
+function renderMarginDistribution(chartId, rows, title){
+  const buckets=['≤0%','0-5%','5-10%','10-20%','20-30%','>30%'];
+  const counts=new Array(buckets.length).fill(0);
+  const sales=new Array(buckets.length).fill(0);
+  rows.forEach(o=>{
+    if(o.gm2===null || o.gm2===undefined || !isFinite(o.gm2)) return;
+    const v=o.gm2;
+    let idx=0;
+    if(v<=0) idx=0;
+    else if(v<=5) idx=1;
+    else if(v<=10) idx=2;
+    else if(v<=20) idx=3;
+    else if(v<=30) idx=4;
+    else idx=5;
+    counts[idx]+=1;
+    sales[idx]+=o.sales||0;
+  });
+  const totalSales=sales.reduce((a,b)=>a+b,0);
+  const totalCount=counts.reduce((a,b)=>a+b,0);
+  if(!totalCount){
+    ChartManager.setEmpty(chartId, '暂无数据');
+    return;
+  }
+  const shares=sales.map(v=>totalSales? +(v/totalSales*100).toFixed(2):0);
+  ChartManager.setOption(chartId,{
+    title:{text:title,left:16,top:10,textStyle:{fontSize:12,fontWeight:800,color:'#1b1a17'}},
+    tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
+    grid:{left:50,right:60,top:50,bottom:40},
+    xAxis:{type:'category',data:buckets},
+    yAxis:[
+      {type:'value',name:'数量'},
+      {type:'value',name:'销售占比',position:'right',axisLabel:{formatter:'{value}%'}}
+    ],
+    series:[
+      {name:'数量',type:'bar',data:counts,barMaxWidth:36,itemStyle:{color:'#148a78'}},
+      {name:'销售占比',type:'line',yAxisIndex:1,data:shares,smooth:true,itemStyle:{color:'#f05a3e'}}
+    ]
+  });
+}
 
 function renderCatTon(segKey){
   const grainEl=document.getElementById(segKey+'_catton_grain');
   if(!grainEl) return;
   const grain=grainEl.value||'month';
-  const {start,end}=getRange(segKey);
+  const global=getRange(segKey);
+  syncTableRangeInputs(segKey,'catton');
+  const tableRange=getTableRange(segKey,'catton');
   const noteEl=document.getElementById(segKey+'_catton_note');
   if(noteEl){
     noteEl.innerText = `口径：数量按规格折吨（油按 ${CAT_TON_META.oil_density}kg/L；袋装无规格默认${CAT_TON_META.fallback_bag_kg}kg；仍有 ${CAT_TON_META.missing_weight_lines} 行无法解析未计入吨数）`;
   }
 
   const cats=['大米','食用油','面粉','杂粮'];
-  let rowsRaw=[];
-  if(grain==='week'){
-    rowsRaw=(CAT_TON[segKey]&&CAT_TON[segKey].weekly)?CAT_TON[segKey].weekly:[];
-    const startDate=_monthStartDate(start);
-    const endDate=_monthEndDate(end);
-    rowsRaw=rowsRaw.filter(r=>{
-      const ws=_toDate(r[0]);
-      const we=_toDate(r[1]);
-      return we>=startDate && ws<=endDate;
-    });
-  }else{
-    rowsRaw=(CAT_TON[segKey]&&CAT_TON[segKey].monthly)?CAT_TON[segKey].monthly:[];
-    rowsRaw=rowsRaw.filter(r=>monthInRange(r[0],start,end));
+  function getPeriodWeight(rangeStart,rangeEnd,periodStart,periodEnd){
+    if(!rangeStart || !rangeEnd) return 1;
+    const s=_toDateStart(rangeStart);
+    const e=_toDateEnd(rangeEnd);
+    const ps=_toDateStart(periodStart);
+    const pe=_toDateEnd(periodEnd);
+    if(!s || !e || !ps || !pe) return 1;
+    if(e < ps || s > pe) return 0;
+    const overlapStart=Math.max(s.getTime(), ps.getTime());
+    const overlapEnd=Math.min(e.getTime(), pe.getTime());
+    if(overlapEnd < overlapStart) return 0;
+    const overlapDays=Math.floor((overlapEnd - overlapStart) / 86400000) + 1;
+    const totalDays=Math.floor((pe.getTime() - ps.getTime()) / 86400000) + 1;
+    return Math.max(0, Math.min(1, overlapDays / totalDays));
   }
 
-  const norm = rowsRaw.map(r=>{
+  function buildNorm(range){
+    let rowsRaw=[];
     if(grain==='week'){
-      return {periodKey:r[0], period:r[2], cat:r[3], tons:r[4], profit:r[5], ppt:r[6], orders:r[7], _t:r[0]};
+      rowsRaw=(CAT_TON[segKey]&&CAT_TON[segKey].weekly)?CAT_TON[segKey].weekly:[];
+      const startDateObj=range.startDate ? _toDate(range.startDate) : _monthStartDate(range.startMonth);
+      const endDateObj=range.endDate ? _toDateEnd(range.endDate) : _monthEndDate(range.endMonth);
+      rowsRaw=rowsRaw.filter(r=>{
+        const ws=_toDate(r[0]);
+        const we=_toDate(r[1]);
+        return we>=startDateObj && ws<=endDateObj;
+      }).map(r=>{
+        const w=getPeriodWeight(range.startDate,range.endDate,r[0],r[1]);
+        if(!w) return null;
+        return {periodKey:r[0], period:r[2], cat:r[3], tons:r[4]*w, profit:r[5]*w, ppt:r[6], orders:r[7]*w, _t:r[0]};
+      }).filter(Boolean);
+    }else{
+      rowsRaw=(CAT_TON[segKey]&&CAT_TON[segKey].monthly)?CAT_TON[segKey].monthly:[];
+      rowsRaw=rowsRaw.filter(r=>monthInRange(r[0],range.startMonth,range.endMonth));
+      const weightMap=getMonthWeights(range.startDate,range.endDate,[...new Set(rowsRaw.map(r=>r[0]))]);
+      rowsRaw=rowsRaw.map(r=>{
+        const w=weightMap.get(r[0])||0;
+        if(!w) return null;
+        return {periodKey:r[0], period:r[0], cat:r[1], tons:r[2]*w, profit:r[3]*w, ppt:r[4], orders:r[5]*w, _t:r[0]+'-01'};
+      }).filter(Boolean);
     }
-    return {periodKey:r[0], period:r[0], cat:r[1], tons:r[2], profit:r[3], ppt:r[4], orders:r[5], _t:r[0]+'-01'};
-  }).filter(o=>cats.includes(o.cat));
+    return rowsRaw.filter(o=>cats.includes(o.cat));
+  }
 
-  const periods=[...new Set(norm.map(o=>o.period))];
+  const normChart=buildNorm(global);
+  const normTable=buildNorm(tableRange);
+
+  const periods=[...new Set(normChart.map(o=>o.period))];
   periods.sort((a,b)=>{
-    const oa=norm.find(x=>x.period===a);
-    const ob=norm.find(x=>x.period===b);
+    const oa=normChart.find(x=>x.period===a);
+    const ob=normChart.find(x=>x.period===b);
     return String(oa?oa._t:'').localeCompare(String(ob?ob._t:''));
   });
 
@@ -814,7 +1034,7 @@ function renderCatTon(segKey){
     const by={}; cats.forEach(c=>by[c]={tons:[],ppt:[]});
     for(const p of periods){
       for(const c of cats){
-        const hit=norm.find(o=>o.period===p && o.cat===c);
+        const hit=normChart.find(o=>o.period===p && o.cat===c);
         by[c].tons.push(hit?hit.tons:0);
         by[c].ppt.push(hit && isFinite(hit.ppt)?hit.ppt:null);
       }
@@ -840,7 +1060,7 @@ function renderCatTon(segKey){
   }
 
   CATTON_STATE[segKey]=CATTON_STATE[segKey]||{sortCol:0,sortAsc:true,rows:[],view:[]};
-  CATTON_STATE[segKey].rows=norm;
+  CATTON_STATE[segKey].rows=normTable;
   CATTON_STATE[segKey].sortCol=0; CATTON_STATE[segKey].sortAsc=true;
   applyCatTonView(segKey);
 }
@@ -890,7 +1110,7 @@ function renderCatTonTable(segKey){
       (Number(o.tons)||0).toFixed(3),
       fmtNum(o.profit),
       (isFinite(o.ppt)?Number(o.ppt).toFixed(2):''),
-      String(o.orders)
+      fmtNum(o.orders)
     ];
     cells.forEach((c,i)=>{
       const td=document.createElement('td');
@@ -922,7 +1142,8 @@ function resetCatTonTable(segKey){
   if(s) s.value='';
   CATTON_STATE[segKey]=CATTON_STATE[segKey]||{sortCol:0,sortAsc:true,rows:[],view:[]};
   CATTON_STATE[segKey].sortCol=0; CATTON_STATE[segKey].sortAsc=true;
-  applyCatTonView(segKey);
+  resetTableRange(segKey,'catton');
+  try{ renderCatTon(segKey); }catch(e){ console.error(e); }
 }
 
 function exportCatTonCSV(segKey){
@@ -936,19 +1157,45 @@ function exportCatTonCSV(segKey){
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
-function renderProducts(segKey){
-  const {start,end}=getRange(segKey);
-  const arr=DATA[segKey].products.filter(r=>monthInRange(r[2],start,end));
+function buildProductRows(segKey, range){
+  const arr=DATA[segKey].products.filter(r=>monthInRange(r[2],range.startMonth,range.endMonth));
+  const weightMap=getMonthWeights(range.startDate,range.endDate,[...new Set(arr.map(r=>r[2]))]);
   const map=new Map();
   for(const r of arr){
+    const w=weightMap.get(r[2])||0;
+    if(!w) continue;
     const key=r[0]+'||'+r[1];
     if(!map.has(key)) map.set(key,{prod:r[0],cat:r[1],sales:0,cost:0,gp:0,fee:0,gpAdj:0,qty:0,orders:0,lines:0});
     const o=map.get(key);
-    o.sales+=r[3]; o.cost+=r[4]; o.gp+=r[5]; o.fee+=r[6]; o.gpAdj+=r[7]; o.qty+=r[8]; o.orders+=r[9]; o.lines+=r[10];
+    o.sales+=r[3]*w; o.cost+=r[4]*w; o.gp+=r[5]*w; o.fee+=r[6]*w; o.gpAdj+=r[7]*w; o.qty+=r[8]*w; o.orders+=r[9]*w; o.lines+=r[10]*w;
   }
   const rows=[...map.values()];
   rows.forEach(o=>{o.gm=o.sales? o.gp/o.sales*100:null; o.gm2=o.sales? o.gpAdj/o.sales*100:null;});
   rows.sort((a,b)=>b.gpAdj-a.gpAdj);
+  return rows;
+}
+
+function buildCustomerRows(segKey, range){
+  const arr=DATA[segKey].customers.filter(r=>monthInRange(r[2],range.startMonth,range.endMonth));
+  const weightMap=getMonthWeights(range.startDate,range.endDate,[...new Set(arr.map(r=>r[2]))]);
+  const map=new Map();
+  for(const r of arr){
+    const w=weightMap.get(r[2])||0;
+    if(!w) continue;
+    const key=r[0]+'||'+r[1];
+    if(!map.has(key)) map.set(key,{cust:r[0],cls:r[1],sales:0,gp:0,fee:0,gpAdj:0,orders:0,lines:0});
+    const o=map.get(key);
+    o.sales+=r[3]*w; o.gp+=r[5]*w; o.fee+=r[6]*w; o.gpAdj+=r[7]*w; o.orders+=r[9]*w; o.lines+=r[10]*w;
+  }
+  const rows=[...map.values()];
+  rows.forEach(o=>{o.gm=o.sales? o.gp/o.sales*100:null; o.gm2=o.sales? o.gpAdj/o.sales*100:null;});
+  rows.sort((a,b)=>b.gpAdj-a.gpAdj);
+  return rows;
+}
+
+function renderProducts(segKey){
+  const global=getRange(segKey);
+  const rows=buildProductRows(segKey, global);
   const top=rows.slice(0,20);
   if(top.length){
     ChartManager.setOption(segKey+'_chart_prod_top',{
@@ -961,47 +1208,25 @@ function renderProducts(segKey){
   }else{
     ChartManager.setEmpty(segKey+'_chart_prod_top', '暂无数据');
   }
-  const scatter=rows.filter(o=>o.sales>0);
-  if(scatter.length){
-    const scatterData=scatter.map(o=>({
-      value:[o.sales,o.gm2,o.gpAdj],
-      name:o.prod+' | '+o.cat
-    }));
-    ChartManager.setOption(segKey+'_chart_prod_scatter',{
-      tooltip:{
-        formatter:(p)=>{
-          const v=p.data.value;
-          return `${p.data.name}<br/>销售额=${fmtNum(v[0])}<br/>毛利率(扣费)=${fmtPct(v[1])}`;
-        }
-      },
-      grid:{left:60,right:20,top:40,bottom:50},
-      xAxis:{type:'value',name:'销售额（元）'},
-      yAxis:{type:'value',name:'毛利率(%)'},
-      series:[{
-        name:'产品结构',
-        type:'scatter',
-        data:scatterData,
-        symbolSize:(d)=>{
-          const v=Math.max(0, d[2] || 0);
-          return Math.max(6, Math.min(30, Math.sqrt(v)/20));
-        }
-      }]
-    });
-  }else{
-    ChartManager.setEmpty(segKey+'_chart_prod_scatter', '暂无数据');
-  }
+  renderMarginDistribution(segKey+'_chart_prod_margin', rows, '毛利率分布（扣费）');
+
+  syncTableRangeInputs(segKey,'product');
+  const tableRange=getTableRange(segKey,'product');
+  const tableRows=buildProductRows(segKey, tableRange);
 
   const catSel=document.getElementById(segKey+'_product_cat');
-  if(catSel && catSel.options.length<=1){
-    const cats=[...new Set(rows.map(o=>o.cat))].sort();
+  if(catSel){
+    const prev=catSel.value||'';
+    const cats=[...new Set(tableRows.map(o=>o.cat))].sort();
     catSel.innerHTML='<option value="">全部</option>'+cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+    if(prev && cats.includes(prev)) catSel.value=prev;
   }
 
   const tbody=document.querySelector('#'+segKey+'_product_table tbody');
   tbody.innerHTML='';
-  for(const o of rows){
+  for(const o of tableRows){
     const tr=document.createElement('tr');
-    const cells=[o.prod,o.cat,fmtNum(o.sales),fmtNum(o.gp),fmtPct(o.gm),fmtNum(o.fee),fmtNum(o.gpAdj),fmtPct(o.gm2),fmtNum(o.qty),String(o.orders),String(o.lines)];
+    const cells=[o.prod,o.cat,fmtNum(o.sales),fmtNum(o.gp),fmtPct(o.gm),fmtNum(o.fee),fmtNum(o.gpAdj),fmtPct(o.gm2),fmtNum(o.qty),fmtNum(o.orders),fmtNum(o.lines)];
     cells.forEach((c,i)=>{const td=document.createElement('td');
       if(i===9){td.appendChild(createOrderLink(segKey,'product',`产品｜${o.prod}｜${o.cat}`,{prod:o.prod,cat:o.cat},c));}
       else{td.textContent=c;}
@@ -1009,23 +1234,13 @@ function renderProducts(segKey){
     });
     tbody.appendChild(tr);
   }
-  document.getElementById(segKey+'_product_count').innerText=String(rows.length);
+  document.getElementById(segKey+'_product_count').innerText=String(tableRows.length);
   filterTable(segKey,'product');
 }
 
 function renderCustomers(segKey){
-  const {start,end}=getRange(segKey);
-  const arr=DATA[segKey].customers.filter(r=>monthInRange(r[2],start,end));
-  const map=new Map();
-  for(const r of arr){
-    const key=r[0]+'||'+r[1];
-    if(!map.has(key)) map.set(key,{cust:r[0],cls:r[1],sales:0,gp:0,fee:0,gpAdj:0,orders:0,lines:0});
-    const o=map.get(key);
-    o.sales+=r[3]; o.gp+=r[5]; o.fee+=r[6]; o.gpAdj+=r[7]; o.orders+=r[9]; o.lines+=r[10];
-  }
-  const rows=[...map.values()];
-  rows.forEach(o=>{o.gm=o.sales? o.gp/o.sales*100:null; o.gm2=o.sales? o.gpAdj/o.sales*100:null;});
-  rows.sort((a,b)=>b.gpAdj-a.gpAdj);
+  const global=getRange(segKey);
+  const rows=buildCustomerRows(segKey, global);
   const top=rows.slice(0,20);
   if(top.length){
     ChartManager.setOption(segKey+'_chart_cust_top',{
@@ -1038,47 +1253,25 @@ function renderCustomers(segKey){
   }else{
     ChartManager.setEmpty(segKey+'_chart_cust_top', '暂无数据');
   }
-  const scatter=rows.filter(o=>o.sales>0);
-  if(scatter.length){
-    const scatterData=scatter.map(o=>({
-      value:[o.sales,o.gm2,o.gpAdj],
-      name:o.cust+'｜'+o.cls
-    }));
-    ChartManager.setOption(segKey+'_chart_cust_scatter',{
-      tooltip:{
-        formatter:(p)=>{
-          const v=p.data.value;
-          return `${p.data.name}<br/>销售额=${fmtNum(v[0])}<br/>毛利率(扣费)=${fmtPct(v[1])}`;
-        }
-      },
-      grid:{left:60,right:20,top:40,bottom:50},
-      xAxis:{type:'value',name:'销售额（元）'},
-      yAxis:{type:'value',name:'毛利率(%)'},
-      series:[{
-        name:'客户结构',
-        type:'scatter',
-        data:scatterData,
-        symbolSize:(d)=>{
-          const v=Math.max(0, d[2] || 0);
-          return Math.max(6, Math.min(30, Math.sqrt(v)/20));
-        }
-      }]
-    });
-  }else{
-    ChartManager.setEmpty(segKey+'_chart_cust_scatter', '暂无数据');
-  }
+  renderMarginDistribution(segKey+'_chart_cust_margin', rows, '毛利率分布（扣费）');
+
+  syncTableRangeInputs(segKey,'customer');
+  const tableRange=getTableRange(segKey,'customer');
+  const tableRows=buildCustomerRows(segKey, tableRange);
 
   const clsSel=document.getElementById(segKey+'_customer_class');
-  if(clsSel && clsSel.options.length<=1){
-    const cls=[...new Set(rows.map(o=>o.cls).filter(v=>v))].sort();
+  if(clsSel){
+    const prev=clsSel.value||'';
+    const cls=[...new Set(tableRows.map(o=>o.cls).filter(v=>v))].sort();
     clsSel.innerHTML='<option value="">全部</option>'+cls.map(c=>`<option value="${c}">${c}</option>`).join('');
+    if(prev && cls.includes(prev)) clsSel.value=prev;
   }
 
   const tbody=document.querySelector('#'+segKey+'_customer_table tbody');
   tbody.innerHTML='';
-  for(const o of rows){
+  for(const o of tableRows){
     const tr=document.createElement('tr');
-    const cells=[o.cust,o.cls,fmtNum(o.sales),fmtNum(o.gp),fmtPct(o.gm),fmtNum(o.fee),fmtNum(o.gpAdj),fmtPct(o.gm2),String(o.orders),String(o.lines)];
+    const cells=[o.cust,o.cls,fmtNum(o.sales),fmtNum(o.gp),fmtPct(o.gm),fmtNum(o.fee),fmtNum(o.gpAdj),fmtPct(o.gm2),fmtNum(o.orders),fmtNum(o.lines)];
     cells.forEach((c,i)=>{const td=document.createElement('td');
       if(i===8){td.appendChild(createOrderLink(segKey,'customer',`客户｜${o.cust}｜${o.cls}`,{cust:o.cust,cls:o.cls},c));}
       else{td.textContent=c;}
@@ -1086,15 +1279,14 @@ function renderCustomers(segKey){
     });
     tbody.appendChild(tr);
   }
-  document.getElementById(segKey+'_customer_count').innerText=String(rows.length);
+  document.getElementById(segKey+'_customer_count').innerText=String(tableRows.length);
   filterTable(segKey,'customer');
 }
 
-function renderLifecycle(segKey){
-  const {start,end}=getRange(segKey);
-  const months=(DATA[segKey].months||[]).filter(m=>monthInRange(m,start,end));
-
-  const cuRows=DATA[segKey].customers.filter(r=>monthInRange(r[2],start,end));
+function buildLifecycleData(segKey, range){
+  const months=(DATA[segKey].months||[]).filter(m=>monthInRange(m,range.startMonth,range.endMonth));
+  const weightMap=getMonthWeights(range.startDate,range.endDate,months);
+  const cuRows=DATA[segKey].customers.filter(r=>monthInRange(r[2],range.startMonth,range.endMonth));
   const byMonth=new Map(months.map(m=>[m,new Map()]));
   for(const r of cuRows){
     const m=r[2];
@@ -1106,15 +1298,16 @@ function renderLifecycle(segKey){
   const newArr=[], lostArr=[];
   for(let i=0;i<months.length;i++){
     const m=months[i];
+    const w=weightMap.get(m)||0;
     const cur=byMonth.get(m)||new Map();
     const prev=(i>0)? (byMonth.get(months[i-1])||new Map()) : new Map();
     const next=(i<months.length-1)? (byMonth.get(months[i+1])||new Map()) : new Map();
 
     for(const [key,r] of cur.entries()){
-      const sales=r[3]||0;
-      const gpAdj=r[7]||0;
+      const sales=(r[3]||0)*w;
+      const gpAdj=(r[7]||0)*w;
       const gm2=sales? (gpAdj/sales*100):null;
-      const row=[m,r[0],r[1],sales,gpAdj,gm2,r[9]||0,r[10]||0];
+      const row=[m,r[0],r[1],sales,gpAdj,gm2,(r[9]||0)*w,(r[10]||0)*w];
       if(!prev.has(key)) newArr.push(row);
       if(!next.has(key)) lostArr.push(row);
     }
@@ -1124,9 +1317,16 @@ function renderLifecycle(segKey){
 
   const initMap=()=>new Map(months.map(m=>[m,{cnt:0,sales:0,gp:0}]));
   const newBy=initMap(), lostBy=initMap();
-  newArr.forEach(r=>{const o=newBy.get(r[0]); if(o){o.cnt+=1;o.sales+=r[3];o.gp+=r[4];}});
-  lostArr.forEach(r=>{const o=lostBy.get(r[0]); if(o){o.cnt+=1;o.sales+=r[3];o.gp+=r[4];}});
+  newArr.forEach(r=>{const o=newBy.get(r[0]); if(o){o.cnt+=weightMap.get(r[0])||0;o.sales+=r[3];o.gp+=r[4];}});
+  lostArr.forEach(r=>{const o=lostBy.get(r[0]); if(o){o.cnt+=weightMap.get(r[0])||0;o.sales+=r[3];o.gp+=r[4];}});
 
+  return {months,newArr,lostArr,newBy,lostBy};
+}
+
+function renderLifecycle(segKey){
+  const global=getRange(segKey);
+  const globalData=buildLifecycleData(segKey, global);
+  const months=globalData.months;
   if(months.length){
     ChartManager.setOption(segKey+'_chart_newlost_cnt',{
       tooltip:{trigger:'axis'},
@@ -1135,8 +1335,8 @@ function renderLifecycle(segKey){
       xAxis:{type:'category',data:months},
       yAxis:{type:'value',name:'客户数'},
       series:[
-        {name:'新增客户数',type:'line',data:months.map(m=>newBy.get(m).cnt),smooth:true},
-        {name:'流失客户数',type:'line',data:months.map(m=>lostBy.get(m).cnt),smooth:true}
+        {name:'新增客户数',type:'line',data:months.map(m=>globalData.newBy.get(m).cnt),smooth:true},
+        {name:'流失客户数',type:'line',data:months.map(m=>globalData.lostBy.get(m).cnt),smooth:true}
       ]
     });
 
@@ -1150,10 +1350,10 @@ function renderLifecycle(segKey){
         {type:'value',name:'毛利_扣销售费（元）',position:'right'}
       ],
       series:[
-        {name:'新增客户销售额',type:'bar',data:months.map(m=>newBy.get(m).sales)},
-        {name:'流失客户销售额',type:'bar',data:months.map(m=>lostBy.get(m).sales)},
-        {name:'新增毛利_扣费',type:'line',yAxisIndex:1,data:months.map(m=>newBy.get(m).gp),smooth:true},
-        {name:'流失毛利_扣费',type:'line',yAxisIndex:1,data:months.map(m=>lostBy.get(m).gp),smooth:true}
+        {name:'新增客户销售额',type:'bar',data:months.map(m=>globalData.newBy.get(m).sales)},
+        {name:'流失客户销售额',type:'bar',data:months.map(m=>globalData.lostBy.get(m).sales)},
+        {name:'新增毛利_扣费',type:'line',yAxisIndex:1,data:months.map(m=>globalData.newBy.get(m).gp),smooth:true},
+        {name:'流失毛利_扣费',type:'line',yAxisIndex:1,data:months.map(m=>globalData.lostBy.get(m).gp),smooth:true}
       ]
     });
   }else{
@@ -1161,11 +1361,15 @@ function renderLifecycle(segKey){
     ChartManager.setEmpty(segKey+'_chart_newlost_val', '暂无数据');
   }
 
-  fillLifecycleTables(segKey,newArr,lostArr,months);
+  syncTableRangeInputs(segKey,'new');
+  syncTableRangeInputs(segKey,'lost');
+  const newData=buildLifecycleData(segKey, getTableRange(segKey,'new'));
+  const lostData=buildLifecycleData(segKey, getTableRange(segKey,'lost'));
+  fillLifecycleTables(segKey,newData,lostData);
 }
 
-function fillLifecycleTables(segKey,newArr,lostArr,months){
-  const cls=[...new Set([...newArr,...lostArr].map(r=>r[2]).filter(v=>v))].sort();
+function fillLifecycleTables(segKey,newData,lostData){
+  const cls=[...new Set([...newData.newArr,...lostData.lostArr].map(r=>r[2]).filter(v=>v))].sort();
 
   function fillSel(id, arr){
     const el=document.getElementById(id); if(!el) return;
@@ -1173,8 +1377,8 @@ function fillLifecycleTables(segKey,newArr,lostArr,months){
     el.innerHTML='<option value="">全部</option>'+arr.map(v=>`<option value="${v}">${v}</option>`).join('');
     if(prev && arr.includes(prev)) el.value=prev;
   }
-  fillSel(segKey+'_new_month', months);
-  fillSel(segKey+'_lost_month', months);
+  fillSel(segKey+'_new_month', newData.months);
+  fillSel(segKey+'_lost_month', lostData.months);
   fillSel(segKey+'_new_class', cls);
   fillSel(segKey+'_lost_class', cls);
 
@@ -1183,7 +1387,7 @@ function fillLifecycleTables(segKey,newArr,lostArr,months){
     tbody.innerHTML='';
     arr.forEach(r=>{
       const tr=document.createElement('tr');
-      const cells=[r[0],r[1],r[2],fmtNum(r[3]),fmtNum(r[4]),(r[5]==null?'':fmtPct(r[5])),String(r[6]),String(r[7])];
+      const cells=[r[0],r[1],r[2],fmtNum(r[3]),fmtNum(r[4]),(r[5]==null?'':fmtPct(r[5])),fmtNum(r[6]),fmtNum(r[7])];
       cells.forEach((c,i)=>{
         const td=document.createElement('td');
         if(i===6){
@@ -1198,13 +1402,24 @@ function fillLifecycleTables(segKey,newArr,lostArr,months){
     document.getElementById(segKey+'_'+type+'_count').innerText=String(arr.length);
     filterTable(segKey,type);
   }
-  fillTable('new',newArr);
-  fillTable('lost',lostArr);
+  fillTable('new',newData.newArr);
+  fillTable('lost',lostData.lostArr);
 }
 
 function renderAbnormal(segKey){
-  const {start,end}=getRange(segKey);
-  const arr=DATA[segKey].abnormal_orders.filter(r=>monthInRange(r[0].slice(0,7),start,end));
+  const global=getRange(segKey);
+  const arrGlobal=DATA[segKey].abnormal_orders.filter(r=>{
+    const d=r[0];
+    if(global.startDate && global.endDate) return dateInRange(d,global.startDate,global.endDate);
+    return monthInRange(d.slice(0,7),global.startMonth,global.endMonth);
+  });
+  syncTableRangeInputs(segKey,'abnormal');
+  const tableRange=getTableRange(segKey,'abnormal');
+  const arr=DATA[segKey].abnormal_orders.filter(r=>{
+    const d=r[0];
+    if(tableRange.startDate && tableRange.endDate) return dateInRange(d,tableRange.startDate,tableRange.endDate);
+    return monthInRange(d.slice(0,7),tableRange.startMonth,tableRange.endMonth);
+  });
   const clsSel=document.getElementById(segKey+'_abnormal_class');
   if(clsSel){
     const prev=clsSel.value||'';
@@ -1229,15 +1444,13 @@ function renderAbnormal(segKey){
   });
   document.getElementById(segKey+'_abnormal_count').innerText=String(arr.length);
   filterTable(segKey,'abnormal');
-  renderAbnReasonChart(segKey);
+  renderAbnReasonChart(segKey, arrGlobal);
 }
 
-function renderAbnReasonChart(segKey){
-  const table=document.getElementById(segKey+'_abnormal_table');
-  const rows=[...table.querySelectorAll('tbody tr')].filter(tr=>tr.style.display!=='none');
+function renderAbnReasonChart(segKey, rows){
   const map=new Map();
-  rows.forEach(tr=>{
-    const txt=tr.children[8]?.innerText||'';
+  (rows||[]).forEach(r=>{
+    const txt=String(r[8]||'');
     txt.split('｜').map(x=>x.trim()).filter(Boolean).forEach(p=>map.set(p,(map.get(p)||0)+1));
   });
   const arr=[...map.entries()].map(([k,v])=>({k,v})).sort((a,b)=>a.v-b.v);
@@ -1336,7 +1549,7 @@ function filterTable(segKey,type){
   }catch(e){}
 
   if(type==='abnormal'){
-    renderAbnReasonChart(segKey);
+    return;
   }
 }
 
@@ -1350,7 +1563,8 @@ function resetTable(segKey,type){
     abnormal:[segKey+'_abnormal_search',segKey+'_abnormal_class',segKey+'_abnormal_min_sales',segKey+'_abnormal_reason',segKey+'_abnormal_reason_sel']
   }[type]||[];
   ids.forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
-  filterTable(segKey,type);
+  resetTableRange(segKey,type);
+  try{ rerenderTable(segKey,type); }catch(e){ console.error(e); }
 }
 
 function sortTable(segKey,type,colIdx){

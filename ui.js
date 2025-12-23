@@ -10,11 +10,17 @@ function _uniqSorted(arrs){
   return [...s].sort();
 }
 
-function _monthsInCurrentRange(segKey){
-  const range = (typeof getRange === 'function') ? getRange(segKey) : {start:'',end:''};
+function _monthsInCurrentRange(segKey,type){
+  let range = null;
+  if(type && typeof getTableRange === 'function'){
+    try{ range = getTableRange(segKey,type); }catch(e){}
+  }
+  if(!range) range = (typeof getRange === 'function') ? getRange(segKey) : {start:'',end:''};
+  const start = range.startMonth || range.start || '';
+  const end = range.endMonth || range.end || '';
   const months=(DATA && DATA[segKey] && DATA[segKey].months) ? DATA[segKey].months : [];
   if(typeof monthInRange !== 'function') return months.slice();
-  return months.filter(m=>monthInRange(m, range.start, range.end));
+  return months.filter(m=>monthInRange(m, start, end));
 }
 
 function getOrderList(segKey,type,info){
@@ -32,7 +38,7 @@ function getOrderList(segKey,type,info){
 
     const segMap = (ORDER_MAP||{})[segKey];
     if(!segMap) return [];
-    const months=_monthsInCurrentRange(segKey);
+    const months=_monthsInCurrentRange(segKey,type);
     if(type==='category'){
       const cat=(info&&info.cat)||'';
       return _uniqSorted(months.map(m=>segMap.cat_month[`${m}||${cat}`]));
