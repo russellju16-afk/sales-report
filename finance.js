@@ -500,9 +500,18 @@
     }).sort((a,b)=>b.amount - a.amount);
   }
 
+  function getSavedControlValue(id){
+    const st = window.StateManager && window.StateManager.state ? window.StateManager.state : null;
+    if(st && st.controls && st.controls[id] !== undefined && st.controls[id] !== null){
+      return String(st.controls[id]);
+    }
+    return '';
+  }
+
   function syncPriceSelect(select, sortedList){
     if(!select) return { item: null };
-    const curVal = select.value || '';
+    const savedVal = getSavedControlValue(select.id);
+    const curVal = select.value || savedVal || '';
     const topList = sortedList.slice(0, 5);
     const idxSet = new Set(topList.map(x=>String(x.idx)));
     const extra = curVal && !idxSet.has(curVal) ? sortedList.find(x=>String(x.idx) === curVal) : null;
@@ -524,13 +533,17 @@
       return { item: null };
     }
 
+    let nextVal = select.value || '';
     if(curVal && idxSet.has(curVal)){
-      select.value = curVal;
+      nextVal = curVal;
     }else if(extra){
-      select.value = String(extra.idx);
-    }else if(!select.value){
-      select.value = String(finalList[0].idx);
+      nextVal = String(extra.idx);
+    }else if(!nextVal){
+      nextVal = String(finalList[0].idx);
     }
+    const changed = nextVal !== select.value;
+    select.value = nextVal;
+    if(changed && window.StateManager) window.StateManager.queuePersist();
 
     const chosen = sortedList.find(x=>String(x.idx) === String(select.value));
     return { item: chosen ? chosen.item : null };
