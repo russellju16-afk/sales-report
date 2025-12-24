@@ -117,24 +117,21 @@ function getOrderList(segKey,type,info){
 }
 
 function createOrderLink(segKey,type,title,info,text){
-  const a=document.createElement('a');
-  a.href='javascript:void(0)';
-  a.className='order-link';
-  a.dataset.seg=segKey;
-  a.dataset.type=type;
-  a.dataset.title=title||'订单明细';
-  a.dataset.info=JSON.stringify(info||{});
-  a.textContent=text;
-  return a;
+  const btn=document.createElement('button');
+  btn.type='button';
+  btn.className='order-link';
+  btn.dataset.seg=segKey;
+  btn.dataset.type=type;
+  btn.dataset.title=title||'订单明细';
+  btn.dataset.info=JSON.stringify(info||{});
+  btn.textContent=text;
+  btn.title=btn.dataset.title;
+  return btn;
 }
 
 let _orderModalCache=[];
 let _orderModalView=[];
 let _orderModalTitle='订单明细';
-
-function _escapeHTML(s){
-  return String(s).replace(/[&<>"']/g,(m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
-}
 
 let _toastTimer=null;
 function _flashToast(msg){
@@ -175,7 +172,7 @@ function _renderOrderModal(){
     btn.type='button';
     btn.className='order-pill';
     btn.dataset.order=String(o);
-    btn.innerHTML = `<span class="order-no">${_escapeHTML(o)}</span><span class="mini">⧉</span>`;
+    btn.innerHTML = `<span class="order-no">${escapeHtml(o)}</span><span class="mini">⧉</span>`;
     frag.appendChild(btn);
   });
   list.appendChild(frag);
@@ -265,14 +262,14 @@ function copyOrderModal(copyAll){
 }
 
 document.addEventListener('click', (e)=>{
-  const a = e.target.closest && e.target.closest('a.order-link');
-  if(!a) return;
-  e.preventDefault();
-  const segKey=a.dataset.seg;
-  const type=a.dataset.type;
-  const title=a.dataset.title;
+  const link = e.target.closest && e.target.closest('.order-link');
+  if(!link) return;
+  if(link.tagName === 'A') e.preventDefault();
+  const segKey=link.dataset.seg;
+  const type=link.dataset.type;
+  const title=link.dataset.title;
   let info={};
-  try{ info=JSON.parse(a.dataset.info||'{}'); }catch(err){ info={}; }
+  try{ info=JSON.parse(link.dataset.info||'{}'); }catch(err){ info={}; }
   const orders=getOrderList(segKey,type,info);
   showOrderModal(title, orders);
 });
@@ -297,6 +294,15 @@ function syncBaseDisplay(table){
   });
 }
 
+function syncHeaderSticky(table){
+  if(!table || !table.tHead || !table.tHead.rows || table.tHead.rows.length===0) return;
+  const headerRow = table.tHead.rows[0];
+  window.requestAnimationFrame(()=>{
+    const h = Math.ceil(headerRow.getBoundingClientRect().height || headerRow.offsetHeight || 0);
+    if(h) table.style.setProperty('--thead-h', h + 'px');
+  });
+}
+
 function installAllHeaderFilters(segKey){
   const seg = document.getElementById('seg_'+segKey);
   if(!seg) return;
@@ -318,6 +324,8 @@ function installHeaderFiltersForTable(table){
     });
     oldRow.remove();
   }
+  const storedVals = (window.StateManager && table.id) ? window.StateManager.getHeaderFilters(table.id) : null;
+  const presetVals = oldVals.length ? oldVals : (storedVals || []);
 
   const tb = table.tBodies && table.tBodies[0];
   if(tb){
@@ -348,14 +356,20 @@ function installHeaderFiltersForTable(table){
       const opts = ['<option value="">全部</option>']
         .concat(uniq.sort().map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
       ctl.innerHTML = opts.join('');
-      ctl.value = oldVals[ci] || '';
-      ctl.addEventListener('change', ()=>applyHeaderFiltersForTable(table));
+      ctl.value = presetVals[ci] || '';
+      ctl.addEventListener('change', ()=>{
+        applyHeaderFiltersForTable(table);
+        if(window.StateManager) window.StateManager.queuePersist();
+      });
     }else{
       ctl = document.createElement('input');
       ctl.type = 'text';
       ctl.placeholder = '筛选';
-      ctl.value = oldVals[ci] || '';
-      ctl.addEventListener('input', debounce(()=>applyHeaderFiltersForTable(table), 120));
+      ctl.value = presetVals[ci] || '';
+      ctl.addEventListener('input', debounce(()=>{
+        applyHeaderFiltersForTable(table);
+        if(window.StateManager) window.StateManager.queuePersist();
+      }, 120));
     }
     ctl.addEventListener('click', (e)=>e.stopPropagation());
     th.appendChild(ctl);
@@ -363,6 +377,7 @@ function installHeaderFiltersForTable(table){
   }
 
   thead.appendChild(filterRow);
+  syncHeaderSticky(table);
   applyHeaderFiltersForTable(table);
 }
 
@@ -406,6 +421,26 @@ function applyHeaderFiltersForTable(table){
       }
     }
   }catch(e){}
+}
+
+function clearHeaderFiltersForTable(table){
+  if(!table || !table.tHead) return;
+  const fr = table.tHead.querySelector('tr.filter-row');
+  if(!fr) return;
+  [...fr.querySelectorAll('input,select')].forEach(ctl=>{ ctl.value=''; });
+  applyHeaderFiltersForTable(table);
+  if(window.StateManager) window.StateManager.queuePersist();
+}
+
+function clearHeaderFilters(segKey,type){
+  let tableId = '';
+  if(type === 'catton'){
+    tableId = segKey + '_catton_table';
+  }else{
+    tableId = getTableId(segKey,type);
+  }
+  const table = tableId ? document.getElementById(tableId) : null;
+  if(table) clearHeaderFiltersForTable(table);
 }
 
 function getColumnSamples(table, colIdx, maxN){

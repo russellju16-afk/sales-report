@@ -26,16 +26,16 @@
 <div class="container">
   <div class="title">经营分析（毛利为主 + 销售费用 + 品类 + 新增/流失客户 + 异常订单）</div>
   <div class="subtitle">
-    数据范围：<b>2025-08-01</b> 至 <b>2025-11-30</b>。三维度：<b>全部</b> / <b>超群门店</b> / <b>非超群门店</b>。<br/>
+    数据范围：<b id="data_range">—</b>。三维度：<b>全部</b> / <b>超群门店</b> / <b>非超群门店</b>。版本：<b id="page_version">—</b>。<br/>
     ✅ <b>图表/指标联动全局时间筛选</b>（开始日/结束日），<b>列表请使用表内时间筛选</b>（仅影响表内数据）。<br/>
     <span class="hint">本文件必须是“...品类_新增流失_图表联动_v2.html”，否则看不到“品类/新增流失”页签。</span>
     <div id="data_status"></div>
   </div>
 
   <div class="seg-switch">
-    <button class="segbtn active" onclick="showSeg('total')">全部</button>
-    <button class="segbtn" onclick="showSeg('store')">超群门店</button>
-    <button class="segbtn" onclick="showSeg('nonstore')">非超群门店</button>
+    <button class="segbtn active" data-seg="total">全部</button>
+    <button class="segbtn" data-seg="store">超群门店</button>
+    <button class="segbtn" data-seg="nonstore">非超群门店</button>
   </div>
 
   <div class="seg active" id="seg_total"></div>
@@ -80,6 +80,7 @@
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js" defer></script>
 <script src="./charts.js" defer></script>
 <script src="./ui.js" defer></script>
+<script src="./state.js" defer></script>
 <script src="./app.js" defer></script>
 </body>
 </html>

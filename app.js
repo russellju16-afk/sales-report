@@ -5,9 +5,13 @@ var CAT_TON = window.CAT_TON || {};
 var CAT_TON_META = window.CAT_TON_META || {oil_density:0.92, fallback_bag_kg:1, missing_weight_lines:0};
 
 const DATA_META = { generatedAt: null };
+const STATE_MANAGER = window.StateManager || null;
+let BOOTSTRAP_INFLIGHT = false;
+let APP_EVENTS_BOUND = false;
 
 function getDataUrl(){
   const base = window.DATA_URL || './data/latest.json';
+  if(/(?:\?|&)v=/.test(base)) return base;
   const joiner = base.includes('?') ? '&' : '?';
   return base + joiner + 'v=' + Date.now();
 }
@@ -77,7 +81,17 @@ function setErrorState(show, msg){
   if(msgEl) msgEl.textContent = msg || '请检查网络或数据文件路径。';
 }
 
+function setReloadButtonDisabled(disabled){
+  const btn = document.getElementById('reload_btn');
+  if(!btn) return;
+  btn.disabled = !!disabled;
+  btn.classList.toggle('disabled', !!disabled);
+}
+
 async function bootstrap(){
+  if(BOOTSTRAP_INFLIGHT) return;
+  BOOTSTRAP_INFLIGHT = true;
+  setReloadButtonDisabled(true);
   try{
     setErrorState(false, '');
     setLoadingState(true, '正在拉取 ./data/latest.json');
@@ -94,18 +108,26 @@ async function bootstrap(){
 
     const ts = DATA_META.generatedAt ? ('数据更新时间：' + DATA_META.generatedAt) : '数据已加载';
     showDataStatus(true, ts);
-    init();
+    const initialState = STATE_MANAGER ? STATE_MANAGER.readState() : null;
+    if(STATE_MANAGER) STATE_MANAGER.setState(initialState);
+    updatePageMeta();
+    init(initialState);
     setLoadingState(false, '');
   }catch(e){
     console.error(e);
     setLoadingState(false, '');
     setErrorState(true, e && e.message ? e.message : '数据加载失败');
     showDataStatus(false, '数据加载失败，请刷新重试（F5）');
+  }finally{
+    BOOTSTRAP_INFLIGHT = false;
+    setReloadButtonDisabled(false);
   }
 }
 
 let currentSeg='total';
 const tabState={};
+window.tabState = tabState;
+window.currentSeg = currentSeg;
 const sortState={};
 const TABLE_RANGE={};
 
@@ -266,6 +288,7 @@ function makeSegHTML(segKey){
             <label class="ctl table-time">表内结束日：<input id="${segKey}_catton_d_end" type="date" onchange="onTableTimeChange('${segKey}','catton')"/></label>
             <span class="table-hint">仅作用本表，不影响图表/指标</span>
             <button class="btn" onclick="resetCatTonTable('${segKey}')">重置</button>
+            <button class="btn" onclick="clearHeaderFilters('${segKey}','catton')">清空表头筛选</button>
             <button class="btn" onclick="exportCatTonCSV('${segKey}')">导出CSV(当前过滤)</button>
             <span class="count">显示：<b id="${segKey}_catton_count">0</b></span>
           </div>
@@ -354,6 +377,7 @@ function makeTableShell(segKey,type){
         <label class="ctl table-time">表内结束日：<input id="${segKey}_category_d_end" type="date" onchange="onTableTimeChange('${segKey}','category')"/></label>
         <span class="table-hint">仅作用本表，不影响图表/指标</span>
         <button class="btn" onclick="resetTable('${segKey}','category')">重置</button>
+        <button class="btn" onclick="clearHeaderFilters('${segKey}','category')">清空表头筛选</button>
         <button class="btn" onclick="exportTableCSV('${segKey}','category')">导出CSV(当前过滤)</button>
         <span class="count">显示：<b id="${segKey}_category_count">0</b></span>
       </div>
@@ -389,6 +413,7 @@ function makeTableShell(segKey,type){
         <label class="ctl table-time">表内结束日：<input id="${segKey}_product_d_end" type="date" onchange="onTableTimeChange('${segKey}','product')"/></label>
         <span class="table-hint">仅作用本表，不影响图表/指标</span>
         <button class="btn" onclick="resetTable('${segKey}','product')">重置</button>
+        <button class="btn" onclick="clearHeaderFilters('${segKey}','product')">清空表头筛选</button>
         <button class="btn" onclick="exportTableCSV('${segKey}','product')">导出CSV(当前过滤)</button>
         <span class="count">显示：<b id="${segKey}_product_count">0</b></span>
       </div>
@@ -427,6 +452,7 @@ function makeTableShell(segKey,type){
         <label class="ctl table-time">表内结束日：<input id="${segKey}_customer_d_end" type="date" onchange="onTableTimeChange('${segKey}','customer')"/></label>
         <span class="table-hint">仅作用本表，不影响图表/指标</span>
         <button class="btn" onclick="resetTable('${segKey}','customer')">重置</button>
+        <button class="btn" onclick="clearHeaderFilters('${segKey}','customer')">清空表头筛选</button>
         <button class="btn" onclick="exportTableCSV('${segKey}','customer')">导出CSV(当前过滤)</button>
         <span class="count">显示：<b id="${segKey}_customer_count">0</b></span>
       </div>
@@ -462,6 +488,7 @@ function makeTableShell(segKey,type){
         <label class="ctl table-time">表内结束日：<input id="${segKey}_${type}_d_end" type="date" onchange="onTableTimeChange('${segKey}','${type}')"/></label>
         <span class="table-hint">仅作用本表，不影响图表/指标</span>
         <button class="btn" onclick="resetTable('${segKey}','${type}')">重置</button>
+        <button class="btn" onclick="clearHeaderFilters('${segKey}','${type}')">清空表头筛选</button>
         <button class="btn" onclick="exportTableCSV('${segKey}','${type}')">导出CSV(当前过滤)</button>
         <span class="count">显示：<b id="${segKey}_${type}_count">0</b></span>
       </div>
@@ -495,6 +522,7 @@ function makeTableShell(segKey,type){
         <label class="ctl table-time">表内结束日：<input id="${segKey}_abnormal_d_end" type="date" onchange="onTableTimeChange('${segKey}','abnormal')"/></label>
         <span class="table-hint">仅作用本表，不影响图表/指标</span>
         <button class="btn" onclick="resetTable('${segKey}','abnormal')">重置</button>
+        <button class="btn" onclick="clearHeaderFilters('${segKey}','abnormal')">清空表头筛选</button>
         <button class="btn" onclick="exportTableCSV('${segKey}','abnormal')">导出CSV(当前过滤)</button>
         <span class="count">显示：<b id="${segKey}_abnormal_count">0</b></span>
       </div>
@@ -520,16 +548,53 @@ function makeTableShell(segKey,type){
   return '';
 }
 
-function init(){
+function init(initialState){
   ['total','store','nonstore'].forEach(segKey=>{
     const segEl = document.getElementById('seg_'+segKey);
     if(segEl) segEl.innerHTML = makeSegHTML(segKey);
     initDateRange(segKey);
   });
-  showSeg('total');
+  if(STATE_MANAGER) STATE_MANAGER.applyStateToUI(initialState, {phase:'pre'});
+  const targetSeg = (initialState && initialState.seg) ? initialState.seg : 'total';
+  showSeg(targetSeg);
+  if(STATE_MANAGER) STATE_MANAGER.applyStateToUI(initialState, {phase:'post'});
+  bindAppEventsOnce();
+}
+
+function bindAppEventsOnce(){
+  if(APP_EVENTS_BOUND) return;
+  APP_EVENTS_BOUND = true;
+
+  const segSwitch = document.querySelector('.seg-switch');
+  if(segSwitch){
+    segSwitch.addEventListener('click', (e)=>{
+      const btn = e.target.closest ? e.target.closest('.segbtn') : null;
+      if(!btn || !btn.dataset) return;
+      const seg = btn.dataset.seg;
+      if(seg) showSeg(seg);
+    });
+  }
+
   const reloadBtn = document.getElementById('reload_btn');
   if(reloadBtn){
-    reloadBtn.addEventListener('click', ()=>window.location.reload());
+    reloadBtn.addEventListener('click', ()=>{
+      if(BOOTSTRAP_INFLIGHT) return;
+      bootstrap();
+    });
+  }
+
+  if(STATE_MANAGER){
+    const handler = (e)=>{
+      const el = e.target;
+      if(!el || !el.id) return;
+      if(el.closest && el.closest('#order_modal')) return;
+      if(el.closest && el.closest('.filter-row')) return;
+      if(el.closest && (el.closest('.controls') || el.closest('.timebox'))){
+        STATE_MANAGER.queuePersist();
+      }
+    };
+    document.addEventListener('input', handler);
+    document.addEventListener('change', handler);
   }
 }
 
@@ -542,6 +607,52 @@ function monthEndDate(month){
   if(!y || !m) return '';
   const d=new Date(y, m, 0).getDate();
   return month+'-'+String(d).padStart(2,'0');
+}
+
+function deriveGlobalDateRange(){
+  const seg = DATA && DATA.total ? DATA.total : null;
+  if(!seg) return {startDate:'', endDate:'', text:'—'};
+  let startDate = '';
+  let endDate = '';
+  const rows = seg.rows || [];
+  if(rows.length){
+    rows.forEach(r=>{
+      const d = r[ROW_IDX.date];
+      if(!d) return;
+      if(!startDate || d < startDate) startDate = d;
+      if(!endDate || d > endDate) endDate = d;
+    });
+  }
+  if(!startDate || !endDate){
+    const months = seg.months || [];
+    if(months.length){
+      startDate = months[0] + '-01';
+      endDate = monthEndDate(months[months.length-1]);
+    }
+  }
+  const text = (startDate && endDate) ? (startDate + ' 至 ' + endDate) : '—';
+  return {startDate, endDate, text};
+}
+
+function updatePageMeta(){
+  const range = deriveGlobalDateRange();
+  const rangeEl = document.getElementById('data_range');
+  if(rangeEl) rangeEl.textContent = range.text;
+
+  const version = DATA_META.generatedAt ? String(DATA_META.generatedAt) : '';
+  const verEl = document.getElementById('page_version');
+  if(verEl) verEl.textContent = version || '—';
+  if(version){
+    const datePart = version.split(' ')[0];
+    if(datePart){
+      const re = /v\\d{4}-\\d{2}-\\d{2}/;
+      if(re.test(document.title)){
+        document.title = document.title.replace(re, 'v' + datePart);
+      }else{
+        document.title = document.title + ' v' + datePart;
+      }
+    }
+  }
 }
 
 function initDateRange(segKey){
@@ -619,6 +730,7 @@ function onTableTimeChange(segKey,type){
   if(!s || !e) return;
   setTableRange(segKey,type,s,e);
   try{ rerenderTable(segKey,type); }catch(err){ console.error(err); }
+  if(STATE_MANAGER) STATE_MANAGER.queuePersist();
 }
 
 function resetTableRange(segKey,type){
@@ -634,6 +746,7 @@ function resetSegTime(segKey){
   document.getElementById(segKey+'_d_start').value=def.startDate;
   document.getElementById(segKey+'_d_end').value=def.endDate;
   try{ updateSeg(segKey); }catch(e){ console.error(e); }
+  if(STATE_MANAGER) STATE_MANAGER.queuePersist();
 }
 
 function onSegTimeChange(segKey){
@@ -644,10 +757,12 @@ function onSegTimeChange(segKey){
     document.getElementById(segKey+'_d_end').value=s;
   }
   try{ updateSeg(segKey); }catch(e){ console.error(e); }
+  if(STATE_MANAGER) STATE_MANAGER.queuePersist();
 }
 
 function showSeg(segKey){
   currentSeg=segKey;
+  window.currentSeg = segKey;
   document.querySelectorAll('.seg').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.segbtn').forEach(x=>x.classList.remove('active'));
   document.getElementById('seg_'+segKey).classList.add('active');
@@ -657,6 +772,7 @@ function showSeg(segKey){
   if(segKey==='nonstore') btns[2].classList.add('active');
   showTab(segKey, tabState[segKey] || 'overview');
   try{ updateSeg(segKey); }catch(e){ console.error(e); }
+  if(STATE_MANAGER) STATE_MANAGER.queuePersist();
 }
 
 function showTab(segKey, tabKey){
@@ -669,6 +785,7 @@ function showTab(segKey, tabKey){
   if(window.ChartManager){
     setTimeout(()=>ChartManager.resizeAll(), 40);
   }
+  if(STATE_MANAGER) STATE_MANAGER.queuePersist();
 }
 
 function updateSeg(segKey){
@@ -1354,6 +1471,10 @@ function renderCatTonTable(segKey){
   }
   const cnt=document.getElementById(segKey+'_catton_count');
   if(cnt) cnt.innerText=String(st.view.length);
+  const table=document.getElementById(segKey+'_catton_table');
+  if(table){
+    updateSortIndicator(table, st.sortCol, st.sortAsc);
+  }
 }
 
 function sortCatTon(segKey,col){
@@ -1373,6 +1494,7 @@ function resetCatTonTable(segKey){
   CATTON_STATE[segKey].sortCol=0; CATTON_STATE[segKey].sortAsc=true;
   resetTableRange(segKey,'catton');
   try{ renderCatTon(segKey); }catch(e){ console.error(e); }
+  if(STATE_MANAGER) STATE_MANAGER.queuePersist();
 }
 
 function exportCatTonCSV(segKey){
@@ -1968,6 +2090,20 @@ function resetTable(segKey,type){
   ids.forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
   resetTableRange(segKey,type);
   try{ rerenderTable(segKey,type); }catch(e){ console.error(e); }
+  if(STATE_MANAGER) STATE_MANAGER.queuePersist();
+}
+
+function updateSortIndicator(table, colIdx, asc){
+  if(!table || !table.tHead || !table.tHead.rows || !table.tHead.rows.length) return;
+  const headerRow = table.tHead.rows[0];
+  [...headerRow.cells].forEach((th, i)=>{
+    th.classList.add('sortable');
+    th.classList.remove('sort-active','sort-asc','sort-desc');
+    if(i===colIdx){
+      th.classList.add('sort-active');
+      th.classList.add(asc ? 'sort-asc' : 'sort-desc');
+    }
+  });
 }
 
 function sortTable(segKey,type,colIdx){
@@ -1994,6 +2130,7 @@ function sortTable(segKey,type,colIdx){
     return asc? av.localeCompare(bv): bv.localeCompare(av);
   });
   rows.forEach(r=>tbody.appendChild(r));
+  updateSortIndicator(table, colIdx, asc);
   filterTable(segKey,type);
 }
 
