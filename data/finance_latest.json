@@ -1,0 +1,65 @@
+{
+  "meta": {
+    "period_start": "2025-08-01",
+    "period_end": "2025-12-24",
+    "generated_at": "2025-12-24 09:32:22",
+    "currency": "CNY",
+    "unit": "元",
+    "notes": [
+      "应收/应付为明细表期末余额（剔除“合计/小计”行后按客户/供应商末笔余额汇总）。",
+      "现金流以银行收支明细为准（剔除“合计”行）。",
+      "库存以商品收发明细的日末库存成本本位币汇总。"
+    ]
+  },
+  "ar": {
+    "segments": {
+      "total": {
+        "kpi": {
+          "ending_net_ar": 76428247.26,
+          "ending_sales_ar": 85562886.86,
+          "ending_other_ar": 7082215.21,
+          "ending_pre_receipt": 16216854.81,
+          "period_sales_invoiced": 66879003.06,
+          "period_cash_receipts": 58346393.74,
+          "dso_days_est": 186.8,
+          "top1_ratio": 0.3777,
+          "top10_ratio": 0.7391,
+          "no_sales_invoice_balance": 48669938.85
+        },
+        "trend": {
+          "months": [
+            "2025-08",
+            "2025-09",
+            "2025-10",
+            "2025-11",
+            "2025-12"
+          ],
+          "sales_invoiced": [
+            12601362.65,
+            16120942.24,
+            13601413.6,
+            14249228.92,
+            10306055.65
+          ],
+          "cash_receipts": [
+            8603032.5,
+            10919419.42,
+            13868844.64,
+            13760334.29,
+            11194762.89
+          ]
+        },
+        "top_customers": [
+          {
+            "customer_code": "119.01",
+            "customer": "兴盛优选",
+            "ending_net_ar": 28863954.72,
+            "ending_sales_ar": 29090481.9,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": 226527.18,
+            "period_sales_invoiced": 0.0
+          }
+        ]
+      }
+    }
+  }
