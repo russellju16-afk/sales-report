@@ -1,0 +1,1782 @@
+{
+  "meta": {
+    "period_start": "2025-08-01",
+    "period_end": "2025-12-24",
+    "generated_at": "2025-12-24 00:00:00",
+    "currency": "CNY",
+    "source_files": [
+      "应收账款明细表-20251224160719.xlsx",
+      "应付账款明细表-20251224161005.xlsx",
+      "引出数据_采购订单20251224153529.xlsx"
+    ],
+    "assumptions": [
+      "现金回款口径：收款单+预收款单+退款单（负数）；核销单视为非现金（避免重复计入）。",
+      "现金付款口径：付款单+预付款单+其他支出单+预付退款单（负数）；核销单视为非现金（避免重复计入）。",
+      "DSO 基于销售应收余额与销售发票金额估算；DPO 基于采购应付余额与采购发票金额估算。"
+    ]
+  },
+  "ar": {
+    "kpi": {
+      "ending_net_ar": 76428247.26,
+      "opening_net_ar": 70765990.34,
+      "change_net_ar": 5662256.920000002,
+      "ending_sales_ar": 85562886.86,
+      "ending_other_ar": 7082215.21,
+      "ending_prepay_ar": 16216854.81,
+      "sales_invoiced": 66879003.059999995,
+      "cash_receipts_net": 58346393.74,
+      "dso_days_est": 179.89839325544517,
+      "top1_share": 0.3776608224680095,
+      "top2_share": 0.48103470952213484,
+      "top5_share": 0.6441504223238417,
+      "top10_share": 0.7390974462339123,
+      "inactive_balance": 48018310.849999994,
+      "inactive_share": 0.6282796292141476
+    },
+    "trend": {
+      "months": [
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11",
+        "2025-12"
+      ],
+      "sales_invoiced": [
+        12601362.65,
+        16120942.24,
+        13601413.6,
+        14249228.92,
+        10306055.65
+      ],
+      "cash_receipts": [
+        8603032.5,
+        10919419.42,
+        13868844.64,
+        13760334.29,
+        11194762.89
+      ],
+      "collection_ratio": [
+        0.682706524599544,
+        0.6773437468751826,
+        1.0196620033670618,
+        0.9656897483544674,
+        1.0862315584333178
+      ]
+    },
+    "top_customers": [
+      {
+        "customer": "兴盛优选",
+        "opening_balance": 28863954.72,
+        "ending_balance": 28863954.72,
+        "change": 0.0,
+        "sales_invoiced": 0.0,
+        "cash_receipts": 0.0,
+        "last_invoice": null,
+        "last_receipt": null,
+        "days_since_last_receipt": null,
+        "collection_rate": null
+      },
+      {
+        "customer": "兴盛优选（豪发）",
+        "opening_balance": 7900685.0,
+        "ending_balance": 7900685.0,
+        "change": 0.0,
+        "sales_invoiced": 0.0,
+        "cash_receipts": 0.0,
+        "last_invoice": null,
+        "last_receipt": null,
+        "days_since_last_receipt": null,
+        "collection_rate": null
+      },
+      {
+        "customer": "三环新桥出货市场",
+        "opening_balance": 4778804.09,
+        "ending_balance": 4778804.09,
+        "change": 0.0,
+        "sales_invoiced": 0.0,
+        "cash_receipts": 0.0,
+        "last_invoice": null,
+        "last_receipt": null,
+        "days_since_last_receipt": null,
+        "collection_rate": null
+      },
+      {
+        "customer": "西安金富邦粮油有限公司",
+        "opening_balance": 3611830.87,
+        "ending_balance": 4448974.15,
+        "change": 837143.2800000003,
+        "sales_invoiced": 12729173.28,
+        "cash_receipts": 12050000.0,
+        "last_invoice": "2025-12-22",
+        "last_receipt": "2025-12-21",
+        "days_since_last_receipt": 3,
+        "collection_rate": 0.9466443526959357
+      },
+      {
+        "customer": "西安市长安区豪发粮油批发部",
+        "opening_balance": 5272218.88,
+        "ending_balance": 3238869.79,
+        "change": -2033349.0899999999,
+        "sales_invoiced": 10931331.56,
+        "cash_receipts": 9695792.25,
+        "last_invoice": "2025-12-23",
+        "last_receipt": "2025-12-17",
+        "days_since_last_receipt": 7,
+        "collection_rate": 0.8869726617275892
+      },
+      {
+        "customer": "军粮",
+        "opening_balance": 1288908.6,
+        "ending_balance": 2233477.6,
+        "change": 944569.0,
+        "sales_invoiced": 1327414.0,
+        "cash_receipts": 382845.0,
+        "last_invoice": "2025-12-23",
+        "last_receipt": "2025-12-19",
+        "days_since_last_receipt": 5,
+        "collection_rate": 0.2884141646841151
+      },
+      {
+        "customer": "政法1楼-西安众邦餐饮有限公司第一分公司",
+        "opening_balance": 1220113.5,
+        "ending_balance": 1539861.5,
+        "change": 319748.0,
+        "sales_invoiced": 421391.0,
+        "cash_receipts": 170403.0,
+        "last_invoice": "2025-12-06",
+        "last_receipt": "2025-12-17",
+        "days_since_last_receipt": 7,
+        "collection_rate": 0.40438215339198036
+      },
+      {
+        "customer": "众邦",
+        "opening_balance": 1144748.0,
+        "ending_balance": 1511808.0,
+        "change": 367060.0,
+        "sales_invoiced": 767720.0,
+        "cash_receipts": 454820.0,
+        "last_invoice": "2025-12-19",
+        "last_receipt": "2025-12-17",
+        "days_since_last_receipt": 7,
+        "collection_rate": 0.5924295316000625
+      },
+      {
+        "customer": "陕西科技卫生学校1餐厅",
+        "opening_balance": 1108350.5,
+        "ending_balance": 1108350.5,
+        "change": 0.0,
+        "sales_invoiced": 0.0,
+        "cash_receipts": 0.0,
+        "last_invoice": null,
+        "last_receipt": null,
+        "days_since_last_receipt": null,
+        "collection_rate": null
+      },
+      {
+        "customer": "欧亚学院（西安欧亚餐饮管理有限公司）",
+        "opening_balance": 459017.84,
+        "ending_balance": 863137.02,
+        "change": 404119.18,
+        "sales_invoiced": 893748.38,
+        "cash_receipts": 489629.19999999995,
+        "last_invoice": "2025-12-23",
+        "last_receipt": "2025-11-24",
+        "days_since_last_receipt": 30,
+        "collection_rate": 0.5478378601368765
+      },
+      {
+        "customer": "科大北院(香积餐厅)-圣麦",
+        "opening_balance": 834658.5,
+        "ending_balance": 843438.2,
+        "change": 8779.699999999953,
+        "sales_invoiced": 6085.82,
+        "cash_receipts": 604.12,
+        "last_invoice": "2025-08-21",
+        "last_receipt": "2025-11-19",
+        "days_since_last_receipt": 35,
+        "collection_rate": 0.0992668202477234
+      },
+      {
+        "customer": "陕西军粮供应管理有限公司",
+        "opening_balance": 530757.0,
+        "ending_balance": 772818.0,
+        "change": 242061.0,
+        "sales_invoiced": 242061.0,
+        "cash_receipts": 0.0,
+        "last_invoice": "2025-12-23",
+        "last_receipt": null,
+        "days_since_last_receipt": null,
+        "collection_rate": 0.0
+      },
+      {
+        "customer": "博迪学校-西安东顺吉安商务服务有限责任公司",
+        "opening_balance": 679503.1,
+        "ending_balance": 721113.1,
+        "change": 41610.0,
+        "sales_invoiced": 277342.0,
+        "cash_receipts": 235732.0,
+        "last_invoice": "2025-12-22",
+        "last_receipt": "2025-12-10",
+        "days_since_last_receipt": 14,
+        "collection_rate": 0.8499686307879801
+      },
+      {
+        "customer": "师苑-西安师苑后勤服务有限责任公司",
+        "opening_balance": 1502191.75,
+        "ending_balance": 686433.0,
+        "change": -815758.75,
+        "sales_invoiced": 0.0,
+        "cash_receipts": 815758.75,
+        "last_invoice": null,
+        "last_receipt": "2025-12-01",
+        "days_since_last_receipt": 23,
+        "collection_rate": null
+      },
+      {
+        "customer": "李懂礼-陕西顺发粮油食品有限公司",
+        "opening_balance": 678462.5,
+        "ending_balance": 678462.5,
+        "change": 0.0,
+        "sales_invoiced": 0.0,
+        "cash_receipts": 0.0,
+        "last_invoice": null,
+        "last_receipt": null,
+        "days_since_last_receipt": null,
+        "collection_rate": null
+      },
+      {
+        "customer": "科大南院（国际楼餐厅）-终南",
+        "opening_balance": 577022.58,
+        "ending_balance": 578945.28,
+        "change": 1922.7000000000698,
+        "sales_invoiced": 1922.7,
+        "cash_receipts": 0.0,
+        "last_invoice": "2025-08-22",
+        "last_receipt": null,
+        "days_since_last_receipt": null,
+        "collection_rate": 0.0
+      },
+      {
+        "customer": "邮电美食城",
+        "opening_balance": 456497.0,
+        "ending_balance": 576100.4,
+        "change": 119603.40000000002,
+        "sales_invoiced": 335450.58,
+        "cash_receipts": 217785.18,
+        "last_invoice": "2025-12-23",
+        "last_receipt": "2025-11-26",
+        "days_since_last_receipt": 28,
+        "collection_rate": 0.649231788479841
+      },
+      {
+        "customer": "西瑞集团-陕西西瑞粮油工业有限公司",
+        "opening_balance": 553962.82,
+        "ending_balance": 574663.82,
+        "change": 20701.0,
+        "sales_invoiced": 463147.0,
+        "cash_receipts": 442446.0,
+        "last_invoice": "2025-12-20",
+        "last_receipt": "2025-11-27",
+        "days_since_last_receipt": 27,
+        "collection_rate": 0.9553036077098632
+      },
+      {
+        "customer": "师苑-陕西嘉禾垣农业科技有限责任公司",
+        "opening_balance": 708374.5,
+        "ending_balance": 511068.0,
+        "change": -197306.5,
+        "sales_invoiced": 365.0,
+        "cash_receipts": 283734.0,
+        "last_invoice": "2025-08-15",
+        "last_receipt": "2025-12-01",
+        "days_since_last_receipt": 23,
+        "collection_rate": 777.3534246575342
+      },
+      {
+        "customer": "西安帅帅粮油贸易有限公司25",
+        "opening_balance": 39774.0,
+        "ending_balance": 500838.0,
+        "change": 461064.0,
+        "sales_invoiced": 785596.0,
+        "cash_receipts": 821807.0,
+        "last_invoice": "2025-12-19",
+        "last_receipt": "2025-11-19",
+        "days_since_last_receipt": 35,
+        "collection_rate": 1.046093666464697
+      },
+      {
+        "customer": "科大高新学院",
+        "opening_balance": 91797.22,
+        "ending_balance": 497310.34,
+        "change": 405513.12,
+        "sales_invoiced": 1045161.0,
+        "cash_receipts": 651876.88,
+        "last_invoice": "2025-12-22",
+        "last_receipt": "2025-12-03",
+        "days_since_last_receipt": 21,
+        "collection_rate": 0.6237095337464754
+      },
+      {
+        "customer": "周至富海肉业有限责任公司(西安百悦优选超市）",
+        "opening_balance": 0.0,
+        "ending_balance": 432677.0,
+        "change": 432677.0,
+        "sales_invoiced": 549327.0,
+        "cash_receipts": 150000.0,
+        "last_invoice": "2025-12-16",
+        "last_receipt": "2025-11-14",
+        "days_since_last_receipt": 40,
+        "collection_rate": 0.2730614005865359
+      },
+      {
+        "customer": "邮电东区",
+        "opening_balance": 291504.5,
+        "ending_balance": 401044.2,
+        "change": 109539.70000000001,
+        "sales_invoiced": 335537.2,
+        "cash_receipts": 219490.5,
+        "last_invoice": "2025-12-22",
+        "last_receipt": "2025-11-26",
+        "days_since_last_receipt": 28,
+        "collection_rate": 0.6541465447050282
+      },
+      {
+        "customer": "交大城市学院-城市餐厅-城苑餐饮25",
+        "opening_balance": 471905.0,
+        "ending_balance": 396518.0,
+        "change": -75387.0,
+        "sales_invoiced": 0.0,
+        "cash_receipts": 68822.0,
+        "last_invoice": null,
+        "last_receipt": "2025-10-31",
+        "days_since_last_receipt": 54,
+        "collection_rate": null
+      },
+      {
+        "customer": "川渝人家（配料中心）",
+        "opening_balance": 392622.9,
+        "ending_balance": 392622.9,
+        "change": 0.0,
+        "sales_invoiced": 0.0,
+        "cash_receipts": 0.0,
+        "last_invoice": null,
+        "last_receipt": null,
+        "days_since_last_receipt": null,
+        "collection_rate": null
+      },
+      {
+        "customer": "兴盛优选(露利达)",
+        "opening_balance": 392181.0,
+        "ending_balance": 392181.0,
+        "change": 0.0,
+        "sales_invoiced": 0.0,
+        "cash_receipts": 0.0,
+        "last_invoice": null,
+        "last_receipt": null,
+        "days_since_last_receipt": null,
+        "collection_rate": null
+      },
+      {
+        "customer": "零售",
+        "opening_balance": 338536.55,
+        "ending_balance": 391763.05,
+        "change": 53226.5,
+        "sales_invoiced": 773442.0,
+        "cash_receipts": 690725.5,
+        "last_invoice": "2025-12-22",
+        "last_receipt": "2025-12-16",
+        "days_since_last_receipt": 8,
+        "collection_rate": 0.8930540363724753
+      },
+      {
+        "customer": "陕西学前师范学院",
+        "opening_balance": 279452.0,
+        "ending_balance": 357145.5,
+        "change": 77693.5,
+        "sales_invoiced": 319395.5,
+        "cash_receipts": 241702.0,
+        "last_invoice": "2025-12-23",
+        "last_receipt": "2025-09-23",
+        "days_since_last_receipt": 92,
+        "collection_rate": 0.7567482948256942
+      },
+      {
+        "customer": "陕西众乐洛水豆制品有限公司",
+        "opening_balance": 0.0,
+        "ending_balance": 321620.0,
+        "change": 321620.0,
+        "sales_invoiced": 1245673.0,
+        "cash_receipts": 924053.0,
+        "last_invoice": "2025-12-24",
+        "last_receipt": "2025-12-17",
+        "days_since_last_receipt": 7,
+        "collection_rate": 0.7418102503626554
+      },
+      {
+        "customer": "西安工商学院-西安昌龙餐饮管理有限公司",
+        "opening_balance": 99506.0,
+        "ending_balance": 321301.0,
+        "change": 221795.0,
+        "sales_invoiced": 574730.0,
+        "cash_receipts": 352935.0,
+        "last_invoice": "2025-12-15",
+        "last_receipt": "2025-12-02",
+        "days_since_last_receipt": 22,
+        "collection_rate": 0.6140883545316932
+      }
+    ],
+    "segments": {
+      "total": {
+        "kpi": {
+          "opening_net_ar": 70765990.34,
+          "ending_net_ar": 76428247.26,
+          "change_net_ar": 5662256.920000002,
+          "ending_sales_ar": 85562886.86,
+          "ending_other_ar": 7082215.21,
+          "ending_prepay_ar": 16216854.81,
+          "sales_invoiced": 66879003.059999995,
+          "cash_receipts_net": 58346393.74,
+          "dso_days_est": 179.89839325544517,
+          "inactive_balance": 48018310.849999994,
+          "inactive_share": 0.6282796292141476
+        },
+        "trend": {
+          "months": [
+            "2025-08",
+            "2025-09",
+            "2025-10",
+            "2025-11",
+            "2025-12"
+          ],
+          "sales_invoiced": [
+            12601362.65,
+            16120942.24,
+            13601413.6,
+            14249228.92,
+            10306055.65
+          ],
+          "cash_receipts": [
+            8603032.5,
+            10919419.42,
+            13868844.64,
+            13760334.29,
+            11194762.89
+          ],
+          "collection_ratio": [
+            0.682706524599544,
+            0.6773437468751826,
+            1.0196620033670618,
+            0.9656897483544674,
+            1.0862315584333178
+          ]
+        },
+        "top_customers": [
+          {
+            "customer": "兴盛优选",
+            "ending_balance": 28863954.72,
+            "opening_balance": 28863954.72,
+            "change": 0.0,
+            "seg": "nonstore",
+            "sales_invoiced": 0.0,
+            "cash_receipts": 0.0,
+            "last_receipt": null,
+            "days_since_last_receipt": null
+          },
+          {
+            "customer": "兴盛优选（豪发）",
+            "ending_balance": 7900685.0,
+            "opening_balance": 7900685.0,
+            "change": 0.0,
+            "seg": "nonstore",
+            "sales_invoiced": 0.0,
+            "cash_receipts": 0.0,
+            "last_receipt": null,
+            "days_since_last_receipt": null
+          },
+          {
+            "customer": "三环新桥出货市场",
+            "ending_balance": 4778804.09,
+            "opening_balance": 4778804.09,
+            "change": 0.0,
+            "seg": "store",
+            "sales_invoiced": 0.0,
+            "cash_receipts": 0.0,
+            "last_receipt": null,
+            "days_since_last_receipt": null
+          },
+          {
+            "customer": "西安金富邦粮油有限公司",
+            "ending_balance": 4448974.15,
+            "opening_balance": 3611830.87,
+            "change": 837143.2800000003,
+            "seg": "store",
+            "sales_invoiced": 12729173.28,
+            "cash_receipts": 12050000.0,
+            "last_receipt": "2025-12-21",
+            "days_since_last_receipt": 3
+          },
+          {
+            "customer": "西安市长安区豪发粮油批发部",
+            "ending_balance": 3238869.79,
+            "opening_balance": 5272218.88,
+            "change": -2033349.0899999999,
+            "seg": "store",
+            "sales_invoiced": 10931331.56,
+            "cash_receipts": 9695792.25,
+            "last_receipt": "2025-12-17",
+            "days_since_last_receipt": 7
+          },
+          {
+            "customer": "军粮",
+            "ending_balance": 2233477.6,
+            "opening_balance": 1288908.6,
+            "change": 944569.0,
+            "seg": "nonstore",
+            "sales_invoiced": 1327414.0,
+            "cash_receipts": 382845.0,
+            "last_receipt": "2025-12-19",
+            "days_since_last_receipt": 5
+          },
+          {
+            "customer": "政法1楼-西安众邦餐饮有限公司第一分公司",
+            "ending_balance": 1539861.5,
+            "opening_balance": 1220113.5,
+            "change": 319748.0,
+            "seg": "nonstore",
+            "sales_invoiced": 421391.0,
+            "cash_receipts": 170403.0,
+            "last_receipt": "2025-12-17",
+            "days_since_last_receipt": 7
+          },
+          {
+            "customer": "众邦",
+            "ending_balance": 1511808.0,
+            "opening_balance": 1144748.0,
+            "change": 367060.0,
+            "seg": "nonstore",
+            "sales_invoiced": 767720.0,
+            "cash_receipts": 454820.0,
+            "last_receipt": "2025-12-17",
+            "days_since_last_receipt": 7
+          },
+          {
+            "customer": "陕西科技卫生学校1餐厅",
+            "ending_balance": 1108350.5,
+            "opening_balance": 1108350.5,
+            "change": 0.0,
+            "seg": "nonstore",
+            "sales_invoiced": 0.0,
+            "cash_receipts": 0.0,
+            "last_receipt": null,
+            "days_since_last_receipt": null
+          },
+          {
+            "customer": "欧亚学院（西安欧亚餐饮管理有限公司）",
+            "ending_balance": 863137.02,
+            "opening_balance": 459017.84,
+            "change": 404119.18,
+            "seg": "nonstore",
+            "sales_invoiced": 893748.38,
+            "cash_receipts": 489629.19999999995,
+            "last_receipt": "2025-11-24",
+            "days_since_last_receipt": 30
+          },
+          {
+            "customer": "科大北院(香积餐厅)-圣麦",
+            "ending_balance": 843438.2,
+            "opening_balance": 834658.5,
+            "change": 8779.699999999953,
+            "seg": "nonstore",
+            "sales_invoiced": 6085.82,
+            "cash_receipts": 604.12,
+            "last_receipt": "2025-11-19",
+            "days_since_last_receipt": 35
+          },
+          {
+            "customer": "陕西军粮供应管理有限公司",
+            "ending_balance": 772818.0,
+            "opening_balance": 530757.0,
+            "change": 242061.0,
+            "seg": "nonstore",
+            "sales_invoiced": 242061.0,
+            "cash_receipts": 0.0,
+            "last_receipt": null,
+            "days_since_last_receipt": null
+          },
+          {
+            "customer": "博迪学校-西安东顺吉安商务服务有限责任公司",
+            "ending_balance": 721113.1,
+            "opening_balance": 679503.1,
+            "change": 41610.0,
+            "seg": "nonstore",
+            "sales_invoiced": 277342.0,
+            "cash_receipts": 235732.0,
+            "last_receipt": "2025-12-10",
+            "days_since_last_receipt": 14
+          },
+          {
+            "customer": "师苑-西安师苑后勤服务有限责任公司",
+            "ending_balance": 686433.0,
+            "opening_balance": 1502191.75,
+            "change": -815758.75,
+            "seg": "nonstore",
+            "sales_invoiced": 0.0,
+            "cash_receipts": 815758.75,
+            "last_receipt": "2025-12-01",
+            "days_since_last_receipt": 23
+          },
+          {
+            "customer": "李懂礼-陕西顺发粮油食品有限公司",
+            "ending_balance": 678462.5,
+            "opening_balance": 678462.5,
+            "change": 0.0,
+            "seg": "nonstore",
+            "sales_invoiced": 0.0,
+            "cash_receipts": 0.0,
+            "last_receipt": null,
+            "days_since_last_receipt": null
+          },
+          {
+            "customer": "科大南院（国际楼餐厅）-终南",
+            "ending_balance": 578945.28,
+            "opening_balance": 577022.58,
+            "change": 1922.7000000000698,
+            "seg": "nonstore",
+            "sales_invoiced": 1922.7,
+            "cash_receipts": 0.0,
+            "last_receipt": null,
+            "days_since_last_receipt": null
+          },
+          {
+            "customer": "邮电美食城",
+            "ending_balance": 576100.4,
+            "opening_balance": 456497.0,
+            "change": 119603.40000000002,
+            "seg": "nonstore",
+            "sales_invoiced": 335450.58,
+            "cash_receipts": 217785.18,
+            "last_receipt": "2025-11-26",
+            "days_since_last_receipt": 28
+          },
+          {
+            "customer": "西瑞集团-陕西西瑞粮油工业有限公司",
+            "ending_balance": 574663.82,
+            "opening_balance": 553962.82,
+            "change": 20701.0,
+            "seg": "nonstore",
+            "sales_invoiced": 463147.0,
+            "cash_receipts": 442446.0,
+            "last_receipt": "2025-11-27",
+            "days_since_last_receipt": 27
+          },
+          {
+            "customer": "师苑-陕西嘉禾垣农业科技有限责任公司",
+            "ending_balance": 511068.0,
+            "opening_balance": 708374.5,
+            "change": -197306.5,
+            "seg": "nonstore",
+            "sales_invoiced": 365.0,
+            "cash_receipts": 283734.0,
+            "last_receipt": "2025-12-01",
+            "days_since_last_receipt": 23
+          },
+          {
+            "customer": "西安帅帅粮油贸易有限公司25",
+            "ending_balance": 500838.0,
+            "opening_balance": 39774.0,
+            "change": 461064.0,
+            "seg": "nonstore",
+            "sales_invoiced": 785596.0,
+            "cash_receipts": 821807.0,
+            "last_receipt": "2025-11-19",
+            "days_since_last_receipt": 35
+          }
+        ]
+      },
+      "store": {
+        "kpi": {
+          "opening_net_ar": 14561232.299999999,
+          "ending_net_ar": 11863659.93,
+          "change_net_ar": -2697572.369999999,
+          "ending_sales_ar": 14604217.6,
+          "ending_other_ar": 30581.5,
+          "ending_prepay_ar": 2771139.17,
+          "sales_invoiced": 35217781.48,
+          "cash_receipts_net": 34796105.45,
+          "dso_days_est": 70.55265063221127,
+          "inactive_balance": 4790186.09,
+          "inactive_share": 0.40376967295622745
+        },
+        "trend": {
+          "months": [
+            "2025-08",
+            "2025-09",
+            "2025-10",
+            "2025-11",
+            "2025-12"
+          ],
+          "sales_invoiced": [
+            7373763.08,
+            8113432.18,
+            6967680.74,
+            7532710.6,
+            5230194.88
+          ],
+          "cash_receipts": [
+            7127114.5,
+            7151005.7,
+            8071779.6,
+            6566434.65,
+            5879771.0
+          ],
+          "collection_ratio": [
+            0.9665505146661153,
+            0.8813786251430773,
+            1.1584600243896936,
+            0.871722677093157,
+            1.1241973071565547
+          ]
+        },
+        "top_customers": [
+          {
+            "customer": "三环新桥出货市场",
+            "ending_balance": 4778804.09,
+            "opening_balance": 4778804.09,
+            "change": 0.0,
+            "sales_invoiced": 0.0,
+            "cash_receipts": 0.0,
+            "last_receipt": null,
+            "days_since_last_receipt": null
+          },
+          {
+            "customer": "西安金富邦粮油有限公司",
+            "ending_balance": 4448974.15,
+            "opening_balance": 3611830.87,
+            "change": 837143.2800000003,
+            "sales_invoiced": 12729173.28,
+            "cash_receipts": 12050000.0,
+            "last_receipt": "2025-12-21",
+            "days_since_last_receipt": 3
+          },
+          {
+            "customer": "西安市长安区豪发粮油批发部",
+            "ending_balance": 3238869.79,
+            "opening_balance": 5272218.88,
+            "change": -2033349.0899999999,
+            "sales_invoiced": 10931331.56,
+            "cash_receipts": 9695792.25,
+            "last_receipt": "2025-12-17",
+            "days_since_last_receipt": 7
+          },
+          {
+            "customer": "瑞邦粮油销售店-红太阳",
+            "ending_balance": 61893.33,
+            "opening_balance": 653235.33,
+            "change": -591342.0,
+            "sales_invoiced": 5035240.0,
+            "cash_receipts": 5626582.0,
+            "last_receipt": "2025-12-19",
+            "days_since_last_receipt": 5
+          },
+          {
+            "customer": "中快武警新楼",
+            "ending_balance": 10112.0,
+            "opening_balance": 10112.0,
+            "change": 0.0,
+            "sales_invoiced": 0.0,
+            "cash_receipts": 0.0,
+            "last_receipt": null,
+            "days_since_last_receipt": null
+          },
+          {
+            "customer": "中快交大",
+            "ending_balance": 1270.0,
+            "opening_balance": 1270.0,
+            "change": 0.0,
+            "sales_invoiced": 0.0,
+            "cash_receipts": 0.0,
+            "last_receipt": null,
+            "days_since_last_receipt": null
+          },
+          {
+            "customer": "中快  现代学院",
+            "ending_balance": -1680.0,
+            "opening_balance": -1680.0,
+            "change": 0.0,
+            "sales_invoiced": 0.0,
+            "cash_receipts": 0.0,
+            "last_receipt": null,
+            "days_since_last_receipt": null
+          },
+          {
+            "customer": "老三粮油店",
+            "ending_balance": -674583.43,
+            "opening_balance": 235441.13,
+            "change": -910024.56,
+            "sales_invoiced": 6522036.64,
+            "cash_receipts": 7423731.2,
+            "last_receipt": "2025-12-21",
+            "days_since_last_receipt": 3
+          },
+          {
+            "customer": "咸阳职业工业技术学院",
+            "ending_balance": null,
+            "opening_balance": 0.0,
+            "change": null,
+            "sales_invoiced": 0.0,
+            "cash_receipts": 0.0,
+            "last_receipt": null,
+            "days_since_last_receipt": null
+          }
+        ]
+      },
+      "nonstore": {
+        "kpi": {
+          "opening_net_ar": 56204758.04,
+          "ending_net_ar": 64564587.33,
+          "change_net_ar": 8359829.289999999,
+          "ending_sales_ar": 70958669.26,
+          "ending_other_ar": 7051633.71,
+          "ending_prepay_ar": 13445715.64,
+          "sales_invoiced": 31661221.58,
+          "cash_receipts_net": 23550288.29,
+          "dso_days_est": 301.5271326817833,
+          "inactive_balance": 43879752.76,
+          "inactive_share": 0.679625698461039
+        },
+        "trend": {
+          "months": [
+            "2025-08",
+            "2025-09",
+            "2025-10",
+            "2025-11",
+            "2025-12"
+          ],
+          "sales_invoiced": [
+            5227599.57,
+            8007510.06,
+            6633732.86,
+            6716518.32,
+            5075860.77
+          ],
+          "cash_receipts": [
+            1475918.0,
+            3768413.72,
+            5797065.04,
+            7193899.64,
+            5314991.89
+          ],
+          "collection_ratio": [
+            0.282331877229074,
+            0.4706099264020157,
+            0.873876769285521,
+            1.0710757117386973,
+            1.0471114419476089
+          ]
+        },
+        "top_customers": [
+          {
+            "customer": "兴盛优选",
+            "ending_balance": 28863954.72,
+            "opening_balance": 28863954.72,
+            "change": 0.0,
+            "sales_invoiced": 0.0,
+            "cash_receipts": 0.0,
+            "last_receipt": null,
+            "days_since_last_receipt": null
+          },
+          {
+            "customer": "兴盛优选（豪发）",
+            "ending_balance": 7900685.0,
+            "opening_balance": 7900685.0,
+            "change": 0.0,
+            "sales_invoiced": 0.0,
+            "cash_receipts": 0.0,
+            "last_receipt": null,
+            "days_since_last_receipt": null
+          },
+          {
+            "customer": "军粮",
+            "ending_balance": 2233477.6,
+            "opening_balance": 1288908.6,
+            "change": 944569.0,
+            "sales_invoiced": 1327414.0,
+            "cash_receipts": 382845.0,
+            "last_receipt": "2025-12-19",
+            "days_since_last_receipt": 5
+          },
+          {
+            "customer": "政法1楼-西安众邦餐饮有限公司第一分公司",
+            "ending_balance": 1539861.5,
+            "opening_balance": 1220113.5,
+            "change": 319748.0,
+            "sales_invoiced": 421391.0,
+            "cash_receipts": 170403.0,
+            "last_receipt": "2025-12-17",
+            "days_since_last_receipt": 7
+          },
+          {
+            "customer": "众邦",
+            "ending_balance": 1511808.0,
+            "opening_balance": 1144748.0,
+            "change": 367060.0,
+            "sales_invoiced": 767720.0,
+            "cash_receipts": 454820.0,
+            "last_receipt": "2025-12-17",
+            "days_since_last_receipt": 7
+          },
+          {
+            "customer": "陕西科技卫生学校1餐厅",
+            "ending_balance": 1108350.5,
+            "opening_balance": 1108350.5,
+            "change": 0.0,
+            "sales_invoiced": 0.0,
+            "cash_receipts": 0.0,
+            "last_receipt": null,
+            "days_since_last_receipt": null
+          },
+          {
+            "customer": "欧亚学院（西安欧亚餐饮管理有限公司）",
+            "ending_balance": 863137.02,
+            "opening_balance": 459017.84,
+            "change": 404119.18,
+            "sales_invoiced": 893748.38,
+            "cash_receipts": 489629.19999999995,
+            "last_receipt": "2025-11-24",
+            "days_since_last_receipt": 30
+          },
+          {
+            "customer": "科大北院(香积餐厅)-圣麦",
+            "ending_balance": 843438.2,
+            "opening_balance": 834658.5,
+            "change": 8779.699999999953,
+            "sales_invoiced": 6085.82,
+            "cash_receipts": 604.12,
+            "last_receipt": "2025-11-19",
+            "days_since_last_receipt": 35
+          },
+          {
+            "customer": "陕西军粮供应管理有限公司",
+            "ending_balance": 772818.0,
+            "opening_balance": 530757.0,
+            "change": 242061.0,
+            "sales_invoiced": 242061.0,
+            "cash_receipts": 0.0,
+            "last_receipt": null,
+            "days_since_last_receipt": null
+          },
+          {
+            "customer": "博迪学校-西安东顺吉安商务服务有限责任公司",
+            "ending_balance": 721113.1,
+            "opening_balance": 679503.1,
+            "change": 41610.0,
+            "sales_invoiced": 277342.0,
+            "cash_receipts": 235732.0,
+            "last_receipt": "2025-12-10",
+            "days_since_last_receipt": 14
+          },
+          {
+            "customer": "师苑-西安师苑后勤服务有限责任公司",
+            "ending_balance": 686433.0,
+            "opening_balance": 1502191.75,
+            "change": -815758.75,
+            "sales_invoiced": 0.0,
+            "cash_receipts": 815758.75,
+            "last_receipt": "2025-12-01",
+            "days_since_last_receipt": 23
+          },
+          {
+            "customer": "李懂礼-陕西顺发粮油食品有限公司",
+            "ending_balance": 678462.5,
+            "opening_balance": 678462.5,
+            "change": 0.0,
+            "sales_invoiced": 0.0,
+            "cash_receipts": 0.0,
+            "last_receipt": null,
+            "days_since_last_receipt": null
+          },
+          {
+            "customer": "科大南院（国际楼餐厅）-终南",
+            "ending_balance": 578945.28,
+            "opening_balance": 577022.58,
+            "change": 1922.7000000000698,
+            "sales_invoiced": 1922.7,
+            "cash_receipts": 0.0,
+            "last_receipt": null,
+            "days_since_last_receipt": null
+          },
+          {
+            "customer": "邮电美食城",
+            "ending_balance": 576100.4,
+            "opening_balance": 456497.0,
+            "change": 119603.40000000002,
+            "sales_invoiced": 335450.58,
+            "cash_receipts": 217785.18,
+            "last_receipt": "2025-11-26",
+            "days_since_last_receipt": 28
+          },
+          {
+            "customer": "西瑞集团-陕西西瑞粮油工业有限公司",
+            "ending_balance": 574663.82,
+            "opening_balance": 553962.82,
+            "change": 20701.0,
+            "sales_invoiced": 463147.0,
+            "cash_receipts": 442446.0,
+            "last_receipt": "2025-11-27",
+            "days_since_last_receipt": 27
+          },
+          {
+            "customer": "师苑-陕西嘉禾垣农业科技有限责任公司",
+            "ending_balance": 511068.0,
+            "opening_balance": 708374.5,
+            "change": -197306.5,
+            "sales_invoiced": 365.0,
+            "cash_receipts": 283734.0,
+            "last_receipt": "2025-12-01",
+            "days_since_last_receipt": 23
+          },
+          {
+            "customer": "西安帅帅粮油贸易有限公司25",
+            "ending_balance": 500838.0,
+            "opening_balance": 39774.0,
+            "change": 461064.0,
+            "sales_invoiced": 785596.0,
+            "cash_receipts": 821807.0,
+            "last_receipt": "2025-11-19",
+            "days_since_last_receipt": 35
+          },
+          {
+            "customer": "科大高新学院",
+            "ending_balance": 497310.34,
+            "opening_balance": 91797.22,
+            "change": 405513.12,
+            "sales_invoiced": 1045161.0,
+            "cash_receipts": 651876.88,
+            "last_receipt": "2025-12-03",
+            "days_since_last_receipt": 21
+          },
+          {
+            "customer": "周至富海肉业有限责任公司(西安百悦优选超市）",
+            "ending_balance": 432677.0,
+            "opening_balance": 0.0,
+            "change": 432677.0,
+            "sales_invoiced": 549327.0,
+            "cash_receipts": 150000.0,
+            "last_receipt": "2025-11-14",
+            "days_since_last_receipt": 40
+          },
+          {
+            "customer": "邮电东区",
+            "ending_balance": 401044.2,
+            "opening_balance": 291504.5,
+            "change": 109539.70000000001,
+            "sales_invoiced": 335537.2,
+            "cash_receipts": 219490.5,
+            "last_receipt": "2025-11-26",
+            "days_since_last_receipt": 28
+          }
+        ]
+      }
+    },
+    "segment_rule": "store = 客户分类包含'超群'；nonstore = 其他；total = 全部客户。"
+  },
+  "ap": {
+    "kpi": {
+      "ending_net_ap": 511537760.1,
+      "opening_net_ap": 514707497.54999995,
+      "change_net_ap": -3169737.4499999285,
+      "ending_purchase_ap": 147938102.32,
+      "ending_other_ap": 379219260.91,
+      "ending_prepay_ap": 15619603.13,
+      "purchases_invoiced": 62419927.31,
+      "cash_payments_net": 63121429.940000005,
+      "dpo_days_est": 345.05002472679104,
+      "purchase_top1_share": 0.32555183468436966,
+      "purchase_top2_share": 0.49458614036925014,
+      "purchase_top5_share": 0.8016504337298573
+    },
+    "trend": {
+      "months": [
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11",
+        "2025-12"
+      ],
+      "purchases_invoiced": [
+        12202856.56,
+        14881182.64,
+        11991484.26,
+        14312764.5,
+        9031639.35
+      ],
+      "cash_payments": [
+        12276672.0,
+        14302225.06,
+        13000445.0,
+        14985952.8,
+        8556135.08
+      ],
+      "pay_ratio": [
+        1.0060490295560762,
+        0.9610946526223133,
+        1.0841397710344824,
+        1.0470341211860226,
+        0.9473512779271905
+      ]
+    },
+    "top_suppliers": [
+      {
+        "supplier": "陕西杨凌来富油脂有限公司（西瑞户）",
+        "opening_balance": 422012047.94,
+        "ending_balance": 421698765.24,
+        "change": -313282.6999999881,
+        "purchase_ap_balance": 48161520.63,
+        "other_ap_balance": 374139824.61,
+        "prepay_balance": 602580.0,
+        "purchases_invoiced": 14792077.3,
+        "payments_cash_like": 15105360.0,
+        "last_purchase_invoice": "2025-12-23",
+        "last_payment": "2025-12-20",
+        "days_since_last_payment": 4
+      },
+      {
+        "supplier": "豪发粮油（郭杜市场）",
+        "opening_balance": 27800795.01,
+        "ending_balance": 24885602.96,
+        "change": -2915192.0500000007,
+        "purchase_ap_balance": 25006614.41,
+        "other_ap_balance": 102863.55,
+        "prepay_balance": 223875.0,
+        "purchases_invoiced": 785423.0,
+        "payments_cash_like": 960008.5,
+        "last_purchase_invoice": "2025-12-20",
+        "last_payment": "2025-11-24",
+        "days_since_last_payment": 30
+      },
+      {
+        "supplier": "渭南长安花粮油有限公司（邦淇中包）",
+        "opening_balance": 13571468.39,
+        "ending_balance": 13931860.58,
+        "change": 360392.1899999995,
+        "purchase_ap_balance": 22085869.58,
+        "other_ap_balance": null,
+        "prepay_balance": 8154009.0,
+        "purchases_invoiced": 32273652.19,
+        "payments_cash_like": 31913260.0,
+        "last_purchase_invoice": "2025-12-23",
+        "last_payment": "2025-12-21",
+        "days_since_last_payment": 3
+      },
+      {
+        "supplier": "陕西杨凌来富油脂有限公司（盛农瑞家户）",
+        "opening_balance": 12395433.24,
+        "ending_balance": 12472038.44,
+        "change": 76605.19999999925,
+        "purchase_ap_balance": 13402006.27,
+        "other_ap_balance": null,
+        "prepay_balance": 929967.83,
+        "purchases_invoiced": 97951.0,
+        "payments_cash_like": 21345.8,
+        "last_purchase_invoice": "2025-12-15",
+        "last_payment": "2025-12-15",
+        "days_since_last_payment": 9
+      },
+      {
+        "supplier": "桦川县鑫华米业有限公司（冰宝）",
+        "opening_balance": 8905093.0,
+        "ending_balance": 8977709.0,
+        "change": 72616.0,
+        "purchase_ap_balance": 9938633.0,
+        "other_ap_balance": 39076.0,
+        "prepay_balance": 1000000.0,
+        "purchases_invoiced": 7428499.8,
+        "payments_cash_like": 7679103.3,
+        "last_purchase_invoice": "2025-12-18",
+        "last_payment": "2025-12-18",
+        "days_since_last_payment": 6
+      },
+      {
+        "supplier": "陕西杨凌来富油脂有限公司（水鸭户）",
+        "opening_balance": 5550723.75,
+        "ending_balance": 5479537.75,
+        "change": -71186.0,
+        "purchase_ap_balance": 8132939.96,
+        "other_ap_balance": 322326.09,
+        "prepay_balance": 2975728.3,
+        "purchases_invoiced": 1699584.0,
+        "payments_cash_like": 1770770.0,
+        "last_purchase_invoice": "2025-12-22",
+        "last_payment": "2025-12-20",
+        "days_since_last_payment": 4
+      },
+      {
+        "supplier": "盛农瑞家邦淇",
+        "opening_balance": 9581248.28,
+        "ending_balance": 9581248.28,
+        "change": 0.0,
+        "purchase_ap_balance": 6893775.0,
+        "other_ap_balance": 2687473.28,
+        "prepay_balance": null,
+        "purchases_invoiced": 0.0,
+        "payments_cash_like": 0.0,
+        "last_purchase_invoice": null,
+        "last_payment": null,
+        "days_since_last_payment": null
+      },
+      {
+        "supplier": "渭南长安花粮油有限公司（邦淇小包）",
+        "opening_balance": 5069231.94,
+        "ending_balance": 5065762.9,
+        "change": -3469.0400000000373,
+        "purchase_ap_balance": 4323034.63,
+        "other_ap_balance": 742728.27,
+        "prepay_balance": null,
+        "purchases_invoiced": 62465.52,
+        "payments_cash_like": 65934.56,
+        "last_purchase_invoice": "2025-09-29",
+        "last_payment": "2025-12-12",
+        "days_since_last_payment": 12
+      },
+      {
+        "supplier": "渭南长安花粮油有限公司（盛农邦淇小包）",
+        "opening_balance": 541873.18,
+        "ending_balance": 377301.18,
+        "change": -164572.00000000006,
+        "purchase_ap_balance": 1286667.77,
+        "other_ap_balance": 93753.41,
+        "prepay_balance": 1003120.0,
+        "purchases_invoiced": 2057808.0,
+        "payments_cash_like": 2222380.0,
+        "last_purchase_invoice": "2025-12-16",
+        "last_payment": "2025-12-15",
+        "days_since_last_payment": 9
+      },
+      {
+        "supplier": "粮农来富（米禾）",
+        "opening_balance": 1884635.3,
+        "ending_balance": 1884635.3,
+        "change": 0.0,
+        "purchase_ap_balance": 1226813.6,
+        "other_ap_balance": 740541.7,
+        "prepay_balance": 82720.0,
+        "purchases_invoiced": 0.0,
+        "payments_cash_like": 0.0,
+        "last_purchase_invoice": null,
+        "last_payment": null,
+        "days_since_last_payment": null
+      },
+      {
+        "supplier": "王东（京贡）",
+        "opening_balance": 944193.4,
+        "ending_balance": 1120722.7,
+        "change": 176529.29999999993,
+        "purchase_ap_balance": 1120722.7,
+        "other_ap_balance": null,
+        "prepay_balance": null,
+        "purchases_invoiced": 0.0,
+        "payments_cash_like": -176529.3,
+        "last_purchase_invoice": null,
+        "last_payment": "2025-11-30",
+        "days_since_last_payment": 24
+      },
+      {
+        "supplier": "金源米业-胡云朋",
+        "opening_balance": 778095.0,
+        "ending_balance": 778095.0,
+        "change": 0.0,
+        "purchase_ap_balance": 778095.0,
+        "other_ap_balance": null,
+        "prepay_balance": null,
+        "purchases_invoiced": 684545.0,
+        "payments_cash_like": 684545.0,
+        "last_purchase_invoice": "2025-11-22",
+        "last_payment": "2025-12-02",
+        "days_since_last_payment": 22
+      },
+      {
+        "supplier": "吉光爱（德龙米业）",
+        "opening_balance": 572345.0,
+        "ending_balance": 572345.0,
+        "change": 0.0,
+        "purchase_ap_balance": 572345.0,
+        "other_ap_balance": null,
+        "prepay_balance": null,
+        "purchases_invoiced": 0.0,
+        "payments_cash_like": 0.0,
+        "last_purchase_invoice": null,
+        "last_payment": null,
+        "days_since_last_payment": null
+      },
+      {
+        "supplier": "白城市名香米业有限公司-陈世铭",
+        "opening_balance": 315582.9,
+        "ending_balance": -21817.1,
+        "change": -337400.0,
+        "purchase_ap_balance": 567582.9,
+        "other_ap_balance": null,
+        "prepay_balance": 589400.0,
+        "purchases_invoiced": 803240.0,
+        "payments_cash_like": 1157035.8,
+        "last_purchase_invoice": "2025-12-15",
+        "last_payment": "2025-12-17",
+        "days_since_last_payment": 7
+      },
+      {
+        "supplier": "张斌",
+        "opening_balance": 531780.0,
+        "ending_balance": 531780.0,
+        "change": 0.0,
+        "purchase_ap_balance": 531780.0,
+        "other_ap_balance": null,
+        "prepay_balance": null,
+        "purchases_invoiced": 0.0,
+        "payments_cash_like": 0.0,
+        "last_purchase_invoice": null,
+        "last_payment": null,
+        "days_since_last_payment": null
+      },
+      {
+        "supplier": "王奎杰",
+        "opening_balance": 641590.0,
+        "ending_balance": 687190.0,
+        "change": 45600.0,
+        "purchase_ap_balance": 503990.0,
+        "other_ap_balance": 183200.0,
+        "prepay_balance": null,
+        "purchases_invoiced": 68000.0,
+        "payments_cash_like": 22400.0,
+        "last_purchase_invoice": "2025-09-27",
+        "last_payment": "2025-09-16",
+        "days_since_last_payment": 99
+      },
+      {
+        "supplier": "陕西乔府大院贸易有限公司-张剑",
+        "opening_balance": 405550.0,
+        "ending_balance": 445880.0,
+        "change": 40330.0,
+        "purchase_ap_balance": 445880.0,
+        "other_ap_balance": null,
+        "prepay_balance": null,
+        "purchases_invoiced": 243100.0,
+        "payments_cash_like": 202770.0,
+        "last_purchase_invoice": "2025-12-23",
+        "last_payment": "2025-11-17",
+        "days_since_last_payment": 37
+      },
+      {
+        "supplier": "粮农集团",
+        "opening_balance": 322840.0,
+        "ending_balance": 322840.0,
+        "change": 0.0,
+        "purchase_ap_balance": 322840.0,
+        "other_ap_balance": null,
+        "prepay_balance": null,
+        "purchases_invoiced": 0.0,
+        "payments_cash_like": 0.0,
+        "last_purchase_invoice": null,
+        "last_payment": null,
+        "days_since_last_payment": null
+      },
+      {
+        "supplier": "中益汇海",
+        "opening_balance": 312800.0,
+        "ending_balance": 312800.0,
+        "change": 0.0,
+        "purchase_ap_balance": 312800.0,
+        "other_ap_balance": null,
+        "prepay_balance": null,
+        "purchases_invoiced": 0.0,
+        "payments_cash_like": 0.0,
+        "last_purchase_invoice": null,
+        "last_payment": null,
+        "days_since_last_payment": null
+      },
+      {
+        "supplier": "稻米香厂",
+        "opening_balance": 292955.0,
+        "ending_balance": 292955.0,
+        "change": 0.0,
+        "purchase_ap_balance": 292955.0,
+        "other_ap_balance": null,
+        "prepay_balance": null,
+        "purchases_invoiced": 0.0,
+        "payments_cash_like": 0.0,
+        "last_purchase_invoice": null,
+        "last_payment": null,
+        "days_since_last_payment": null
+      },
+      {
+        "supplier": "张昭友",
+        "opening_balance": 100440.0,
+        "ending_balance": 280424.0,
+        "change": 179984.0,
+        "purchase_ap_balance": 280424.0,
+        "other_ap_balance": null,
+        "prepay_balance": null,
+        "purchases_invoiced": 179984.0,
+        "payments_cash_like": 0.0,
+        "last_purchase_invoice": "2025-11-22",
+        "last_payment": null,
+        "days_since_last_payment": null
+      },
+      {
+        "supplier": "益海嘉里（油）",
+        "opening_balance": 241606.0,
+        "ending_balance": 241606.0,
+        "change": 0.0,
+        "purchase_ap_balance": 241606.0,
+        "other_ap_balance": null,
+        "prepay_balance": null,
+        "purchases_invoiced": 0.0,
+        "payments_cash_like": 0.0,
+        "last_purchase_invoice": null,
+        "last_payment": null,
+        "days_since_last_payment": null
+      },
+      {
+        "supplier": "张海龙（似玉）",
+        "opening_balance": 209560.0,
+        "ending_balance": 231106.0,
+        "change": 21546.0,
+        "purchase_ap_balance": 237888.0,
+        "other_ap_balance": null,
+        "prepay_balance": 6782.0,
+        "purchases_invoiced": 33516.0,
+        "payments_cash_like": 11970.0,
+        "last_purchase_invoice": "2025-12-22",
+        "last_payment": "2025-08-13",
+        "days_since_last_payment": 133
+      },
+      {
+        "supplier": "五得利",
+        "opening_balance": 313047.59,
+        "ending_balance": 210184.04,
+        "change": -102863.55000000002,
+        "purchase_ap_balance": 210184.04,
+        "other_ap_balance": null,
+        "prepay_balance": null,
+        "purchases_invoiced": 322791.5,
+        "payments_cash_like": 0.0,
+        "last_purchase_invoice": "2025-09-24",
+        "last_payment": null,
+        "days_since_last_payment": null
+      },
+      {
+        "supplier": "益海嘉里",
+        "opening_balance": 161770.0,
+        "ending_balance": 161770.0,
+        "change": 0.0,
+        "purchase_ap_balance": 161770.0,
+        "other_ap_balance": null,
+        "prepay_balance": null,
+        "purchases_invoiced": 0.0,
+        "payments_cash_like": 0.0,
+        "last_purchase_invoice": null,
+        "last_payment": null,
+        "days_since_last_payment": null
+      },
+      {
+        "supplier": "孙锦",
+        "opening_balance": 159050.0,
+        "ending_balance": 159050.0,
+        "change": 0.0,
+        "purchase_ap_balance": 159050.0,
+        "other_ap_balance": null,
+        "prepay_balance": null,
+        "purchases_invoiced": 0.0,
+        "payments_cash_like": 0.0,
+        "last_purchase_invoice": null,
+        "last_payment": null,
+        "days_since_last_payment": null
+      },
+      {
+        "supplier": "晨龙米业（秋田小町）",
+        "opening_balance": 144000.0,
+        "ending_balance": 144000.0,
+        "change": 0.0,
+        "purchase_ap_balance": 144000.0,
+        "other_ap_balance": null,
+        "prepay_balance": null,
+        "purchases_invoiced": 0.0,
+        "payments_cash_like": 0.0,
+        "last_purchase_invoice": null,
+        "last_payment": null,
+        "days_since_last_payment": null
+      },
+      {
+        "supplier": "米禾平台",
+        "opening_balance": 125057.0,
+        "ending_balance": 125057.0,
+        "change": 0.0,
+        "purchase_ap_balance": 125057.0,
+        "other_ap_balance": null,
+        "prepay_balance": null,
+        "purchases_invoiced": 0.0,
+        "payments_cash_like": 0.0,
+        "last_purchase_invoice": null,
+        "last_payment": null,
+        "days_since_last_payment": null
+      },
+      {
+        "supplier": "胡明生",
+        "opening_balance": 116250.0,
+        "ending_balance": 116250.0,
+        "change": 0.0,
+        "purchase_ap_balance": 116250.0,
+        "other_ap_balance": null,
+        "prepay_balance": null,
+        "purchases_invoiced": 0.0,
+        "payments_cash_like": 0.0,
+        "last_purchase_invoice": null,
+        "last_payment": null,
+        "days_since_last_payment": null
+      },
+      {
+        "supplier": "御米粮川",
+        "opening_balance": 98560.0,
+        "ending_balance": 98560.0,
+        "change": 0.0,
+        "purchase_ap_balance": 98560.0,
+        "other_ap_balance": null,
+        "prepay_balance": null,
+        "purchases_invoiced": 0.0,
+        "payments_cash_like": 0.0,
+        "last_purchase_invoice": null,
+        "last_payment": null,
+        "days_since_last_payment": null
+      }
+    ]
+  },
+  "po": {
+    "kpi": {
+      "spend_total": 54103211.760001004,
+      "suppliers_count": 20,
+      "top1_share": 0.5032104445253637,
+      "top2_share": 0.7424507812620705
+    },
+    "trend": {
+      "months": [
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11"
+      ],
+      "spend": [
+        12336236.560000256,
+        15106522.64000029,
+        12103057.06000019,
+        14557395.50000027
+      ]
+    },
+    "top_suppliers": [
+      {
+        "supplier": "渭南长安花粮油有限公司（邦淇中包）",
+        "amount": 27225301.23999999
+      },
+      {
+        "supplier": "陕西杨凌来富油脂有限公司（西瑞户）",
+        "amount": 12943670.6
+      },
+      {
+        "supplier": "桦川县鑫华米业有限公司（冰宝）",
+        "amount": 6977049.800000269
+      },
+      {
+        "supplier": "渭南长安花粮油有限公司（盛农邦淇小包）",
+        "amount": 1915600.0000007707
+      },
+      {
+        "supplier": "陕西杨凌来富油脂有限公司（水鸭户）",
+        "amount": 1382148.8
+      },
+      {
+        "supplier": "金源米业-胡云朋",
+        "amount": 708439.9999999332
+      },
+      {
+        "supplier": "豪发粮油（郭杜市场）",
+        "amount": 601375.5
+      },
+      {
+        "supplier": "白城市名香米业有限公司-陈世铭",
+        "amount": 592495.800000041
+      },
+      {
+        "supplier": "陕西西瑞粮油工业有限公司-陕西西瑞米业有限责任公司",
+        "amount": 577720.0
+      },
+      {
+        "supplier": "五得利",
+        "amount": 322791.5
+      },
+      {
+        "supplier": "陕西乔府大院贸易有限公司-张剑",
+        "amount": 229408.0
+      },
+      {
+        "supplier": "张昭友",
+        "amount": 179984.0
+      },
+      {
+        "supplier": "裕华米业",
+        "amount": 144300.0
+      },
+      {
+        "supplier": "陕西杨凌来富油脂有限公司（盛农瑞家户）",
+        "amount": 79491.0
+      },
+      {
+        "supplier": "王奎杰",
+        "amount": 68000.0
+      },
+      {
+        "supplier": "渭南长安花粮油有限公司（邦淇小包）",
+        "amount": 62465.52
+      },
+      {
+        "supplier": "盛禾粮行（陈世铭）",
+        "amount": 40540.0
+      },
+      {
+        "supplier": "张海龙（似玉）",
+        "amount": 27930.0
+      },
+      {
+        "supplier": "西安景顺商贸有限公司",
+        "amount": 23400.0
+      },
+      {
+        "supplier": "欧亚金桥",
+        "amount": 1100.0
+      }
+    ],
+    "price_trends": [
+      {
+        "material_code": "A01.01.005",
+        "material_name": "16.4L邦淇大豆油（非转基因一级）",
+        "total_amount": 10302102.079999968,
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unitcost": [
+          152.34559259259257,
+          153.9098526881715,
+          153.97173058013766,
+          153.4646361336022
+        ]
+      },
+      {
+        "material_code": "A01.01.003",
+        "material_name": "20L邦淇大豆油（一级）",
+        "total_amount": 3270872.669999996,
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unitcost": [
+          163.24311926605503,
+          167.35169491525423,
+          168.196,
+          168.40391477272652
+        ]
+      },
+      {
+        "material_code": "A03.106",
+        "material_name": "25kg冰宝一级珍珠米",
+        "total_amount": 3099665.410000157,
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unitcost": [
+          103.0,
+          103.07619540007762,
+          101.45493023258139,
+          101.25995239469663
+        ]
+      },
+      {
+        "material_code": "A01.01.006",
+        "material_name": "16.4L邦淇纯正菜籽油",
+        "total_amount": 3018884.76,
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unitcost": [
+          162.513698630137,
+          167.578125,
+          168.529284164859,
+          166.5991194184839
+        ]
+      },
+      {
+        "material_code": "A03.049",
+        "material_name": "25kg冰宝优选珍珠米(红袋)",
+        "total_amount": 2545065.3200000357,
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unitcost": [
+          102.94846259842991,
+          103.07763206162876,
+          101.354296875,
+          100.06447844771608
+        ]
+      },
+      {
+        "material_code": "A01.11.022",
+        "material_name": "16.4L西瑞一级大豆油非转基因",
+        "total_amount": 2251045.9,
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unitcost": [
+          151.96990083087644,
+          152.7,
+          152.72540422033433,
+          146.19217703349284
+        ]
+      }
+    ]
+  },
+  "cash_gap": {
+    "months": [
+      "2025-08",
+      "2025-09",
+      "2025-10",
+      "2025-11",
+      "2025-12"
+    ],
+    "net_cash_gap": [
+      -3673639.5,
+      -3382805.6400000006,
+      868399.6400000006,
+      -1225618.5100000016,
+      2638627.8100000005
+    ],
+    "cum_net_cash_gap": [
+      -3673639.5,
+      -7056445.140000001,
+      -6188045.5,
+      -7413664.010000002,
+      -4775036.200000001
+    ]
+  }
+}
