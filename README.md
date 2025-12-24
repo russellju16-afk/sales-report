@@ -15,3 +15,11 @@
 - 财务 Tab：窗口缩放后图表可正常 resize
 - 财务 Tab：表头筛选清空按钮可恢复全量显示
 - 财务 Tab：右上角“打开 BP 报告”可新开页面
+- Finance v3：bank 图表净现金流/累计切换可复现
+- Finance v3：inventory 图表渲染正常
+- Finance v3：wc 其他应付提示逻辑触发正确
+- Finance v3：po SKU 切换与状态复现
+- Finance v3：BP 链接兜底（latest_path 缺失/失效时 fallback）
+- Finance v3：切换维度仅影响 AR，其他模块保持不变
+- Finance v3：bank/po 新表格筛选排序可复现
+- Finance v3：图表 resize 后不变形

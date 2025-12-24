@@ -4,6 +4,8 @@ var ORDER_MAP_CATTON = window.ORDER_MAP_CATTON || {};
 var CAT_TON = window.CAT_TON || {};
 var CAT_TON_META = window.CAT_TON_META || {oil_density:0.92, fallback_bag_kg:1, missing_weight_lines:0};
 var FINANCE_DATA = window.FINANCE_DATA || null;
+var FINANCE_ERROR = window.FINANCE_ERROR || null;
+var FINANCE_LOADING = window.FINANCE_LOADING || false;
 
 const DATA_META = { generatedAt: null };
 const BP_META = { latest_path: '', title: '', highlights: [] };
@@ -76,12 +78,19 @@ function normalizeData(raw){
 
 function normalizeFinanceData(raw){
   const root = raw && raw.data ? raw.data : (raw || {});
+  const meta = root.meta || {};
+  if(!meta.generated_at){
+    meta.generated_at = root.generated_at || root.generatedAt || root.as_of || root.asOf || '';
+  }
   return {
-    meta: root.meta || {},
+    meta: meta,
     ar: root.ar || {},
     ap: root.ap || {},
     po: root.po || {},
-    cash_gap: root.cash_gap || {}
+    inventory: root.inventory || {},
+    bank: root.bank || {},
+    wc: root.wc || {},
+    bp: root.bp || {}
   };
 }
 
@@ -126,13 +135,20 @@ async function bootstrap(){
     setLoadingState(true, '正在拉取 ./data/latest.json 与 ./data/finance_latest.json');
     showDataStatus(true, '数据加载中…');
     const results = await Promise.allSettled([loadData(), loadFinanceData()]);
-    const errs = [];
-    if(results[0].status === 'rejected') errs.push(results[0].reason && results[0].reason.message ? results[0].reason.message : '销售数据加载失败');
-    if(results[1].status === 'rejected') errs.push(results[1].reason && results[1].reason.message ? results[1].reason.message : '财务数据加载失败');
-    if(errs.length) throw new Error(errs.join('；'));
+    if(results[0].status === 'rejected'){
+      const msg = results[0].reason && results[0].reason.message ? results[0].reason.message : '销售数据加载失败';
+      throw new Error(msg);
+    }
 
     const normalized = normalizeData(results[0].value);
-    const financeNormalized = normalizeFinanceData(results[1].value);
+    let financeNormalized = null;
+    if(results[1].status === 'fulfilled'){
+      financeNormalized = normalizeFinanceData(results[1].value);
+      FINANCE_ERROR = null;
+    }else{
+      const msg = results[1].reason && results[1].reason.message ? results[1].reason.message : '财务数据加载失败';
+      FINANCE_ERROR = { message: msg };
+    }
 
     DATA = normalized.segments;
     ORDER_MAP = normalized.orderMap || {};
@@ -145,6 +161,7 @@ async function bootstrap(){
     BP_META.highlights = (normalized.bp && Array.isArray(normalized.bp.highlights)) ? normalized.bp.highlights : [];
     FINANCE_DATA = financeNormalized;
     window.FINANCE_DATA = FINANCE_DATA;
+    window.FINANCE_ERROR = FINANCE_ERROR;
 
     const ts = DATA_META.generatedAt ? ('数据更新时间：' + DATA_META.generatedAt) : '数据已加载';
     showDataStatus(true, ts);
@@ -161,6 +178,28 @@ async function bootstrap(){
   }finally{
     BOOTSTRAP_INFLIGHT = false;
     setReloadButtonDisabled(false);
+  }
+}
+
+async function reloadFinanceData(){
+  if(FINANCE_LOADING) return;
+  FINANCE_LOADING = true;
+  window.FINANCE_LOADING = true;
+  try{
+    const raw = await loadFinanceData();
+    FINANCE_DATA = normalizeFinanceData(raw);
+    FINANCE_ERROR = null;
+  }catch(e){
+    FINANCE_DATA = null;
+    FINANCE_ERROR = { message: e && e.message ? e.message : '财务数据加载失败' };
+  }finally{
+    window.FINANCE_DATA = FINANCE_DATA;
+    window.FINANCE_ERROR = FINANCE_ERROR;
+    FINANCE_LOADING = false;
+    window.FINANCE_LOADING = false;
+    if(typeof renderFinance === 'function'){
+      try{ renderFinance(window.currentSeg || 'total'); }catch(err){ console.error(err); }
+    }
   }
 }
 
@@ -408,16 +447,22 @@ function makeSegHTML(segKey){
 
     <div class="section" id="${segKey}_finance">
       <div class="finance-empty" id="${segKey}_finance_empty">暂无财务数据</div>
+      <div class="finance-error card hidden" id="${segKey}_finance_error">
+        <div class="finance-error-title">财务数据加载失败</div>
+        <div class="finance-error-msg" id="${segKey}_finance_error_msg">—</div>
+        <button class="btn" data-finance-action="retry-finance" data-seg="${segKey}">重试</button>
+      </div>
       <div class="finance-content" id="${segKey}_finance_content">
         <div class="card finance-summary">
           <div class="finance-block-hd">
             <div>
               <div class="finance-title">财务概览</div>
-              <div class="finance-meta">期间：<span id="${segKey}_finance_period">—</span> ｜ 币种：<span id="${segKey}_finance_currency">—</span></div>
+              <div class="finance-meta">期间：<span id="${segKey}_finance_period">—</span> ｜ 币种：<span id="${segKey}_finance_currency">—</span> ｜ 财务版本：<span id="${segKey}_finance_version">—</span></div>
             </div>
-            <a class="btn finance-bp-btn" href="reports/bp_20251224.html" target="_blank" rel="noopener">打开 BP 报告</a>
+            <a class="btn finance-bp-btn disabled" id="${segKey}_finance_bp_btn" href="#" data-finance-action="open-bp" target="_blank" rel="noopener" aria-disabled="true">未发布</a>
           </div>
           <div class="finance-kpis" id="${segKey}_finance_kpis"></div>
+          <div class="finance-notes" id="${segKey}_finance_notes"></div>
         </div>
 
         <div class="grid2 finance-charts">
@@ -439,19 +484,6 @@ function makeSegHTML(segKey){
             </div>
             <div id="${segKey}_finance_ap_chart" class="plot-sm"></div>
           </div>
-        </div>
-
-        <div class="card">
-          <div class="finance-block-hd">
-            <div>
-              <div class="finance-title">净现金差</div>
-              <div class="finance-meta">月度口径</div>
-            </div>
-            <div class="controls finance-controls">
-              <label class="ctl"><input id="${segKey}_finance_cash_gap_cum" class="finance-cash-toggle" type="checkbox" data-finance-action="toggle-cash-gap" data-seg="${segKey}"/>显示累计</label>
-            </div>
-          </div>
-          <div id="${segKey}_finance_cash_gap_chart" class="plot-sm"></div>
         </div>
 
         <div class="grid2 finance-tables">
@@ -495,6 +527,128 @@ function makeSegHTML(segKey){
                 </tr></thead>
                 <tbody></tbody>
               </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="finance-block card">
+          <div class="finance-block-hd">
+            <div>
+              <div class="finance-title">银行现金流</div>
+              <div class="finance-meta">期间流入/流出与对账差异</div>
+            </div>
+            <div class="controls finance-controls">
+              <label class="ctl"><input id="${segKey}_finance_bank_cum" class="finance-toggle" type="checkbox" data-finance-action="toggle-bank" data-seg="${segKey}"/>显示累计净现金流</label>
+            </div>
+          </div>
+          <div class="finance-kpis" id="${segKey}_finance_bank_kpis"></div>
+          <div class="card finance-subcard"><div id="${segKey}_finance_bank_chart" class="plot-sm"></div></div>
+          <details class="finance-collapse" open>
+            <summary>按类型汇总</summary>
+            <div class="table-wrap finance-table">
+              <div class="controls finance-controls">
+                <button class="btn btn-sm" data-finance-action="clear-filters" data-table="${segKey}_finance_bank_type_table">清空筛选</button>
+                <input type="hidden" id="${segKey}_finance_bank_type_sort" value=""/>
+                <span class="count">显示：<b id="${segKey}_finance_bank_type_count">0</b></span>
+              </div>
+              <div class="table-scroll" style="max-height:320px;">
+                <table id="${segKey}_finance_bank_type_table" data-finance-table="bank_type">
+                  <thead><tr>
+                    <th>类型</th>
+                    <th>流入</th>
+                    <th>流出</th>
+                    <th>笔数</th>
+                  </tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+          <div class="grid2 finance-recon">
+            <div class="finance-mini-card" id="${segKey}_finance_bank_recon_receipts"></div>
+            <div class="finance-mini-card" id="${segKey}_finance_bank_recon_payments"></div>
+          </div>
+        </div>
+
+        <div class="finance-block card">
+          <div class="finance-block-hd">
+            <div>
+              <div class="finance-title">库存与周转</div>
+              <div class="finance-meta">库存水平与周转效率</div>
+            </div>
+          </div>
+          <div class="finance-kpis" id="${segKey}_finance_inventory_kpis"></div>
+          <div class="card finance-subcard"><div id="${segKey}_finance_inventory_chart" class="plot-sm"></div></div>
+        </div>
+
+        <div class="finance-block card finance-wc">
+          <div class="finance-block-hd">
+            <div>
+              <div class="finance-title">CCC / 贸易营运资本</div>
+              <div class="finance-meta">DSO / DPO / DIO / CCC</div>
+            </div>
+          </div>
+          <div class="finance-kpis finance-kpis-compact" id="${segKey}_finance_wc_kpis"></div>
+          <div class="finance-warn" id="${segKey}_finance_wc_warn"></div>
+        </div>
+
+        <div class="finance-block card">
+          <div class="finance-block-hd">
+            <div>
+              <div class="finance-title">采购入库</div>
+              <div class="finance-meta">入库金额与价格趋势</div>
+            </div>
+          </div>
+          <div class="finance-kpis" id="${segKey}_finance_po_kpis"></div>
+          <div class="grid2 finance-charts">
+            <div class="card finance-subcard"><div id="${segKey}_finance_po_inbound_chart" class="plot-sm"></div></div>
+            <div class="card finance-subcard">
+              <div class="controls finance-controls">
+                <label class="ctl">SKU：
+                  <select id="${segKey}_finance_po_price_sku" data-finance-action="po-price-sku" data-seg="${segKey}"></select>
+                </label>
+              </div>
+              <div id="${segKey}_finance_po_price_chart" class="plot-sm"></div>
+            </div>
+          </div>
+          <div class="grid2 finance-tables">
+            <div class="table-wrap finance-table">
+              <div class="controls finance-controls">
+                <div class="finance-table-title">Top 供应商</div>
+                <button class="btn btn-sm" data-finance-action="clear-filters" data-table="${segKey}_finance_po_sup_table">清空筛选</button>
+                <input type="hidden" id="${segKey}_finance_po_sup_sort" value=""/>
+                <span class="count">显示：<b id="${segKey}_finance_po_sup_count">0</b></span>
+              </div>
+              <div class="table-scroll" style="max-height:320px;">
+                <table id="${segKey}_finance_po_sup_table" data-finance-table="po_sup">
+                  <thead><tr>
+                    <th>供应商</th>
+                    <th>入库金额</th>
+                  </tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="table-wrap finance-table">
+              <div class="controls finance-controls">
+                <div class="finance-table-title">SKU 价格趋势</div>
+                <button class="btn btn-sm" data-finance-action="clear-filters" data-table="${segKey}_finance_po_price_table">清空筛选</button>
+                <input type="hidden" id="${segKey}_finance_po_price_sort" value=""/>
+                <span class="count">显示：<b id="${segKey}_finance_po_price_count">0</b></span>
+              </div>
+              <div class="table-scroll" style="max-height:320px;">
+                <table id="${segKey}_finance_po_price_table" data-finance-table="po_price">
+                  <thead><tr>
+                    <th>SKU</th>
+                    <th>产品</th>
+                    <th>月份数</th>
+                    <th>最新均价</th>
+                    <th>期间金额</th>
+                  </tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
