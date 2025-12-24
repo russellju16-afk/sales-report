@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>财务BP分析报告 - 截至2025-12-24</title>
+<style>
+  :root {
+    --bg:#fbf8f2;
+    --card:#ffffff;
+    --text:#1f2937;
+    --muted:#6b7280;
+    --stroke:#e5e7eb;
+    --radius:16px;
+    --shadow:0 6px 18px rgba(17,24,39,.06);
+    --font-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,-apple-system,"Segoe UI","Helvetica Neue",Arial,sans-serif;
+  }
+  body {
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    line-height:1.55;
+  }
+  .wrap {
+    max-width:1100px;
+    margin:0 auto;
+    padding:22px 18px 50px;
+  }
+  .header {
+    background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.55));
+    border:1px solid var(--stroke);
+    border-radius:var(--radius);
+    padding:18px 18px 14px;
+    box-shadow:var(--shadow);
+  }
+  h1 {
+    margin:0 0 6px 0;
+    font-size:20px;
+    letter-spacing:.2px;
+  }
+  .sub {
+    color:var(--muted);
+    font-size:12px;
+  }
+  .grid {
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap:12px;
+    margin-top:12px;
+  }
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 520px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  .kpi {
+    background:var(--card);
+    border:1px solid var(--stroke);
+    border-radius:var(--radius);
+    padding:12px 12px 10px;
+    box-shadow:var(--shadow);
+  }
+  .kpi-title {
+    color:var(--muted);
+    font-size:12px;
+    margin-bottom:6px;
+  }
+  .kpi-val {
+    font-size:18px;
+    font-weight:700;
+    margin-bottom:4px;
+  }
+  .kpi-sub {
+    font-size:11px;
+    color:var(--muted);
+  }
+  .section {
+    margin-top:14px;
+    background:var(--card);
+    border:1px solid var(--stroke);
+    border-radius:var(--radius);
+    padding:14px 14px 10px;
+    box-shadow:var(--shadow);
+  }
+  .section h2 {
+    margin:0 0 10px 0;
+    font-size:15px;
+  }
+  .note {
+    margin:6px 0 0;
+    color:var(--muted);
+    font-size:11px;
+  }
+  .two {
+    display:grid;
+    grid-template-columns: 1.2fr .8fr;
+    gap:12px;
+  }
+  @media (max-width: 900px) {
+    .two { grid-template-columns: 1fr; }
+  }
+  table {
+    width:100%;
+    border-collapse:collapse;
+    font-size:12px;
+  }
+  th, td {
+    border-bottom:1px solid var(--stroke);
+    padding:7px 8px;
+    text-align:left;
+    vertical-align:top;
+  }
+  th {
+    background:#fbf8f2;
+    position:sticky;
+    top:0;
+    z-index:1;
+  }
+  .pill {
+    display:inline-block;
+    padding:2px 8px;
+    border:1px solid var(--stroke);
+    border-radius:999px;
+    font-size:11px;
+    color:var(--muted);
+    background:#fff;
+  }
+  .warn {
+    background:#fff7ed;
+    border:1px solid #fed7aa;
+    padding:10px 12px;
+    border-radius:12px;
+    margin-top:10px;
+  }
+  .warn b { color:#9a3412; }
+  .bullets {
+    margin:8px 0 0 0;
+    padding-left:18px;
+    font-size:12px;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <h1>财务BP分析报告（应收/应付/采购）</h1>
+      <div class="sub">数据期间：2025-08-01 至 2025-12-24（146天）；采购入库单数据覆盖：2025-08-01 至 2025-11-30。币种：CNY。</div>
+      <div class="grid">
+        <div class="kpi">
+      <div class="kpi-title">期末应收净额</div>
+      <div class="kpi-val">7,642.82 万</div>
+      <div class="kpi-sub">期初 7,076.60 万，变动 566.23 万</div>
+    </div><div class="kpi">
+      <div class="kpi-title">期末销售应收余额</div>
+      <div class="kpi-val">8,556.29 万</div>
+      <div class="kpi-sub">预收余额 1,621.69 万</div>
+    </div><div class="kpi">
+      <div class="kpi-title">期末应付净额</div>
+      <div class="kpi-val">51,153.78 万</div>
+      <div class="kpi-sub">其中采购应付余额 14,793.81 万</div>
+    </div><div class="kpi">
+      <div class="kpi-title">采购/回款现金差(8-12月累计)</div>
+      <div class="kpi-val">-477.50 万</div>
+      <div class="kpi-sub">月度：08:-367.36 万, 09:-338.28 万, 10:86.84 万, 11:-122.56 万, 12:263.86 万</div>
+    </div>
+      </div>
+      <div class="warn">
+        <b>关键风险提示：</b>应收高度集中且“存量不动”占比较高；应付中“其他应付余额”被单一往来对象显著占用（建议优先核对科目与往来属性，避免误判现金流与信用风险）。
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>1) 应收：规模、结构与回款</h2>
+      <div class="two">
+        <div>
+          <div class="pill">月度开票 vs 现金回款</div>
+          <div style="margin-top:8px; overflow:auto;"><svg width="720" height="220" viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="720" height="220" fill="white" />
+    <rect x="40" y="2" width="10" height="3" fill="#2563eb"></rect><text x="54" y="6" font-size="11" fill="#374151">开票(销售发票)</text><rect x="180" y="2" width="10" height="3" fill="#f97316"></rect><text x="194" y="6" font-size="11" fill="#374151">现金回款(收款+预收+退款)</text>
+    <line x1="40" y1="180.0" x2="680" y2="180.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="152.0" x2="680" y2="152.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="124.0" x2="680" y2="124.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="96.0" x2="680" y2="96.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="68.0" x2="680" y2="68.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="40.0" x2="680" y2="40.0" stroke="#e5e7eb" stroke-width="1" />
+    <line x1="40" y1="180" x2="680" y2="180" stroke="#9ca3af" stroke-width="1" />
+    <line x1="40" y1="40" x2="40" y2="180" stroke="#9ca3af" stroke-width="1" />
+    <polyline fill="none" stroke="#2563eb" stroke-width="2" points="40.0,105.5 200.0,40.0 360.0,86.9 520.0,74.9 680.0,148.3" /><polyline fill="none" stroke="#f97316" stroke-width="2" points="40.0,180.0 200.0,136.9 360.0,81.9 520.0,84.0 680.0,131.7" />
+    <text x="34" y="184.0" text-anchor="end" font-size="10" fill="#6b7280">8.6M</text><text x="34" y="156.0" text-anchor="end" font-size="10" fill="#6b7280">10.1M</text><text x="34" y="128.0" text-anchor="end" font-size="10" fill="#6b7280">11.6M</text><text x="34" y="100.0" text-anchor="end" font-size="10" fill="#6b7280">13.1M</text><text x="34" y="72.0" text-anchor="end" font-size="10" fill="#6b7280">14.6M</text><text x="34" y="44.0" text-anchor="end" font-size="10" fill="#6b7280">16.1M</text>
+    <text x="40.0" y="198" text-anchor="middle" font-size="10" fill="#6b7280">08</text><text x="200.0" y="198" text-anchor="middle" font-size="10" fill="#6b7280">09</text><text x="360.0" y="198" text-anchor="middle" font-size="10" fill="#6b7280">10</text><text x="520.0" y="198" text-anchor="middle" font-size="10" fill="#6b7280">11</text><text x="680.0" y="198" text-anchor="middle" font-size="10" fill="#6b7280">12</text>
+</svg></div>
+          <ul class="bullets">
+            <li>期初应收净额：7,076.60 万；期末：7,642.82 万，净增加 566.23 万。</li>
+            <li>期末销售应收余额：8,556.29 万；预收余额：1,621.69 万（预收对冲后形成净额）。</li>
+            <li>本期销售发票：6,687.90 万；现金回款（收款+预收+退款）：5,834.64 万。</li>
+            <li>DSO（按销售应收余额/销售发票估算）：约 180 天（偏高，且受期初存量影响）。</li>
+            <li>“本期无开票发生额”的存量应收合计：4,801.83 万，约占期末应收净额 62.8%（重点清理对象）。</li>
+          </ul>
+          <div style="margin-top:10px;">
+            <div class="pill">门店 vs 非门店（应收表现对比）</div>
+            <div style="margin-top:8px; max-height:260px; overflow:auto;"><table><thead><tr><th>维度</th><th>期末应收净额</th><th>本期变动</th><th>DSO估算</th><th>回款/开票</th><th>存量不动占比</th></tr></thead><tbody><tr><td>超群门店</td><td>1,186.37 万</td><td>-269.76 万</td><td>71 天</td><td>98.8%</td><td>40.4%</td></tr><tr><td>非超群门店</td><td>6,456.46 万</td><td>835.98 万</td><td>302 天</td><td>74.4%</td><td>68.0%</td></tr></tbody></table></div>
+            <p class="note">结论：门店维度回款接近开票（DSO≈71天）；非门店维度回款显著落后（DSO≈302天）。</p>
+          </div>
+        </div>
+        <div>
+          <div class="pill">Top10 客户（按期末应收净额）</div>
+          <div style="margin-top:8px; max-height:420px; overflow:auto;"><table><thead><tr><th>客户</th><th>期末余额</th><th>期初余额</th><th>变动</th><th>最近回款</th><th>距今(天)</th></tr></thead><tbody><tr><td>兴盛优选</td><td>2,886.40 万</td><td>2,886.40 万</td><td>0.00 万</td><td>—</td><td>—</td></tr><tr><td>兴盛优选（豪发）</td><td>790.07 万</td><td>790.07 万</td><td>0.00 万</td><td>—</td><td>—</td></tr><tr><td>三环新桥出货市场</td><td>477.88 万</td><td>477.88 万</td><td>0.00 万</td><td>—</td><td>—</td></tr><tr><td>西安金富邦粮油有限公司</td><td>444.90 万</td><td>361.18 万</td><td>83.71 万</td><td>2025-12-21</td><td>3</td></tr><tr><td>西安市长安区豪发粮油批发部</td><td>323.89 万</td><td>527.22 万</td><td>-203.33 万</td><td>2025-12-17</td><td>7</td></tr><tr><td>军粮</td><td>223.35 万</td><td>128.89 万</td><td>94.46 万</td><td>2025-12-19</td><td>5</td></tr><tr><td>政法1楼-西安众邦餐饮有限公司第一分公司</td><td>153.99 万</td><td>122.01 万</td><td>31.97 万</td><td>2025-12-17</td><td>7</td></tr><tr><td>众邦</td><td>151.18 万</td><td>114.47 万</td><td>36.71 万</td><td>2025-12-17</td><td>7</td></tr><tr><td>陕西科技卫生学校1餐厅</td><td>110.84 万</td><td>110.84 万</td><td>0.00 万</td><td>—</td><td>—</td></tr><tr><td>欧亚学院（西安欧亚餐饮管理有限公司）</td><td>86.31 万</td><td>45.90 万</td><td>40.41 万</td><td>2025-11-24</td><td>30</td></tr></tbody></table></div>
+          <p class="note">Top10 占期末应收净额 73.9%；Top2 占 48.1%。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>2) 应付：采购应付 vs 其他应付（结构性诊断）</h2>
+      <div class="two">
+        <div>
+          <div class="pill">月度采购发票 vs 现金付款</div>
+          <div style="margin-top:8px; overflow:auto;"><svg width="720" height="220" viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="720" height="220" fill="white" />
+    <rect x="40" y="2" width="10" height="3" fill="#2563eb"></rect><text x="54" y="6" font-size="11" fill="#374151">采购发票</text><rect x="180" y="2" width="10" height="3" fill="#f97316"></rect><text x="194" y="6" font-size="11" fill="#374151">现金付款(付款+预付+支出+退款)</text>
+    <line x1="40" y1="180.0" x2="680" y2="180.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="152.0" x2="680" y2="152.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="124.0" x2="680" y2="124.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="96.0" x2="680" y2="96.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="68.0" x2="680" y2="68.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="40.0" x2="680" y2="40.0" stroke="#e5e7eb" stroke-width="1" />
+    <line x1="40" y1="180" x2="680" y2="180" stroke="#9ca3af" stroke-width="1" />
+    <line x1="40" y1="40" x2="40" y2="180" stroke="#9ca3af" stroke-width="1" />
+    <polyline fill="none" stroke="#2563eb" stroke-width="2" points="40.0,100.6 200.0,42.3 360.0,105.2 520.0,54.7 680.0,169.6" /><polyline fill="none" stroke="#f97316" stroke-width="2" points="40.0,99.0 200.0,54.9 360.0,83.2 520.0,40.0 680.0,180.0" />
+    <text x="34" y="184.0" text-anchor="end" font-size="10" fill="#6b7280">8.6M</text><text x="34" y="156.0" text-anchor="end" font-size="10" fill="#6b7280">9.8M</text><text x="34" y="128.0" text-anchor="end" font-size="10" fill="#6b7280">11.1M</text><text x="34" y="100.0" text-anchor="end" font-size="10" fill="#6b7280">12.4M</text><text x="34" y="72.0" text-anchor="end" font-size="10" fill="#6b7280">13.7M</text><text x="34" y="44.0" text-anchor="end" font-size="10" fill="#6b7280">15.0M</text>
+    <text x="40.0" y="198" text-anchor="middle" font-size="10" fill="#6b7280">08</text><text x="200.0" y="198" text-anchor="middle" font-size="10" fill="#6b7280">09</text><text x="360.0" y="198" text-anchor="middle" font-size="10" fill="#6b7280">10</text><text x="520.0" y="198" text-anchor="middle" font-size="10" fill="#6b7280">11</text><text x="680.0" y="198" text-anchor="middle" font-size="10" fill="#6b7280">12</text>
+</svg></div>
+          <ul class="bullets">
+            <li>期初应付净额：51,470.75 万；期末：51,153.78 万，净减少 -316.97 万。</li>
+            <li>期末采购应付余额：14,793.81 万；期末其他应付余额：37,921.93 万；期末预付余额：1,561.96 万。</li>
+            <li>本期采购发票：6,241.99 万；现金付款（付款+预付+支出+退款）：6,312.14 万。</li>
+            <li>DPO（按采购应付余额/采购发票估算）：约 345 天（极高，说明存量大/账龄长；需结合账龄与对账情况判断风险）。</li>
+          </ul>
+          <div class="warn">
+            <b>结构异常：</b>“其他应付余额”占比极高，且高度集中。建议先做一次<b>科目/往来重分类复核</b>（是否含借款、保证金、代收代付、内部往来等），再进入付款计划与信用评估。
+          </div>
+        </div>
+        <div>
+          <div class="pill">Top10 供应商（按期末采购应付余额）</div>
+          <div style="margin-top:8px; max-height:420px; overflow:auto;"><table><thead><tr><th>供应商</th><th>采购应付余额</th><th>其他应付余额</th><th>预付余额</th><th>期末净额</th><th>最近付款</th></tr></thead><tbody><tr><td>陕西杨凌来富油脂有限公司（西瑞户）</td><td>4,816.15 万</td><td>37,413.98 万</td><td>60.26 万</td><td>42,169.88 万</td><td>2025-12-20</td></tr><tr><td>豪发粮油（郭杜市场）</td><td>2,500.66 万</td><td>10.29 万</td><td>22.39 万</td><td>2,488.56 万</td><td>2025-11-24</td></tr><tr><td>渭南长安花粮油有限公司（邦淇中包）</td><td>2,208.59 万</td><td>—</td><td>815.40 万</td><td>1,393.19 万</td><td>2025-12-21</td></tr><tr><td>陕西杨凌来富油脂有限公司（盛农瑞家户）</td><td>1,340.20 万</td><td>—</td><td>93.00 万</td><td>1,247.20 万</td><td>2025-12-15</td></tr><tr><td>桦川县鑫华米业有限公司（冰宝）</td><td>993.86 万</td><td>3.91 万</td><td>100.00 万</td><td>897.77 万</td><td>2025-12-18</td></tr><tr><td>陕西杨凌来富油脂有限公司（水鸭户）</td><td>813.29 万</td><td>32.23 万</td><td>297.57 万</td><td>547.95 万</td><td>2025-12-20</td></tr><tr><td>盛农瑞家邦淇</td><td>689.38 万</td><td>268.75 万</td><td>—</td><td>958.12 万</td><td>—</td></tr><tr><td>渭南长安花粮油有限公司（邦淇小包）</td><td>432.30 万</td><td>74.27 万</td><td>—</td><td>506.58 万</td><td>2025-12-12</td></tr><tr><td>渭南长安花粮油有限公司（盛农邦淇小包）</td><td>128.67 万</td><td>9.38 万</td><td>100.31 万</td><td>37.73 万</td><td>2025-12-15</td></tr><tr><td>粮农来富（米禾）</td><td>122.68 万</td><td>74.05 万</td><td>8.27 万</td><td>188.46 万</td><td>—</td></tr></tbody></table></div>
+          <p class="note">Top5 供应商占采购应付余额 80.2%；Top2 占 49.5%。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>3) 采购入库：供应商集中度与价格趋势（8-11月）</h2>
+      <div class="two">
+        <div>
+          <div class="pill">月度采购入库金额</div>
+          <div style="margin-top:8px; overflow:auto;"><svg width="720" height="220" viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="720" height="220" fill="white" />
+    <rect x="40" y="2" width="10" height="3" fill="#2563eb"></rect><text x="54" y="6" font-size="11" fill="#374151">入库金额</text>
+    <line x1="40" y1="180.0" x2="680" y2="180.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="152.0" x2="680" y2="152.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="124.0" x2="680" y2="124.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="96.0" x2="680" y2="96.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="68.0" x2="680" y2="68.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="40.0" x2="680" y2="40.0" stroke="#e5e7eb" stroke-width="1" />
+    <line x1="40" y1="180" x2="680" y2="180" stroke="#9ca3af" stroke-width="1" />
+    <line x1="40" y1="40" x2="40" y2="180" stroke="#9ca3af" stroke-width="1" />
+    <polyline fill="none" stroke="#2563eb" stroke-width="2" points="40.0,169.1 253.3,40.0 466.7,180.0 680.0,65.6" />
+    <text x="34" y="184.0" text-anchor="end" font-size="10" fill="#6b7280">12.1M</text><text x="34" y="156.0" text-anchor="end" font-size="10" fill="#6b7280">12.7M</text><text x="34" y="128.0" text-anchor="end" font-size="10" fill="#6b7280">13.3M</text><text x="34" y="100.0" text-anchor="end" font-size="10" fill="#6b7280">13.9M</text><text x="34" y="72.0" text-anchor="end" font-size="10" fill="#6b7280">14.5M</text><text x="34" y="44.0" text-anchor="end" font-size="10" fill="#6b7280">15.1M</text>
+    <text x="40.0" y="198" text-anchor="middle" font-size="10" fill="#6b7280">08</text><text x="253.3" y="198" text-anchor="middle" font-size="10" fill="#6b7280">09</text><text x="466.7" y="198" text-anchor="middle" font-size="10" fill="#6b7280">10</text><text x="680.0" y="198" text-anchor="middle" font-size="10" fill="#6b7280">11</text>
+</svg></div>
+          <ul class="bullets">
+            <li>采购入库单合计：5,410.32 万；供应商数：20。</li>
+            <li>Top1 供应商占比：50.3%；Top2 占比：74.2%（采购集中度高）。</li>
+          </ul>
+          <div style="margin-top:10px;">
+            <div class="pill">门店 vs 非门店（应收表现对比）</div>
+            <div style="margin-top:8px; max-height:260px; overflow:auto;"><table><thead><tr><th>维度</th><th>期末应收净额</th><th>本期变动</th><th>DSO估算</th><th>回款/开票</th><th>存量不动占比</th></tr></thead><tbody><tr><td>超群门店</td><td>1,186.37 万</td><td>-269.76 万</td><td>71 天</td><td>98.8%</td><td>40.4%</td></tr><tr><td>非超群门店</td><td>6,456.46 万</td><td>835.98 万</td><td>302 天</td><td>74.4%</td><td>68.0%</td></tr></tbody></table></div>
+            <p class="note">结论：门店维度回款接近开票（DSO≈71天）；非门店维度回款显著落后（DSO≈302天）。</p>
+          </div>
+        </div>
+        <div>
+          <div class="pill">Top10 供应商（入库金额）</div>
+          <div style="margin-top:8px; max-height:420px; overflow:auto;"><table><thead><tr><th>供应商</th><th>采购金额(入库口径)</th></tr></thead><tbody><tr><td>渭南长安花粮油有限公司（邦淇中包）</td><td>2,722.53 万</td></tr><tr><td>陕西杨凌来富油脂有限公司（西瑞户）</td><td>1,294.37 万</td></tr><tr><td>桦川县鑫华米业有限公司（冰宝）</td><td>697.70 万</td></tr><tr><td>渭南长安花粮油有限公司（盛农邦淇小包）</td><td>191.56 万</td></tr><tr><td>陕西杨凌来富油脂有限公司（水鸭户）</td><td>138.21 万</td></tr><tr><td>金源米业-胡云朋</td><td>70.84 万</td></tr><tr><td>豪发粮油（郭杜市场）</td><td>60.14 万</td></tr><tr><td>白城市名香米业有限公司-陈世铭</td><td>59.25 万</td></tr><tr><td>陕西西瑞粮油工业有限公司-陕西西瑞米业有限责任公司</td><td>57.77 万</td></tr><tr><td>五得利</td><td>32.28 万</td></tr></tbody></table></div>
+          <p class="note">入库口径与采购发票口径存在时间差/开票差，建议后续做“入库-开票-付款”三表对齐。</p>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <div class="pill">重点 SKU 采购均价趋势（8月→11月）</div>
+        <div style="margin-top:8px; overflow:auto;"><table><thead><tr><th>编码</th><th>商品</th><th>8月均价</th><th>11月均价</th><th>涨跌</th></tr></thead><tbody><tr><td>A01.01.005</td><td>16.4L邦淇大豆油（非转基因一级）</td><td>152.35</td><td>153.46</td><td>0.7%</td></tr><tr><td>A01.01.003</td><td>20L邦淇大豆油（一级）</td><td>163.24</td><td>168.40</td><td>3.2%</td></tr><tr><td>A03.106</td><td>25kg冰宝一级珍珠米</td><td>103.00</td><td>101.26</td><td>-1.7%</td></tr><tr><td>A01.01.006</td><td>16.4L邦淇纯正菜籽油</td><td>162.51</td><td>166.60</td><td>2.5%</td></tr><tr><td>A03.049</td><td>25kg冰宝优选珍珠米(红袋)</td><td>102.95</td><td>100.06</td><td>-2.8%</td></tr><tr><td>A01.11.022</td><td>16.4L西瑞一级大豆油非转基因</td><td>151.97</td><td>146.19</td><td>-3.8%</td></tr></tbody></table></div>
+        <p class="note">均价为“加权平均单价（按数量权重）”。</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>4) 经营现金差：回款 vs 付款（粗口径）</h2>
+      <div class="pill">月度净现金差（回款-付款）</div>
+      <div style="margin-top:8px; overflow:auto;"><svg width="720" height="220" viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="720" height="220" fill="white" />
+    <rect x="40" y="2" width="10" height="3" fill="#2563eb"></rect><text x="54" y="6" font-size="11" fill="#374151">净现金差(回款-付款)</text>
+    <line x1="40" y1="180.0" x2="680" y2="180.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="152.0" x2="680" y2="152.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="124.0" x2="680" y2="124.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="96.0" x2="680" y2="96.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="68.0" x2="680" y2="68.0" stroke="#e5e7eb" stroke-width="1" /><line x1="40" y1="40.0" x2="680" y2="40.0" stroke="#e5e7eb" stroke-width="1" />
+    <line x1="40" y1="180" x2="680" y2="180" stroke="#9ca3af" stroke-width="1" />
+    <line x1="40" y1="40" x2="40" y2="180" stroke="#9ca3af" stroke-width="1" />
+    <polyline fill="none" stroke="#2563eb" stroke-width="2" points="40.0,180.0 200.0,173.5 360.0,79.3 520.0,125.7 680.0,40.0" />
+    <text x="34" y="184.0" text-anchor="end" font-size="10" fill="#6b7280">-3.7M</text><text x="34" y="156.0" text-anchor="end" font-size="10" fill="#6b7280">-2.4M</text><text x="34" y="128.0" text-anchor="end" font-size="10" fill="#6b7280">-1.1M</text><text x="34" y="100.0" text-anchor="end" font-size="10" fill="#6b7280">0.1M</text><text x="34" y="72.0" text-anchor="end" font-size="10" fill="#6b7280">1.4M</text><text x="34" y="44.0" text-anchor="end" font-size="10" fill="#6b7280">2.6M</text>
+    <text x="40.0" y="198" text-anchor="middle" font-size="10" fill="#6b7280">08</text><text x="200.0" y="198" text-anchor="middle" font-size="10" fill="#6b7280">09</text><text x="360.0" y="198" text-anchor="middle" font-size="10" fill="#6b7280">10</text><text x="520.0" y="198" text-anchor="middle" font-size="10" fill="#6b7280">11</text><text x="680.0" y="198" text-anchor="middle" font-size="10" fill="#6b7280">12</text>
+</svg></div>
+      <ul class="bullets">
+        <li>8-12月累计净现金差：-477.50 万（为负表示现金流出）。</li>
+        <li>负值月份集中在 8月/9月/11月，建议回溯对应客户的回款节奏与采购付款节奏。</li>
+      </ul>
+      <div class="warn">
+        <b>BP建议（现金抓手）：</b>若将 DSO 从约 180 天压缩到 150 天，按本期日均销售开票约 45.8 万/天测算，可释放约 1374 万现金（量级很大）。
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>5) 下一步落地：如何把这些结果集成到你的网站</h2>
+      <ul class="bullets">
+        <li><b>数据层：</b>新增一个 <code>data/finance_latest.json</code>（我已在本次输出中生成同结构数据），包含 AR/AP/PO KPI、月度趋势、Top 客户/供应商、现金差。</li>
+        <li><b>前端层：</b>在现有 3 维度（全部/门店/非门店）上，为 AR 提供分维度聚合（按客户分类包含“超群”判断门店），AP/PO 默认全量展示，并在界面标注“AP/PO 不分维度”。</li>
+        <li><b>展示层：</b>新增一个“财务”Tab：上方 KPI 卡片（应收净额/销售应收/应付净额/现金差）；中间 3 张趋势图（开票vs回款、采购vs付款、现金差）；下方 2 张表（Top 客户/Top 供应商）支持筛选/排序/导出。</li>
+        <li><b>报告层：</b>把本页面作为 <code>reports/bp_20251224.html</code> 发布，并在首页加一个“BP报告”入口（用于飞书网页应用直接打开）。</li>
+      </ul>
+      <p class="note">本 HTML 为静态报告页（不依赖 Plotly/Vega/eval），适合 CSP 场景。后续如果要更强交互，可用 ECharts 做同款图表并按你现有 UI 组件封装。</p>
+    </div>
+
+    <div class="section">
+      <h2>附：口径说明（务必与财务/业务对齐）</h2>
+      <ul class="bullets">
+        <li>应收/应付报表来自明细账导出，包含“其他应收/其他应付/预收/预付”。请先明确哪些属于贸易往来，哪些属于借款/保证金/代收代付。</li>
+        <li>本报告的“现金回款/现金付款”以单据类型粗分，核销单默认不计入现金，避免与收款/付款重复计入（如你确认核销单就是收款入账，可再调整口径）。</li>
+        <li>DSO/DPO 为估算值，若要精确账龄，需要“单据到期日/账龄字段”或“发票逐笔未清明细”。</li>
+      </ul>
+    </div>
+
+    <div class="note" style="text-align:center; margin-top:10px;">
+      生成时间：2025-12-24
+    </div>
+  </div>
+</body>
+</html>
