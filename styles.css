@@ -404,6 +404,9 @@ tbody tr:hover{background:#fff1e8;}
 .finance-kpi .kpi-val{font-size:16px;}
 .finance-charts{margin-bottom:12px;}
 .finance-table-title{font-weight:900;margin-bottom:8px;}
+.finance-controls{margin:0;}
+.finance-controls .finance-table-title{margin-bottom:0;margin-right:auto;}
+.finance-bp-btn{white-space:nowrap;}
 .finance-empty-row{
   text-align:center;
   color:var(--muted);

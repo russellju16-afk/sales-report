@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "period_start": "2025-08-01",
+    "period_end": "2025-12-31",
+    "currency": "CNY"
+  },
+  "ar": {
+    "segments": {
+      "total": {
+        "kpi": {},
+        "trend": {
+          "months": [],
+          "sales_invoiced": [],
+          "cash_receipts": []
+        },
+        "top_customers": []
+      },
+      "store": {
+        "kpi": {},
+        "trend": {
+          "months": [],
+          "sales_invoiced": [],
+          "cash_receipts": []
+        },
+        "top_customers": []
+      },
+      "nonstore": {
+        "kpi": {},
+        "trend": {
+          "months": [],
+          "sales_invoiced": [],
+          "cash_receipts": []
+        },
+        "top_customers": []
+      }
+    }
+  },
+  "ap": {
+    "kpi": {},
+    "trend": {
+      "months": [],
+      "purchases_invoiced": [],
+      "cash_payments": []
+    },
+    "top_suppliers": []
+  },
+  "po": {
+    "kpi": {},
+    "trend": {
+      "months": []
+    },
+    "top_suppliers": [],
+    "price_trends": {
+      "months": []
+    }
+  },
+  "cash_gap": {
+    "months": [],
+    "net_cash_gap": [],
+    "cum_net_cash_gap": []
+  }
+}

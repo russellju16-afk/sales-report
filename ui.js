@@ -387,11 +387,32 @@ function applyHeaderFiltersForTable(table){
   if(!fr) return;
   const ctrls = [...fr.querySelectorAll('input,select')];
   const rows = [...table.tBodies[0].rows];
+  const dataRows = rows.filter(tr=>!(tr.dataset && tr.dataset.empty === '1') && !(tr.querySelector && tr.querySelector('.finance-empty-row')));
+
+  if(dataRows.length === 0){
+    rows.forEach(tr=>{
+      if(tr.dataset && tr.dataset.empty === '1'){ tr.style.display = ''; return; }
+      if(tr.querySelector && tr.querySelector('.finance-empty-row')){ tr.style.display = ''; return; }
+      tr.style.display = 'none';
+    });
+    try{
+      const id = table.id || '';
+      const m = id.match(/^(total|store|nonstore)_(\w+)_table$/);
+      if(m){
+        const segKey=m[1], type=m[2];
+        const countEl=document.getElementById(segKey+'_'+type+'_count');
+        if(countEl) countEl.innerText = '0';
+      }
+    }catch(e){}
+    return;
+  }
 
   rows.forEach(tr=>{
     const base = (tr.dataset.baseDisplay==='none') ? 'none' : '';
     tr.style.display = base;
     if(base==='none') return;
+    if(tr.dataset && tr.dataset.empty === '1') return;
+    if(tr.querySelector && tr.querySelector('.finance-empty-row')) return;
 
     let ok = true;
     for(let i=0; i<ctrls.length; i++){
@@ -416,7 +437,7 @@ function applyHeaderFiltersForTable(table){
       const segKey=m[1], type=m[2];
       const countEl=document.getElementById(segKey+'_'+type+'_count');
       if(countEl){
-        const visible = rows.filter(r=>r.style.display!=='none').length;
+        const visible = rows.filter(r=>r.style.display!=='none' && !(r.dataset && r.dataset.empty === '1') && !(r.querySelector && r.querySelector('.finance-empty-row'))).length;
         countEl.innerText = String(visible);
       }
     }
@@ -448,6 +469,8 @@ function getColumnSamples(table, colIdx, maxN){
   const tb = table.tBodies && table.tBodies[0];
   if(!tb) return out;
   for(const tr of [...tb.rows]){
+    if(tr.dataset && tr.dataset.empty === '1') continue;
+    if(tr.querySelector && tr.querySelector('.finance-empty-row')) continue;
     const t = (tr.cells[colIdx]?.innerText || '').trim();
     if(t) out.push(t);
     if(out.length>=maxN) break;
