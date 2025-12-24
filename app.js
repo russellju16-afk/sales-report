@@ -24,8 +24,15 @@ function normalizeData(raw){
   const segments = {};
   ['total','store','nonstore'].forEach((key)=>{
     const seg = root[key] || {};
+    const rows = seg.rows || seg.raw_rows || [];
+    let months = seg.months || [];
+    if(!months.length && rows.length){
+      const mset=new Set(rows.map(r=>String(r[0]||'').slice(0,7)).filter(Boolean));
+      months=[...mset].sort();
+    }
     segments[key] = {
-      months: seg.months || [],
+      months,
+      rows,
       monthly: seg.monthly || [],
       cat_monthly: seg.cat_monthly || [],
       products: seg.products || [],
@@ -101,6 +108,32 @@ let currentSeg='total';
 const tabState={};
 const sortState={};
 const TABLE_RANGE={};
+
+const ROW_IDX={
+  date:0,
+  order:1,
+  cust:2,
+  cls:3,
+  name:4,
+  spec:5,
+  prod:6,
+  cat:7,
+  qty:8,
+  sales:9,
+  cost:10,
+  fee:11,
+  gp:12,
+  gpAdj:13,
+  unitPrice:14
+};
+
+function hasRawRows(segKey){
+  return !!(DATA && DATA[segKey] && DATA[segKey].rows && DATA[segKey].rows.length);
+}
+
+function getRawRows(segKey){
+  return hasRawRows(segKey) ? DATA[segKey].rows : [];
+}
 
 function fmtWan(x){const n=Number(x); if(!isFinite(n)) return ''; return (n/10000).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' 万';}
 function fmtYi(x){const n=Number(x); if(!isFinite(n)) return ''; return (n/1e8).toFixed(3)+' 亿';}
@@ -512,15 +545,14 @@ function monthEndDate(month){
 }
 
 function initDateRange(segKey){
-  const months=DATA[segKey].months||[];
   const s=document.getElementById(segKey+'_d_start');
   const e=document.getElementById(segKey+'_d_end');
-  if(!s || !e || !months.length) return;
-  const startDate=months[0]+'-01';
-  const endDate=monthEndDate(months[months.length-1]);
-  s.min=startDate; s.max=endDate;
-  e.min=startDate; e.max=endDate;
-  s.value=startDate; e.value=endDate;
+  if(!s || !e) return;
+  const def=getDefaultDateRange(segKey);
+  if(!def.startDate || !def.endDate) return;
+  s.min=def.startDate; s.max=def.endDate;
+  e.min=def.startDate; e.max=def.endDate;
+  s.value=def.startDate; e.value=def.endDate;
 }
 
 function getRange(segKey){
@@ -532,6 +564,13 @@ function getRange(segKey){
 }
 
 function getDefaultDateRange(segKey){
+  if(hasRawRows(segKey)){
+    const rows=getRawRows(segKey);
+    if(rows.length){
+      const dates=rows.map(r=>r[ROW_IDX.date]).filter(Boolean).sort();
+      return {startDate:dates[0], endDate:dates[dates.length-1]};
+    }
+  }
   const months=DATA[segKey].months||[];
   if(!months.length) return {startDate:'',endDate:''};
   return {startDate:months[0]+'-01', endDate:monthEndDate(months[months.length-1])};
@@ -590,10 +629,10 @@ function resetTableRange(segKey,type){
 }
 
 function resetSegTime(segKey){
-  const months=DATA[segKey].months||[];
-  if(!months.length) return;
-  document.getElementById(segKey+'_d_start').value=months[0]+'-01';
-  document.getElementById(segKey+'_d_end').value=monthEndDate(months[months.length-1]);
+  const def=getDefaultDateRange(segKey);
+  if(!def.startDate || !def.endDate) return;
+  document.getElementById(segKey+'_d_start').value=def.startDate;
+  document.getElementById(segKey+'_d_end').value=def.endDate;
   try{ updateSeg(segKey); }catch(e){ console.error(e); }
 }
 
@@ -650,13 +689,25 @@ function updateSeg(segKey){
 
 function renderKPIs(segKey){
   const {startDate,endDate,startMonth,endMonth}=getRange(segKey);
-  const rows=(DATA[segKey].monthly||[]).filter(r=>monthInRange(r[0],startMonth,endMonth));
   let sales=0,gp=0,fee=0,gpAdj=0;
-  rows.forEach(r=>{
-    const w=getMonthWeight(r[0],startDate,endDate);
-    if(!w) return;
-    sales+=r[1]*w; gp+=r[3]*w; fee+=r[4]*w; gpAdj+=r[5]*w;
-  });
+  if(hasRawRows(segKey)){
+    const rows=getRawRows(segKey);
+    rows.forEach(r=>{
+      const d=r[ROW_IDX.date];
+      if(!dateInRange(d,startDate,endDate)) return;
+      sales+=Number(r[ROW_IDX.sales])||0;
+      gp+=Number(r[ROW_IDX.gp])||0;
+      fee+=Number(r[ROW_IDX.fee])||0;
+      gpAdj+=Number(r[ROW_IDX.gpAdj])||0;
+    });
+  }else{
+    const rows=(DATA[segKey].monthly||[]).filter(r=>monthInRange(r[0],startMonth,endMonth));
+    rows.forEach(r=>{
+      const w=getMonthWeight(r[0],startDate,endDate);
+      if(!w) return;
+      sales+=r[1]*w; gp+=r[3]*w; fee+=r[4]*w; gpAdj+=r[5]*w;
+    });
+  }
   const gm=sales? gp/sales*100 : NaN;
   const gmAdj=sales? gpAdj/sales*100 : NaN;
   document.getElementById(segKey+'_kpis').innerHTML = `
@@ -671,28 +722,59 @@ function renderKPIs(segKey){
 
 function renderOverview(segKey){
   const {startDate,endDate,startMonth,endMonth}=getRange(segKey);
-  const rows=(DATA[segKey].monthly||[]).filter(r=>monthInRange(r[0],startMonth,endMonth));
-  const weightMap=getMonthWeights(startDate,endDate,rows.map(r=>r[0]));
   const months=[];
   const cost=[],gp=[],fee=[],gpAdj=[],gm=[],gmAdj=[],active=[];
-  rows.forEach(r=>{
-    const m=r[0];
-    const w=weightMap.get(m) || 0;
-    if(!w) return;
-    const sales=r[1]*w;
-    const costW=r[2]*w;
-    const gpW=r[3]*w;
-    const feeW=r[4]*w;
-    const gpAdjW=r[5]*w;
-    months.push(m);
-    cost.push(costW);
-    gp.push(gpW);
-    fee.push(feeW);
-    gpAdj.push(gpAdjW);
-    gm.push(sales? gpW/sales*100:null);
-    gmAdj.push(sales? gpAdjW/sales*100:null);
-    active.push((r[7]||0)*w);
-  });
+  if(hasRawRows(segKey)){
+    const map=new Map();
+    const activeMap=new Map();
+    getRawRows(segKey).forEach(r=>{
+      const d=r[ROW_IDX.date];
+      if(!dateInRange(d,startDate,endDate)) return;
+      if(!map.has(d)) map.set(d,{sales:0,cost:0,gp:0,fee:0,gpAdj:0});
+      const o=map.get(d);
+      o.sales+=Number(r[ROW_IDX.sales])||0;
+      o.cost+=Number(r[ROW_IDX.cost])||0;
+      o.gp+=Number(r[ROW_IDX.gp])||0;
+      o.fee+=Number(r[ROW_IDX.fee])||0;
+      o.gpAdj+=Number(r[ROW_IDX.gpAdj])||0;
+      const cust=r[ROW_IDX.cust]||'';
+      if(!activeMap.has(d)) activeMap.set(d,new Set());
+      if(cust) activeMap.get(d).add(cust);
+    });
+    const dates=[...map.keys()].sort();
+    dates.forEach(d=>{
+      const o=map.get(d);
+      months.push(d);
+      cost.push(o.cost);
+      gp.push(o.gp);
+      fee.push(o.fee);
+      gpAdj.push(o.gpAdj);
+      gm.push(o.sales? o.gp/o.sales*100:null);
+      gmAdj.push(o.sales? o.gpAdj/o.sales*100:null);
+      active.push(activeMap.get(d)?activeMap.get(d).size:0);
+    });
+  }else{
+    const rows=(DATA[segKey].monthly||[]).filter(r=>monthInRange(r[0],startMonth,endMonth));
+    const weightMap=getMonthWeights(startDate,endDate,rows.map(r=>r[0]));
+    rows.forEach(r=>{
+      const m=r[0];
+      const w=weightMap.get(m) || 0;
+      if(!w) return;
+      const sales=r[1]*w;
+      const costW=r[2]*w;
+      const gpW=r[3]*w;
+      const feeW=r[4]*w;
+      const gpAdjW=r[5]*w;
+      months.push(m);
+      cost.push(costW);
+      gp.push(gpW);
+      fee.push(feeW);
+      gpAdj.push(gpAdjW);
+      gm.push(sales? gpW/sales*100:null);
+      gmAdj.push(sales? gpAdjW/sales*100:null);
+      active.push((r[7]||0)*w);
+    });
+  }
   if(!months.length){
     ChartManager.setEmpty(segKey+'_chart_sales', '暂无数据');
     ChartManager.setEmpty(segKey+'_chart_fee', '暂无数据');
@@ -759,7 +841,23 @@ function computeGrowthInsights(segKey,startDate,endDate){
   const monthsAll=DATA[segKey].months||[];
   const first=startDate? startDate.slice(0,7):(monthsAll[0]||'');
   const last=endDate? endDate.slice(0,7):(monthsAll[monthsAll.length-1]||'');
-  function sumBy(arr, keyFn, valIdx, monthIdx){
+  function sumByRaw(keyFn){
+    const map=new Map();
+    getRawRows(segKey).forEach(r=>{
+      const d=r[ROW_IDX.date];
+      if(!dateInRange(d,startDate,endDate)) return;
+      const m=String(d||'').slice(0,7);
+      if(m!==first && m!==last) return;
+      const k=keyFn(r);
+      if(!map.has(k)) map.set(k,{first:0,last:0});
+      const o=map.get(k);
+      const v=Number(r[ROW_IDX.gpAdj])||0;
+      if(m===first) o.first+=v;
+      if(m===last) o.last+=v;
+    });
+    return map;
+  }
+  function sumByAgg(arr, keyFn, valIdx, monthIdx){
     const map=new Map();
     for(const r of arr){
       const m=r[monthIdx];
@@ -773,9 +871,15 @@ function computeGrowthInsights(segKey,startDate,endDate){
     }
     return map;
   }
-  const catMap=sumBy(DATA[segKey].cat_monthly, r=>r[1], 6, 0);
-  const prodMap=sumBy(DATA[segKey].products, r=>r[0]+'｜'+r[1], 7, 2);
-  const custMap=sumBy(DATA[segKey].customers, r=>r[0]+'｜'+r[1], 7, 2);
+  const catMap=hasRawRows(segKey)
+    ? sumByRaw(r=>r[ROW_IDX.cat])
+    : sumByAgg(DATA[segKey].cat_monthly, r=>r[1], 6, 0);
+  const prodMap=hasRawRows(segKey)
+    ? sumByRaw(r=>r[ROW_IDX.prod]+'｜'+r[ROW_IDX.cat])
+    : sumByAgg(DATA[segKey].products, r=>r[0]+'｜'+r[1], 7, 2);
+  const custMap=hasRawRows(segKey)
+    ? sumByRaw(r=>r[ROW_IDX.cust]+'｜'+r[ROW_IDX.cls])
+    : sumByAgg(DATA[segKey].customers, r=>r[0]+'｜'+r[1], 7, 2);
 
   function topDelta(map,n){
     const arr=[...map.entries()].map(([k,v])=>({k,d:v.last-v.first}));
@@ -796,15 +900,27 @@ function computeGrowthInsights(segKey,startDate,endDate){
 function computeStructureHints(segKey,startDate,endDate){
   const startMonth=startDate? startDate.slice(0,7):'';
   const endMonth=endDate? endDate.slice(0,7):'';
-  const cats=DATA[segKey].cat_monthly.filter(r=>monthInRange(r[0],startMonth,endMonth));
   const map=new Map();
-  for(const r of cats){
-    const k=r[1];
-    if(!map.has(k)) map.set(k,{sales:0,gpAdj:0});
-    const o=map.get(k);
-    const w=getMonthWeight(r[0],startDate,endDate);
-    if(!w) continue;
-    o.sales+=r[2]*w; o.gpAdj+=r[6]*w;
+  if(hasRawRows(segKey)){
+    getRawRows(segKey).forEach(r=>{
+      const d=r[ROW_IDX.date];
+      if(!dateInRange(d,startDate,endDate)) return;
+      const k=r[ROW_IDX.cat];
+      if(!map.has(k)) map.set(k,{sales:0,gpAdj:0});
+      const o=map.get(k);
+      o.sales+=Number(r[ROW_IDX.sales])||0;
+      o.gpAdj+=Number(r[ROW_IDX.gpAdj])||0;
+    });
+  }else{
+    const cats=DATA[segKey].cat_monthly.filter(r=>monthInRange(r[0],startMonth,endMonth));
+    for(const r of cats){
+      const k=r[1];
+      if(!map.has(k)) map.set(k,{sales:0,gpAdj:0});
+      const o=map.get(k);
+      const w=getMonthWeight(r[0],startDate,endDate);
+      if(!w) continue;
+      o.sales+=r[2]*w; o.gpAdj+=r[6]*w;
+    }
   }
   const arr=[...map.entries()].map(([k,v])=>({k,sales:v.sales,gpAdj:v.gpAdj,gm:v.sales? v.gpAdj/v.sales*100:null}));
   arr.sort((a,b)=>b.gpAdj-a.gpAdj);
@@ -817,6 +933,119 @@ function computeStructureHints(segKey,startDate,endDate){
 
 function renderCategory(segKey){
   const global=getRange(segKey);
+  if(hasRawRows(segKey)){
+    const rows=getRawRows(segKey).filter(r=>dateInRange(r[ROW_IDX.date],global.startDate,global.endDate));
+    const monthSet=new Set();
+    const catSet=new Set();
+    const byMonth=new Map();
+    rows.forEach(r=>{
+      const m=String(r[ROW_IDX.date]||'').slice(0,7);
+      const c=r[ROW_IDX.cat];
+      if(!m || !c) return;
+      monthSet.add(m); catSet.add(c);
+      if(!byMonth.has(m)) byMonth.set(m,new Map());
+      const cm=byMonth.get(m);
+      if(!cm.has(c)) cm.set(c,{sales:0,gpAdj:0});
+      const o=cm.get(c);
+      o.sales+=Number(r[ROW_IDX.sales])||0;
+      o.gpAdj+=Number(r[ROW_IDX.gpAdj])||0;
+    });
+    const months=[...monthSet].sort();
+    const cats=[...catSet].sort();
+    if(!months.length){
+      ChartManager.setEmpty(segKey+'_chart_cat_sales', '暂无数据');
+      ChartManager.setEmpty(segKey+'_chart_cat_gp', '暂无数据');
+      ChartManager.setEmpty(segKey+'_chart_cat_rank', '暂无数据');
+    }else{
+      const by={};
+      cats.forEach(c=>by[c]={sales:[],gpAdj:[]});
+      months.forEach(m=>{
+        const cm=byMonth.get(m)||new Map();
+        cats.forEach(c=>{
+          const v=cm.get(c);
+          by[c].sales.push(v?v.sales:0);
+          by[c].gpAdj.push(v?v.gpAdj:0);
+        });
+      });
+
+      ChartManager.setOption(segKey+'_chart_cat_sales',{
+        tooltip:{trigger:'axis'},
+        legend:{top:10,type:'scroll'},
+        grid:{left:50,right:20,top:60,bottom:40},
+        xAxis:{type:'category',data:months},
+        yAxis:{type:'value',name:'销售额（元）'},
+        series: cats.map(c=>({name:c,type:'bar',stack:'sales',data:by[c].sales}))
+      });
+
+      ChartManager.setOption(segKey+'_chart_cat_gp',{
+        tooltip:{trigger:'axis'},
+        legend:{top:10,type:'scroll'},
+        grid:{left:50,right:20,top:60,bottom:40},
+        xAxis:{type:'category',data:months},
+        yAxis:{type:'value',name:'毛利_扣销售费（元）'},
+        series: cats.map(c=>({name:c,type:'bar',stack:'gp',data:by[c].gpAdj}))
+      });
+
+      const agg=cats.map(c=>({cat:c,sales:by[c].sales.reduce((a,b)=>a+b,0),gpAdj:by[c].gpAdj.reduce((a,b)=>a+b,0)}));
+      agg.forEach(x=>x.gm=x.sales? x.gpAdj/x.sales*100:null);
+      agg.sort((a,b)=>b.gpAdj-a.gpAdj);
+      const top=agg.slice(0,10);
+      ChartManager.setOption(segKey+'_chart_cat_rank',{
+        tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
+        grid:{left:140,right:20,top:40,bottom:40},
+        xAxis:{type:'value',name:'毛利（元）'},
+        yAxis:{type:'category',data:top.map(x=>x.cat),inverse:true},
+        series:[{name:'毛利_扣销售费',type:'bar',data:top.map(x=>x.gpAdj)}]
+      });
+    }
+
+    syncTableRangeInputs(segKey,'category');
+    const tableRange=getTableRange(segKey,'category');
+    const tableRows=getRawRows(segKey).filter(r=>dateInRange(r[ROW_IDX.date],tableRange.startDate,tableRange.endDate));
+    const tbody=document.querySelector('#'+segKey+'_category_table tbody');
+    if(tbody){
+      tbody.innerHTML='';
+      const map2=new Map();
+      const orders=new Map();
+      for(const r of tableRows){
+        const k=r[ROW_IDX.cat];
+        if(!k) continue;
+        if(!map2.has(k)) map2.set(k,{sales:0,cost:0,gp:0,fee:0,gpAdj:0,qty:0});
+        const o=map2.get(k);
+        o.sales+=Number(r[ROW_IDX.sales])||0;
+        o.cost+=Number(r[ROW_IDX.cost])||0;
+        o.gp+=Number(r[ROW_IDX.gp])||0;
+        o.fee+=Number(r[ROW_IDX.fee])||0;
+        o.gpAdj+=Number(r[ROW_IDX.gpAdj])||0;
+        o.qty+=Number(r[ROW_IDX.qty])||0;
+        if(!orders.has(k)) orders.set(k,new Set());
+        const ord=r[ROW_IDX.order];
+        if(ord) orders.get(k).add(ord);
+      }
+      const list=[...map2.entries()].map(([k,v])=>({
+        k,
+        ...v,
+        orders:(orders.get(k)?orders.get(k).size:0),
+        gm:v.sales? v.gp/v.sales*100:null,
+        gm2:v.sales? v.gpAdj/v.sales*100:null
+      }));
+      list.sort((a,b)=>b.gpAdj-a.gpAdj);
+      for(const o of list){
+        const tr=document.createElement('tr');
+        const cells=[o.k,fmtNum(o.sales),fmtNum(o.gp),fmtPct(o.gm),fmtNum(o.fee),fmtNum(o.gpAdj),fmtPct(o.gm2),fmtNum(o.qty),fmtNum(o.orders)];
+        cells.forEach((c,i)=>{const td=document.createElement('td');
+          if(i===8){td.appendChild(createOrderLink(segKey,'category',`品类｜${o.k}`,{cat:o.k},c));}
+          else{td.textContent=c;}
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      }
+      document.getElementById(segKey+'_category_count').innerText=String(list.length);
+      filterTable(segKey,'category');
+    }
+    return;
+  }
+
   const rows=DATA[segKey].cat_monthly.filter(r=>monthInRange(r[0],global.startMonth,global.endMonth));
   const monthsAll=[...new Set(rows.map(r=>r[0]))].sort();
   const weightMap=getMonthWeights(global.startDate,global.endDate,monthsAll);
@@ -1158,6 +1387,37 @@ function exportCatTonCSV(segKey){
 }
 
 function buildProductRows(segKey, range){
+  if(hasRawRows(segKey)){
+    const map=new Map();
+    const orderMap=new Map();
+    getRawRows(segKey).forEach(r=>{
+      const d=r[ROW_IDX.date];
+      if(!dateInRange(d,range.startDate,range.endDate)) return;
+      const prod=r[ROW_IDX.prod];
+      const cat=r[ROW_IDX.cat];
+      const key=prod+'||'+cat;
+      if(!map.has(key)) map.set(key,{prod,cat,sales:0,cost:0,gp:0,fee:0,gpAdj:0,qty:0,orders:0,lines:0});
+      const o=map.get(key);
+      o.sales+=Number(r[ROW_IDX.sales])||0;
+      o.cost+=Number(r[ROW_IDX.cost])||0;
+      o.gp+=Number(r[ROW_IDX.gp])||0;
+      o.fee+=Number(r[ROW_IDX.fee])||0;
+      o.gpAdj+=Number(r[ROW_IDX.gpAdj])||0;
+      o.qty+=Number(r[ROW_IDX.qty])||0;
+      o.lines+=1;
+      if(!orderMap.has(key)) orderMap.set(key,new Set());
+      const ord=r[ROW_IDX.order];
+      if(ord) orderMap.get(key).add(ord);
+    });
+    const rows=[...map.entries()].map(([key,o])=>{
+      o.orders=orderMap.get(key)?orderMap.get(key).size:0;
+      o.gm=o.sales? o.gp/o.sales*100:null;
+      o.gm2=o.sales? o.gpAdj/o.sales*100:null;
+      return o;
+    });
+    rows.sort((a,b)=>b.gpAdj-a.gpAdj);
+    return rows;
+  }
   const arr=DATA[segKey].products.filter(r=>monthInRange(r[2],range.startMonth,range.endMonth));
   const weightMap=getMonthWeights(range.startDate,range.endDate,[...new Set(arr.map(r=>r[2]))]);
   const map=new Map();
@@ -1176,6 +1436,35 @@ function buildProductRows(segKey, range){
 }
 
 function buildCustomerRows(segKey, range){
+  if(hasRawRows(segKey)){
+    const map=new Map();
+    const orderMap=new Map();
+    getRawRows(segKey).forEach(r=>{
+      const d=r[ROW_IDX.date];
+      if(!dateInRange(d,range.startDate,range.endDate)) return;
+      const cust=r[ROW_IDX.cust];
+      const cls=r[ROW_IDX.cls];
+      const key=cust+'||'+cls;
+      if(!map.has(key)) map.set(key,{cust,cls,sales:0,gp:0,fee:0,gpAdj:0,orders:0,lines:0});
+      const o=map.get(key);
+      o.sales+=Number(r[ROW_IDX.sales])||0;
+      o.gp+=Number(r[ROW_IDX.gp])||0;
+      o.fee+=Number(r[ROW_IDX.fee])||0;
+      o.gpAdj+=Number(r[ROW_IDX.gpAdj])||0;
+      o.lines+=1;
+      if(!orderMap.has(key)) orderMap.set(key,new Set());
+      const ord=r[ROW_IDX.order];
+      if(ord) orderMap.get(key).add(ord);
+    });
+    const rows=[...map.entries()].map(([key,o])=>{
+      o.orders=orderMap.get(key)?orderMap.get(key).size:0;
+      o.gm=o.sales? o.gp/o.sales*100:null;
+      o.gm2=o.sales? o.gpAdj/o.sales*100:null;
+      return o;
+    });
+    rows.sort((a,b)=>b.gpAdj-a.gpAdj);
+    return rows;
+  }
   const arr=DATA[segKey].customers.filter(r=>monthInRange(r[2],range.startMonth,range.endMonth));
   const weightMap=getMonthWeights(range.startDate,range.endDate,[...new Set(arr.map(r=>r[2]))]);
   const map=new Map();
@@ -1284,6 +1573,55 @@ function renderCustomers(segKey){
 }
 
 function buildLifecycleData(segKey, range){
+  if(hasRawRows(segKey)){
+    const rows=getRawRows(segKey).filter(r=>dateInRange(r[ROW_IDX.date],range.startDate,range.endDate));
+    const monthSet=new Set(rows.map(r=>String(r[ROW_IDX.date]||'').slice(0,7)).filter(Boolean));
+    const months=[...monthSet].sort();
+    const byMonth=new Map(months.map(m=>[m,new Map()]));
+    const orderMap=new Map();
+    rows.forEach(r=>{
+      const m=String(r[ROW_IDX.date]||'').slice(0,7);
+      if(!byMonth.has(m)) return;
+      const key=(r[ROW_IDX.cust]||'')+'||'+(r[ROW_IDX.cls]||'');
+      const cur=byMonth.get(m);
+      if(!cur.has(key)) cur.set(key,{cust:r[ROW_IDX.cust],cls:r[ROW_IDX.cls],sales:0,gpAdj:0,orders:0,lines:0});
+      const o=cur.get(key);
+      o.sales+=Number(r[ROW_IDX.sales])||0;
+      o.gpAdj+=Number(r[ROW_IDX.gpAdj])||0;
+      o.lines+=1;
+      const ord=r[ROW_IDX.order];
+      const okey=m+'||'+key;
+      if(!orderMap.has(okey)) orderMap.set(okey,new Set());
+      if(ord) orderMap.get(okey).add(ord);
+    });
+
+    const newArr=[], lostArr=[];
+    for(let i=0;i<months.length;i++){
+      const m=months[i];
+      const cur=byMonth.get(m)||new Map();
+      const prev=(i>0)? (byMonth.get(months[i-1])||new Map()) : new Map();
+      const next=(i<months.length-1)? (byMonth.get(months[i+1])||new Map()) : new Map();
+      for(const [key,r] of cur.entries()){
+        const sales=r.sales||0;
+        const gpAdj=r.gpAdj||0;
+        const gm2=sales? (gpAdj/sales*100):null;
+        const ordSet=orderMap.get(m+'||'+key);
+        const row=[m,r.cust,r.cls,sales,gpAdj,gm2,ordSet?ordSet.size:0,r.lines||0];
+        if(!prev.has(key)) newArr.push(row);
+        if(!next.has(key)) lostArr.push(row);
+      }
+    }
+    newArr.sort((a,b)=>a[0].localeCompare(b[0]) || (b[3]-a[3]));
+    lostArr.sort((a,b)=>a[0].localeCompare(b[0]) || (b[3]-a[3]));
+
+    const initMap=()=>new Map(months.map(m=>[m,{cnt:0,sales:0,gp:0}]));
+    const newBy=initMap(), lostBy=initMap();
+    newArr.forEach(r=>{const o=newBy.get(r[0]); if(o){o.cnt+=1;o.sales+=r[3];o.gp+=r[4];}});
+    lostArr.forEach(r=>{const o=lostBy.get(r[0]); if(o){o.cnt+=1;o.sales+=r[3];o.gp+=r[4];}});
+
+    return {months,newArr,lostArr,newBy,lostBy};
+  }
+
   const months=(DATA[segKey].months||[]).filter(m=>monthInRange(m,range.startMonth,range.endMonth));
   const weightMap=getMonthWeights(range.startDate,range.endDate,months);
   const cuRows=DATA[segKey].customers.filter(r=>monthInRange(r[2],range.startMonth,range.endMonth));
@@ -1407,6 +1745,7 @@ function fillLifecycleTables(segKey,newData,lostData){
 }
 
 function renderAbnormal(segKey){
+  ensureAbnormalOrders(segKey);
   const global=getRange(segKey);
   const arrGlobal=DATA[segKey].abnormal_orders.filter(r=>{
     const d=r[0];
@@ -1465,6 +1804,70 @@ function renderAbnReasonChart(segKey, rows){
     yAxis:{type:'category',data:arr.map(x=>x.k),inverse:true},
     series:[{name:'订单数',type:'bar',data:arr.map(x=>x.v)}]
   });
+}
+
+function ensureAbnormalOrders(segKey){
+  if((DATA[segKey].abnormal_orders||[]).length || !hasRawRows(segKey)) return;
+  const orders=new Map();
+  const priceMap=new Map();
+  getRawRows(segKey).forEach(r=>{
+    const date=r[ROW_IDX.date];
+    const orderNo=r[ROW_IDX.order];
+    if(!date || !orderNo) return;
+    const key=date+'||'+orderNo;
+    if(!orders.has(key)){
+      orders.set(key,{
+        date,
+        orderNo,
+        cust:r[ROW_IDX.cust]||'',
+        cls:r[ROW_IDX.cls]||'',
+        sales:0,
+        gpAdj:0,
+        lines:0,
+        qtyBad:false,
+        costBad:false,
+        priceDiff:false
+      });
+    }
+    const o=orders.get(key);
+    o.sales+=Number(r[ROW_IDX.sales])||0;
+    o.gpAdj+=Number(r[ROW_IDX.gpAdj])||0;
+    o.lines+=1;
+    const qty=Number(r[ROW_IDX.qty]);
+    const cost=Number(r[ROW_IDX.cost]);
+    if(!isFinite(qty) || qty<=0) o.qtyBad=true;
+    if(!isFinite(cost) || cost<=0) o.costBad=true;
+
+    const pkey=date+'||'+(r[ROW_IDX.cust]||'')+'||'+(r[ROW_IDX.prod]||'');
+    if(!priceMap.has(pkey)) priceMap.set(pkey,{prices:new Set(), orders:new Set()});
+    const pm=priceMap.get(pkey);
+    const price=Number(r[ROW_IDX.unitPrice]);
+    if(isFinite(price) && price>0) pm.prices.add(price);
+    pm.orders.add(key);
+  });
+
+  priceMap.forEach(pm=>{
+    if(pm.prices.size>1){
+      pm.orders.forEach(key=>{
+        const o=orders.get(key);
+        if(o) o.priceDiff=true;
+      });
+    }
+  });
+
+  const res=[];
+  orders.forEach(o=>{
+    const reasons=[];
+    const gm2=o.sales? (o.gpAdj/o.sales*100):null;
+    if(o.gpAdj<0) reasons.push('倒挂/亏损');
+    if(gm2!==null && gm2<0.2) reasons.push('低毛利(<0.2%)');
+    if(o.qtyBad) reasons.push('数量异常');
+    if(o.costBad) reasons.push('成本异常');
+    if(o.priceDiff) reasons.push('同日同客同品不同价');
+    if(!reasons.length) return;
+    res.push([o.date,o.orderNo,o.cust,o.cls,o.sales,o.gpAdj,gm2,o.lines,reasons.join('｜'),Math.abs(o.gpAdj||0)]);
+  });
+  DATA[segKey].abnormal_orders=res;
 }
 
 function filterTable(segKey,type){

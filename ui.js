@@ -4,6 +4,15 @@ var ORDER_MAP_CATTON = window.ORDER_MAP_CATTON || {};
 var CAT_TON = window.CAT_TON || {};
 var CAT_TON_META = window.CAT_TON_META || {};
 
+const RAW_IDX = {
+  date: 0,
+  order: 1,
+  cust: 2,
+  cls: 3,
+  prod: 6,
+  cat: 7
+};
+
 function _uniqSorted(arrs){
   const s=new Set();
   (arrs||[]).forEach(a=>{(a||[]).forEach(x=>s.add(x));});
@@ -23,6 +32,23 @@ function _monthsInCurrentRange(segKey,type){
   return months.filter(m=>monthInRange(m, start, end));
 }
 
+function _rowsInRange(segKey,type){
+  if(!(DATA && DATA[segKey] && Array.isArray(DATA[segKey].rows))) return null;
+  let range = null;
+  if(type && typeof getTableRange === 'function'){
+    try{ range = getTableRange(segKey,type); }catch(e){}
+  }
+  if(!range && typeof getRange === 'function') range = getRange(segKey);
+  const start = range && range.startDate ? range.startDate : '';
+  const end = range && range.endDate ? range.endDate : '';
+  const rows = DATA[segKey].rows || [];
+  if(!start || !end) return rows.slice();
+  return rows.filter(r=>{
+    const d = r[RAW_IDX.date];
+    return d && d >= start && d <= end;
+  });
+}
+
 function getOrderList(segKey,type,info){
   try{
     if(type==='catton'){
@@ -34,6 +60,33 @@ function getOrderList(segKey,type,info){
         return (segMap2.week && segMap2.week[`${period}||${cat}`] ? segMap2.week[`${period}||${cat}`] : []).slice();
       }
       return (segMap2.month && segMap2.month[`${period}||${cat}`] ? segMap2.month[`${period}||${cat}`] : []).slice();
+    }
+
+    if(DATA && DATA[segKey] && Array.isArray(DATA[segKey].rows)){
+      const rows=_rowsInRange(segKey,type) || [];
+      if(type==='category'){
+        const cat=(info&&info.cat)||'';
+        return _uniqSorted(rows.filter(r=>r[RAW_IDX.cat]===cat).map(r=>r[RAW_IDX.order]));
+      }
+      if(type==='product'){
+        const prod=(info&&info.prod)||'';
+        const cat=(info&&info.cat)||'';
+        return _uniqSorted(rows.filter(r=>r[RAW_IDX.prod]===prod && r[RAW_IDX.cat]===cat).map(r=>r[RAW_IDX.order]));
+      }
+      if(type==='customer'){
+        const cust=(info&&info.cust)||'';
+        const cls=(info&&info.cls)||'';
+        return _uniqSorted(rows.filter(r=>r[RAW_IDX.cust]===cust && r[RAW_IDX.cls]===cls).map(r=>r[RAW_IDX.order]));
+      }
+      if(type==='new' || type==='lost'){
+        const month=(info&&info.month)||'';
+        const cust=(info&&info.cust)||'';
+        const cls=(info&&info.cls)||'';
+        return _uniqSorted(rows.filter(r=>{
+          const d=r[RAW_IDX.date]||'';
+          return d.startsWith(month) && r[RAW_IDX.cust]===cust && r[RAW_IDX.cls]===cls;
+        }).map(r=>r[RAW_IDX.order]));
+      }
     }
 
     const segMap = (ORDER_MAP||{})[segKey];
