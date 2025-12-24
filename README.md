@@ -7,3 +7,5 @@
 - 表头筛选可清空
 - 订单明细弹窗点击仍可用（含复制/搜索）
 - 图表切换 Tab/维度后不变形（必要时 resizeAll）
+- Finance Tab：AR/AP/PO KPI、图表、Top 列表有数据/无数据时均可正常展示
+- BP 报告入口：bp.latest_path 存在时显示链接并可点击跳转

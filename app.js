@@ -5,6 +5,7 @@ var CAT_TON = window.CAT_TON || {};
 var CAT_TON_META = window.CAT_TON_META || {oil_density:0.92, fallback_bag_kg:1, missing_weight_lines:0};
 
 const DATA_META = { generatedAt: null };
+const BP_META = { latest_path: '', title: '', highlights: [] };
 const STATE_MANAGER = window.StateManager || null;
 let BOOTSTRAP_INFLIGHT = false;
 let APP_EVENTS_BOUND = false;
@@ -43,7 +44,8 @@ function normalizeData(raw){
       customers: seg.customers || [],
       new_customers: seg.new_customers || [],
       lost_customers: seg.lost_customers || [],
-      abnormal_orders: seg.abnormal_orders || []
+      abnormal_orders: seg.abnormal_orders || [],
+      finance: seg.finance || {}
     };
   });
   return {
@@ -52,7 +54,8 @@ function normalizeData(raw){
     orderMapCatTon: root.order_map_catton || root.orderMapCatTon || raw.order_map_catton || raw.orderMapCatTon || {},
     catTon: root.cat_ton || root.catTon || raw.cat_ton || raw.catTon || {},
     catTonMeta: root.cat_ton_meta || root.catTonMeta || raw.cat_ton_meta || raw.catTonMeta || {},
-    generatedAt: raw && raw.generatedAt ? raw.generatedAt : (root.generatedAt || null)
+    generatedAt: raw && raw.generatedAt ? raw.generatedAt : (root.generatedAt || null),
+    bp: raw.bp || root.bp || {}
   };
 }
 
@@ -105,6 +108,9 @@ async function bootstrap(){
     CAT_TON = normalized.catTon || {};
     CAT_TON_META = Object.assign({oil_density:0.92, fallback_bag_kg:1, missing_weight_lines:0}, normalized.catTonMeta || {});
     DATA_META.generatedAt = normalized.generatedAt;
+    BP_META.latest_path = normalized.bp && normalized.bp.latest_path ? normalized.bp.latest_path : '';
+    BP_META.title = normalized.bp && normalized.bp.title ? normalized.bp.title : '';
+    BP_META.highlights = (normalized.bp && Array.isArray(normalized.bp.highlights)) ? normalized.bp.highlights : [];
 
     const ts = DATA_META.generatedAt ? ('数据更新时间：' + DATA_META.generatedAt) : '数据已加载';
     showDataStatus(true, ts);
@@ -222,6 +228,7 @@ function makeSegHTML(segKey){
       <button class="tabbtn" data-seg="${segKey}" data-tab="customer" onclick="showTab('${segKey}','customer')">客户</button>
       <button class="tabbtn" data-seg="${segKey}" data-tab="lifecycle" onclick="showTab('${segKey}','lifecycle')">新增/流失客户</button>
       <button class="tabbtn" data-seg="${segKey}" data-tab="abnormal" onclick="showTab('${segKey}','abnormal')">异常订单</button>
+      <button class="tabbtn" data-seg="${segKey}" data-tab="finance" onclick="showTab('${segKey}','finance')">财务</button>
     </div>
 
     <div class="section active" id="${segKey}_overview">
@@ -363,6 +370,109 @@ function makeSegHTML(segKey){
         </div>
       </div>
       ${makeTableShell(segKey,'abnormal')}
+    </div>
+
+    <div class="section" id="${segKey}_finance">
+      <div class="finance-empty" id="${segKey}_finance_empty">暂无数据</div>
+      <div class="finance-content" id="${segKey}_finance_content">
+        <div class="finance-block card">
+          <div class="finance-block-hd">
+            <div>
+              <div class="finance-title">应收 AR</div>
+              <div class="finance-meta">截至：<span id="${segKey}_finance_ar_asof">—</span></div>
+            </div>
+          </div>
+          <div class="finance-kpis" id="${segKey}_finance_ar_kpis"></div>
+          <div class="grid2 finance-charts">
+            <div class="card"><div id="${segKey}_finance_ar_trend" class="plot-sm"></div></div>
+            <div class="card"><div id="${segKey}_finance_ar_aging" class="plot-sm"></div></div>
+          </div>
+          <div class="table-wrap finance-table">
+            <div class="finance-table-title">Top 逾期客户</div>
+            <div class="table-scroll" style="max-height:320px;">
+              <table id="${segKey}_finance_ar_top_table">
+                <thead><tr>
+                  <th>客户</th>
+                  <th>逾期金额</th>
+                  <th>应收余额</th>
+                  <th>最大逾期天数</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="finance-block card">
+          <div class="finance-block-hd">
+            <div>
+              <div class="finance-title">应付 AP</div>
+              <div class="finance-meta">截至：<span id="${segKey}_finance_ap_asof">—</span></div>
+            </div>
+          </div>
+          <div class="finance-kpis" id="${segKey}_finance_ap_kpis"></div>
+          <div class="grid2 finance-charts">
+            <div class="card"><div id="${segKey}_finance_ap_trend" class="plot-sm"></div></div>
+            <div class="card"><div id="${segKey}_finance_ap_aging" class="plot-sm"></div></div>
+          </div>
+          <div class="table-wrap finance-table">
+            <div class="finance-table-title">Top 到期供应商</div>
+            <div class="table-scroll" style="max-height:320px;">
+              <table id="${segKey}_finance_ap_top_table">
+                <thead><tr>
+                  <th>供应商</th>
+                  <th>到期金额</th>
+                  <th>应付余额</th>
+                  <th>最大逾期天数</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="finance-block card">
+          <div class="finance-block-hd">
+            <div>
+              <div class="finance-title">采购 PO</div>
+              <div class="finance-meta">截至：<span id="${segKey}_finance_po_asof">—</span></div>
+            </div>
+          </div>
+          <div class="finance-kpis" id="${segKey}_finance_po_kpis"></div>
+          <div class="grid2 finance-charts">
+            <div class="card"><div id="${segKey}_finance_po_trend" class="plot-sm"></div></div>
+            <div class="card"><div id="${segKey}_finance_po_open" class="plot-sm"></div></div>
+          </div>
+          <div class="table-wrap finance-table">
+            <div class="finance-table-title">未清 PO 列表</div>
+            <div class="table-scroll" style="max-height:360px;">
+              <table id="${segKey}_finance_po_open_table">
+                <thead><tr>
+                  <th>PO号</th>
+                  <th>供应商</th>
+                  <th>下单日</th>
+                  <th>预计到货</th>
+                  <th>逾期天数</th>
+                  <th>金额</th>
+                  <th>状态</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="finance-block card finance-wc">
+          <div class="finance-block-hd">
+            <div>
+              <div class="finance-title">营运资本小结</div>
+              <div class="finance-meta">NWC / CCC 视角</div>
+            </div>
+          </div>
+          <div class="finance-kpis finance-kpis-compact" id="${segKey}_finance_wc_kpis"></div>
+          <div class="finance-insight" id="${segKey}_finance_wc_insight"></div>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -653,6 +763,36 @@ function updatePageMeta(){
       }
     }
   }
+  updateBpEntry();
+}
+
+function updateBpEntry(){
+  const entry = document.getElementById('bp_entry');
+  if(!entry) return;
+  const link = document.getElementById('bp_link');
+  const highlights = document.getElementById('bp_highlights');
+  const path = BP_META && BP_META.latest_path ? String(BP_META.latest_path).trim() : '';
+
+  if(!path){
+    entry.classList.remove('show');
+    if(link) link.removeAttribute('href');
+    if(highlights) highlights.textContent = '';
+    return;
+  }
+
+  entry.classList.add('show');
+  if(link){
+    link.href = path;
+    link.textContent = BP_META.title ? BP_META.title : '财务BP报告';
+    if(BP_META.title) link.title = BP_META.title;
+  }
+  if(highlights){
+    if(Array.isArray(BP_META.highlights) && BP_META.highlights.length){
+      highlights.textContent = BP_META.highlights.join('｜');
+    }else{
+      highlights.textContent = '';
+    }
+  }
 }
 
 function initDateRange(segKey){
@@ -782,6 +922,9 @@ function showTab(segKey, tabKey){
   seg.querySelectorAll('.tabbtn').forEach(x=>x.classList.remove('active'));
   document.getElementById(segKey+'_'+tabKey).classList.add('active');
   [...seg.querySelectorAll('.tabbtn')].find(b=>b.dataset.tab===tabKey).classList.add('active');
+  if(tabKey === 'finance' && typeof renderFinance === 'function'){
+    try{ renderFinance(segKey); }catch(e){ console.error(e); }
+  }
   if(window.ChartManager){
     setTimeout(()=>ChartManager.resizeAll(), 40);
   }
@@ -797,6 +940,9 @@ function updateSeg(segKey){
   renderCustomers(segKey);
   renderLifecycle(segKey);
   renderAbnormal(segKey);
+  if(tabState[segKey] === 'finance' && typeof renderFinance === 'function'){
+    try{ renderFinance(segKey); }catch(e){ console.error(e); }
+  }
 
   try{ installAllHeaderFilters(segKey); }catch(e){ console.error(e); }
   if(window.ChartManager){

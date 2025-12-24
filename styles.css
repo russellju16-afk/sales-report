@@ -67,6 +67,27 @@ body::after{
   border-radius:14px;
   box-shadow:var(--shadow-sm);
 }
+.bp-entry{
+  display:none;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:8px;
+}
+.bp-entry.show{display:flex;}
+.bp-link{
+  color:var(--accent-2);
+  font-weight:800;
+  text-decoration:none;
+  border-bottom:1px dashed rgba(20,138,120,.45);
+  padding-bottom:2px;
+}
+.bp-link:hover{color:var(--ink);}
+.bp-highlights{
+  font-size:12px;
+  color:var(--muted);
+  font-weight:700;
+}
 #data_status{
   display:flex;
   align-items:center;
@@ -350,6 +371,57 @@ tbody tr:hover{background:#fff1e8;}
 .insight .small{color:var(--muted);font-size:12px;line-height:1.6;}
 .hint{color:var(--muted);font-size:12px;margin-top:10px;}
 
+.finance-empty{
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  border-radius:var(--radius);
+  border:1px dashed var(--stroke);
+  background:rgba(255,255,255,.7);
+  color:var(--muted);
+  font-weight:800;
+}
+.finance-empty.show{display:flex;}
+.finance-content{display:flex;flex-direction:column;gap:14px;}
+.finance-block-hd{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+  flex-wrap:wrap;
+}
+.finance-title{font-size:18px;font-weight:900;}
+.finance-meta{font-size:12px;color:var(--muted);font-weight:700;}
+.finance-kpis{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(160px,1fr));
+  gap:10px;
+  margin-bottom:12px;
+}
+.finance-kpis-compact{grid-template-columns:repeat(5,minmax(140px,1fr));}
+.finance-kpi .kpi-val{font-size:16px;}
+.finance-charts{margin-bottom:12px;}
+.finance-table-title{font-weight:900;margin-bottom:8px;}
+.finance-empty-row{
+  text-align:center;
+  color:var(--muted);
+  font-weight:800;
+  padding:12px;
+}
+.finance-insight{
+  margin-top:10px;
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.6;
+  background:rgba(20,138,120,.08);
+  border:1px solid rgba(20,138,120,.2);
+  border-radius:12px;
+  padding:10px 12px;
+  font-weight:700;
+}
+
 @media (max-width:1100px){
   .kpis{grid-template-columns:1fr 1fr;}
   .grid2{grid-template-columns:1fr;}
@@ -357,6 +429,8 @@ tbody tr:hover{background:#fff1e8;}
   .insight-grid{grid-template-columns:1fr;}
   .timebox-wrap{align-items:flex-start;}
   .time-hint{text-align:left;}
+  .finance-kpis{grid-template-columns:1fr 1fr;}
+  .finance-kpis-compact{grid-template-columns:1fr 1fr;}
 }
 
 @keyframes fadeUp{
