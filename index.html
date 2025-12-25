@@ -23,6 +23,17 @@
   </div>
 </div>
 
+<div id="debug_panel" class="report-debug hidden">
+  <div class="report-debug-title">自检面板（debug=1）</div>
+  <div class="report-debug-grid">
+    <div id="debug_load_time">加载耗时：—</div>
+    <div id="debug_data_status">latest.json：—</div>
+    <div id="debug_finance_status">finance_latest.json：—</div>
+  </div>
+  <div class="report-debug-title">缺失字段</div>
+  <ul class="report-debug-list" id="debug_missing_list"></ul>
+</div>
+
 <div class="report-toolbar" id="report_toolbar">
   <div class="report-toolbar-main">
     <div class="report-title">经营分析&财务分析总报告（CFO版）</div>
@@ -37,9 +48,11 @@
   <div class="report-toolbar-actions">
     <a class="btn" href="./dashboard.html">打开看板</a>
     <a class="btn" href="./reports/bp_latest.html" target="_blank" rel="noopener">打开BP</a>
+    <button class="btn" id="export_snapshot_btn">下载本期摘要 JSON</button>
     <button class="btn" id="print_btn">打印</button>
     <button class="btn" id="export_actions_btn">导出动作CSV</button>
     <button class="btn" id="export_warnings_btn">导出预警CSV</button>
+    <a class="btn" href="https://github.com/russellju16-afk/sales-report" target="_blank" rel="noopener">打开仓库/反馈</a>
   </div>
 </div>
 
@@ -126,15 +139,67 @@
         </div>
       </details>
 
+      <details class="report-detail">
+        <summary>口径&阈值（可折叠）</summary>
+        <ul class="report-list" id="threshold_list">
+          <li>加载中…</li>
+        </ul>
+      </details>
+
       <div class="report-conclusion-grid" id="sec0_conclusions"></div>
     </section>
 
     <section id="sec-1" class="report-section">
       <div class="section-head">
         <h2>1 Executive Summary</h2>
-        <div class="section-meta">12~16 KPI + 本期5条关键结论</div>
+        <div class="section-meta">16~20 KPI + 预警灯 + 本期5条关键结论</div>
       </div>
       <div class="kpis report-kpis" id="exec_kpis"></div>
+      <div class="report-grid report-grid-2 report-exec-grid">
+        <div class="card report-card" id="warning_traffic_panel">
+          <div class="report-card-title">红黄绿灯（点击跳转预警中心）</div>
+          <div class="report-traffic">
+            <button class="report-traffic-item level-red" id="traffic_red">
+              <span class="traffic-label">红</span>
+              <b id="traffic_red_count">—</b>
+            </button>
+            <button class="report-traffic-item level-yellow" id="traffic_yellow">
+              <span class="traffic-label">黄</span>
+              <b id="traffic_yellow_count">—</b>
+            </button>
+            <button class="report-traffic-item level-green" id="traffic_green">
+              <span class="traffic-label">绿</span>
+              <b id="traffic_green_count">—</b>
+            </button>
+          </div>
+          <div class="report-mini-note">点击任意灯号自动滚动到预警中心。</div>
+        </div>
+        <div class="card report-card">
+          <div class="report-card-title">Segment 对比矩阵（total/store/nonstore）</div>
+          <div class="table-wrap dense-table">
+            <div class="table-scroll report-table-scroll">
+              <table id="segment_matrix_table">
+                <thead><tr>
+                  <th>Segment</th>
+                  <th>销售额</th>
+                  <th>毛利额</th>
+                  <th>毛利率</th>
+                  <th>净现金流</th>
+                  <th>净应收</th>
+                  <th>净应付</th>
+                  <th>库存</th>
+                  <th>DSO</th>
+                  <th>DPO</th>
+                  <th>DIO</th>
+                  <th>CCC</th>
+                  <th>Top1集中度</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="report-subhead">本期5条关键结论</div>
       <div class="report-conclusion-grid" id="exec_conclusions"></div>
     </section>
@@ -148,6 +213,8 @@
         <div class="card report-card">
           <div class="report-card-title">销售与毛利趋势</div>
           <div id="sales_trend_chart" class="plot-sm report-plot"></div>
+          <div class="report-mini-note" id="sales_mom_text">加载中…</div>
+          <div id="sales_mom_bridge" class="plot-xs report-plot"></div>
         </div>
         <div class="card report-card">
           <div class="report-card-title">结构贡献 Top</div>
@@ -159,7 +226,8 @@
                   <thead><tr>
                     <th>品类</th>
                     <th>销售额</th>
-                    <th>毛利-销售费</th>
+                    <th>占比</th>
+                    <th>毛利率</th>
                     <th>扣费毛利率</th>
                   </tr></thead>
                   <tbody></tbody>
@@ -173,8 +241,9 @@
                   <thead><tr>
                     <th>客户</th>
                     <th>销售额</th>
-                    <th>毛利-销售费</th>
                     <th>占比</th>
+                    <th>毛利率</th>
+                    <th>扣费毛利率</th>
                   </tr></thead>
                   <tbody></tbody>
                 </table>
@@ -187,8 +256,9 @@
                   <thead><tr>
                     <th>产品</th>
                     <th>销售额</th>
-                    <th>毛利-销售费</th>
                     <th>占比</th>
+                    <th>毛利率</th>
+                    <th>扣费毛利率</th>
                   </tr></thead>
                   <tbody></tbody>
                 </table>
@@ -230,6 +300,7 @@
             <div class="report-mini-card" id="bank_recon_receipts"></div>
             <div class="report-mini-card" id="bank_recon_payments"></div>
           </div>
+          <div class="report-recon-explain" id="bank_recon_explain">加载中…</div>
         </div>
       </div>
       <div class="report-conclusion-grid" id="sec3_conclusions"></div>
@@ -271,6 +342,16 @@
         <h2>5 其他应收（专项清理）</h2>
         <div class="section-meta">单列专项，不参与 DSO</div>
       </div>
+      <div class="report-grid report-grid-2">
+        <div class="card report-card">
+          <div class="report-card-title">原因分类模板</div>
+          <div class="report-template">押金 / 往来 / 返利 / 代垫 / 员工借款 / 费用暂挂 / 其他</div>
+        </div>
+        <div class="card report-card">
+          <div class="report-card-title">清理路径</div>
+          <div class="report-template">对账 → 确认 → 回收/冲抵 → 转长期/核销 → 月度跟踪</div>
+        </div>
+      </div>
       <div class="card report-card">
         <div class="report-card-title">Top 其他应收客户</div>
         <div class="table-wrap dense-table">
@@ -280,6 +361,7 @@
                 <th>客户</th>
                 <th>其他应收余额</th>
                 <th>期末应收净额</th>
+                <th>动作建议</th>
               </tr></thead>
               <tbody></tbody>
             </table>
@@ -325,6 +407,16 @@
         <h2>7 其他应付（专项清理）</h2>
         <div class="section-meta">单列专项，不参与 DPO</div>
       </div>
+      <div class="report-grid report-grid-2">
+        <div class="card report-card">
+          <div class="report-card-title">原因分类模板</div>
+          <div class="report-template">押金 / 往来 / 返利 / 代垫 / 员工借款 / 费用暂挂 / 其他</div>
+        </div>
+        <div class="card report-card">
+          <div class="report-card-title">清理路径</div>
+          <div class="report-template">对账 → 确认 → 冲抵/支付 → 转长期/核销 → 月度跟踪</div>
+        </div>
+      </div>
       <div class="card report-card">
         <div class="report-card-title">Top 其他应付供应商</div>
         <div class="table-wrap dense-table">
@@ -334,6 +426,7 @@
                 <th>供应商</th>
                 <th>其他应付余额</th>
                 <th>期末应付净额</th>
+                <th>动作建议</th>
               </tr></thead>
               <tbody></tbody>
             </table>
@@ -427,6 +520,22 @@
           </details>
         </div>
       </div>
+      <div class="report-warning-filters">
+        <label class="ctl">等级：
+          <select id="warning_filter_level">
+            <option value="all">全部</option>
+            <option value="red">仅红</option>
+            <option value="yellow">仅黄</option>
+            <option value="green">仅绿</option>
+          </select>
+        </label>
+        <label class="ctl">领域：
+          <select id="warning_filter_domain">
+            <option value="all">全部</option>
+          </select>
+        </label>
+        <button class="btn btn-sm" id="warning_filter_reset">重置</button>
+      </div>
       <div class="table-wrap dense-table">
         <div class="report-table-title">预警清单</div>
         <div class="table-scroll report-table-scroll">
@@ -478,6 +587,8 @@
     </section>
   </main>
 </div>
+
+<div id="toast" class="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js" defer></script>
 <script src="./js/report.js" defer></script>
