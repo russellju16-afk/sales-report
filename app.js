@@ -6,9 +6,13 @@ var CAT_TON_META = window.CAT_TON_META || {oil_density:0.92, fallback_bag_kg:1, 
 var FINANCE_DATA = window.FINANCE_DATA || null;
 var FINANCE_ERROR = window.FINANCE_ERROR || null;
 var FINANCE_LOADING = window.FINANCE_LOADING || false;
+var FORECAST_DATA = window.FORECAST_DATA || null;
+var FORECAST_ERROR = window.FORECAST_ERROR || null;
+var FORECAST_LOADING = window.FORECAST_LOADING || false;
 
 const DATA_META = { generatedAt: null };
 const BP_META = { latest_path: '', title: '', highlights: [] };
+const FORECAST_META = { generatedAt: null };
 const STATE_MANAGER = window.StateManager || null;
 let BOOTSTRAP_INFLIGHT = false;
 let APP_EVENTS_BOUND = false;
@@ -22,6 +26,13 @@ function getDataUrl(){
 
 function getFinanceUrl(){
   const base = window.FINANCE_URL || './data/finance_latest.json';
+  if(/(?:\?|&)v=/.test(base)) return base;
+  const joiner = base.includes('?') ? '&' : '?';
+  return base + joiner + 'v=' + Date.now();
+}
+
+function getForecastUrl(){
+  const base = window.FORECAST_URL || './data/forecast_latest.json';
   if(/(?:\?|&)v=/.test(base)) return base;
   const joiner = base.includes('?') ? '&' : '?';
   return base + joiner + 'v=' + Date.now();
@@ -71,6 +82,14 @@ async function loadFinanceData(){
   const url = getFinanceUrl();
   const resp = await fetch(url, { cache: 'no-store' });
   if(!resp.ok) throw new Error('财务数据文件加载失败: HTTP ' + resp.status);
+  const text = await resp.text();
+  return parseJsonWithNaN(text);
+}
+
+async function loadForecastData(){
+  const url = getForecastUrl();
+  const resp = await fetch(url, { cache: 'no-store' });
+  if(!resp.ok) throw new Error('预测数据文件加载失败: HTTP ' + resp.status);
   const text = await resp.text();
   return parseJsonWithNaN(text);
 }
@@ -128,10 +147,28 @@ function normalizeFinanceData(raw){
   };
 }
 
+function normalizeForecastData(raw){
+  const root = raw && raw.data ? raw.data : (raw || {});
+  const meta = (root.meta && typeof root.meta === 'object') ? root.meta : {};
+  if(!meta.generated_at){
+    meta.generated_at = root.generated_at || root.generatedAt || root.as_of || root.asOf || '';
+  }
+  return {
+    meta: meta,
+    forecast: root.forecast || {}
+  };
+}
+
 function getFinanceVersion(){
   if(!FINANCE_DATA) return '';
   const meta = FINANCE_DATA.meta || {};
   return meta.generated_at || meta.generatedAt || FINANCE_DATA.generated_at || FINANCE_DATA.generatedAt || FINANCE_DATA.as_of || FINANCE_DATA.asOf || '';
+}
+
+function getForecastVersion(){
+  if(!FORECAST_DATA) return '';
+  const meta = FORECAST_DATA.meta || {};
+  return meta.generated_at || meta.generatedAt || FORECAST_DATA.generated_at || FORECAST_DATA.generatedAt || FORECAST_DATA.as_of || FORECAST_DATA.asOf || '';
 }
 
 function updateDataStatusLine(){
@@ -142,6 +179,12 @@ function updateDataStatusLine(){
   }else{
     const finVer = getFinanceVersion();
     if(finVer) msg += ' ｜ 财务版本：' + finVer;
+  }
+  if(FORECAST_ERROR){
+    msg += ' ｜ 预测数据加载失败';
+  }else{
+    const forecastVer = getForecastVersion();
+    if(forecastVer) msg += ' ｜ 预测版本：' + forecastVer;
   }
   showDataStatus(true, msg);
 }
@@ -227,9 +270,9 @@ async function bootstrap(){
   setReloadButtonDisabled(true);
   try{
     setErrorState(false, '');
-    setLoadingState(true, '正在拉取 ./data/latest.json 与 ./data/finance_latest.json');
+    setLoadingState(true, '正在拉取 ./data/latest.json 与 ./data/finance_latest.json 与 ./data/forecast_latest.json');
     showDataStatus(true, '数据加载中…');
-    const results = await Promise.allSettled([loadData(), loadFinanceData()]);
+    const results = await Promise.allSettled([loadData(), loadFinanceData(), loadForecastData()]);
     if(results[0].status === 'rejected'){
       const msg = results[0].reason && results[0].reason.message ? results[0].reason.message : '销售数据加载失败';
       throw new Error(msg);
@@ -237,12 +280,20 @@ async function bootstrap(){
 
     const normalized = normalizeData(results[0].value);
     let financeNormalized = null;
+    let forecastNormalized = null;
     if(results[1].status === 'fulfilled'){
       financeNormalized = normalizeFinanceData(results[1].value);
       FINANCE_ERROR = null;
     }else{
       const msg = results[1].reason && results[1].reason.message ? results[1].reason.message : '财务数据加载失败';
       FINANCE_ERROR = { message: msg };
+    }
+    if(results[2].status === 'fulfilled'){
+      forecastNormalized = normalizeForecastData(results[2].value);
+      FORECAST_ERROR = null;
+    }else{
+      const msg = results[2].reason && results[2].reason.message ? results[2].reason.message : '预测数据加载失败';
+      FORECAST_ERROR = { message: msg };
     }
 
     DATA = normalized.segments;
@@ -255,8 +306,12 @@ async function bootstrap(){
     BP_META.title = normalized.bp && normalized.bp.title ? normalized.bp.title : '';
     BP_META.highlights = (normalized.bp && Array.isArray(normalized.bp.highlights)) ? normalized.bp.highlights : [];
     FINANCE_DATA = financeNormalized;
+    FORECAST_DATA = forecastNormalized;
     window.FINANCE_DATA = FINANCE_DATA;
     window.FINANCE_ERROR = FINANCE_ERROR;
+    window.FORECAST_DATA = FORECAST_DATA;
+    window.FORECAST_ERROR = FORECAST_ERROR;
+    FORECAST_META.generatedAt = forecastNormalized && forecastNormalized.meta ? forecastNormalized.meta.generated_at : '';
 
     updateDataStatusLine();
     const initialState = STATE_MANAGER ? STATE_MANAGER.readState() : null;
@@ -304,6 +359,13 @@ window.tabState = tabState;
 window.currentSeg = currentSeg;
 const sortState={};
 const TABLE_RANGE={};
+const FORECAST_STATE = {
+  view: 'forecast_ar',
+  page: { ar: 1, ap: 1, po: 1 },
+  stateApplied: false,
+  search: { ar: '', ap: '', po: '' },
+  pendingAnchor: ''
+};
 
 const ROW_IDX={
   date:0,
@@ -397,6 +459,7 @@ function makeSegHTML(segKey){
       <button class="tabbtn" data-seg="${segKey}" data-tab="lifecycle" onclick="showTab('${segKey}','lifecycle')">新增/流失客户</button>
       <button class="tabbtn" data-seg="${segKey}" data-tab="abnormal" onclick="showTab('${segKey}','abnormal')">异常订单</button>
       <button class="tabbtn" data-seg="${segKey}" data-tab="finance" onclick="showTab('${segKey}','finance')">财务</button>
+      <button class="tabbtn" data-seg="${segKey}" data-tab="forecast" onclick="showTab('${segKey}','forecast')">Forecast</button>
     </div>
 
     <div class="section active" id="${segKey}_overview">
@@ -697,6 +760,34 @@ function makeSegHTML(segKey){
               </div>
             </div>
           </details>
+          <details class="finance-collapse" open>
+            <summary>银行收支明细</summary>
+            <div class="table-wrap finance-table">
+              <div class="controls finance-controls">
+                <div class="finance-table-title">银行明细（支持证据筛选）</div>
+                <button class="btn btn-sm" data-finance-action="clear-filters" data-table="${segKey}_finance_bank_txn_table">清空筛选</button>
+                <input type="hidden" id="${segKey}_finance_bank_txn_sort" value=""/>
+                <span class="count">显示：<b id="${segKey}_finance_bank_txn_count">0</b></span>
+              </div>
+              <div class="table-scroll" style="max-height:360px;">
+                <table id="${segKey}_finance_bank_txn_table" data-finance-table="bank_txn">
+                  <thead><tr>
+                    <th>日期</th>
+                    <th>对方</th>
+                    <th>分类</th>
+                    <th>子类</th>
+                    <th>方向</th>
+                    <th>金额</th>
+                    <th>摘要</th>
+                    <th>对账状态</th>
+                    <th>异常标签</th>
+                    <th>Txn ID</th>
+                  </tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </details>
           <div class="grid2 finance-recon">
             <div class="finance-mini-card" id="${segKey}_finance_bank_recon_receipts"></div>
             <div class="finance-mini-card" id="${segKey}_finance_bank_recon_payments"></div>
@@ -783,6 +874,151 @@ function makeSegHTML(segKey){
                 </table>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="${segKey}_forecast">
+      <div class="finance-block card">
+        <div class="finance-block-hd">
+          <div>
+            <div class="finance-title">Rolling 30D Forecast</div>
+            <div class="finance-meta">Base / S1 / S2 / S3 情景缺口与可释放现金</div>
+          </div>
+          <div class="controls finance-controls">
+            <label class="ctl">视图：
+              <select id="${segKey}_forecast_view" onchange="setForecastView('${segKey}', this.value)">
+                <option value="forecast_ar">AR催收</option>
+                <option value="forecast_ap">AP延付</option>
+                <option value="forecast_po">PO减采</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="finance-kpis" id="${segKey}_forecast_kpis"></div>
+        <div class="table-wrap finance-table" id="${segKey}_forecast_summary">
+          <div class="controls finance-controls">
+            <div class="finance-table-title">情景缺口对比</div>
+          </div>
+          <div class="table-scroll" style="max-height:260px;">
+            <table id="${segKey}_forecast_scenario_table">
+              <thead><tr>
+                <th>情景</th>
+                <th>缺口金额</th>
+                <th>最低余额</th>
+                <th>缺口日期</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="table-wrap finance-table" id="${segKey}_forecast_components">
+          <div class="controls finance-controls">
+            <div class="finance-table-title">构成拆解（14-30天可释放）</div>
+          </div>
+          <div class="table-scroll" style="max-height:260px;">
+            <table id="${segKey}_forecast_component_table">
+              <thead><tr>
+                <th>指标</th>
+                <th>金额</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="finance-block card forecast-view" data-view="forecast_ar" id="${segKey}_forecast_ar_section">
+        <div class="finance-block-hd">
+          <div>
+            <div class="finance-title">AR 催收计划</div>
+            <div class="finance-meta">客户 / 账龄 / 计划回款日期</div>
+          </div>
+          <div class="controls finance-controls">
+            <input class="search" id="${segKey}_forecast_ar_search" placeholder="筛选客户..." oninput="renderForecast('${segKey}')"/>
+            <button class="btn btn-sm" onclick="clearForecastSearch('${segKey}','ar')">清空</button>
+            <button class="btn btn-sm" onclick="forecastPagePrev('${segKey}','ar')">上一页</button>
+            <button class="btn btn-sm" onclick="forecastPageNext('${segKey}','ar')">下一页</button>
+            <span class="count" id="${segKey}_forecast_ar_pagination">—</span>
+          </div>
+        </div>
+        <div class="table-wrap finance-table">
+          <div class="table-scroll" style="max-height:360px;">
+            <table id="${segKey}_forecast_ar_table">
+              <thead><tr>
+                <th>客户</th>
+                <th>账龄</th>
+                <th>未收金额</th>
+                <th>计划回款日</th>
+                <th>置信度</th>
+                <th>来源ID</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="finance-block card forecast-view" data-view="forecast_ap" id="${segKey}_forecast_ap_section">
+        <div class="finance-block-hd">
+          <div>
+            <div class="finance-title">AP 延付计划</div>
+            <div class="finance-meta">供应商 / 到期 / 计划付款</div>
+          </div>
+          <div class="controls finance-controls">
+            <input class="search" id="${segKey}_forecast_ap_search" placeholder="筛选供应商..." oninput="renderForecast('${segKey}')"/>
+            <button class="btn btn-sm" onclick="clearForecastSearch('${segKey}','ap')">清空</button>
+            <button class="btn btn-sm" onclick="forecastPagePrev('${segKey}','ap')">上一页</button>
+            <button class="btn btn-sm" onclick="forecastPageNext('${segKey}','ap')">下一页</button>
+            <span class="count" id="${segKey}_forecast_ap_pagination">—</span>
+          </div>
+        </div>
+        <div class="table-wrap finance-table">
+          <div class="table-scroll" style="max-height:360px;">
+            <table id="${segKey}_forecast_ap_table">
+              <thead><tr>
+                <th>供应商</th>
+                <th>到期日</th>
+                <th>计划付款日</th>
+                <th>金额</th>
+                <th>置信度</th>
+                <th>来源ID</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="finance-block card forecast-view" data-view="forecast_po" id="${segKey}_forecast_po_section">
+        <div class="finance-block-hd">
+          <div>
+            <div class="finance-title">PO 减采/暂停计划</div>
+            <div class="finance-meta">供应商 / ETA / 计划付款</div>
+          </div>
+          <div class="controls finance-controls">
+            <input class="search" id="${segKey}_forecast_po_search" placeholder="筛选供应商/品类..." oninput="renderForecast('${segKey}')"/>
+            <button class="btn btn-sm" onclick="clearForecastSearch('${segKey}','po')">清空</button>
+            <button class="btn btn-sm" onclick="forecastPagePrev('${segKey}','po')">上一页</button>
+            <button class="btn btn-sm" onclick="forecastPageNext('${segKey}','po')">下一页</button>
+            <span class="count" id="${segKey}_forecast_po_pagination">—</span>
+          </div>
+        </div>
+        <div class="table-wrap finance-table">
+          <div class="table-scroll" style="max-height:360px;">
+            <table id="${segKey}_forecast_po_table">
+              <thead><tr>
+                <th>供应商</th>
+                <th>品类/货号</th>
+                <th>未到货PO</th>
+                <th>ETA</th>
+                <th>计划付款日</th>
+                <th>置信度</th>
+                <th>来源ID</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -971,6 +1207,290 @@ function makeTableShell(segKey,type){
   return '';
 }
 
+function getForecastRoot(){
+  return FORECAST_DATA && FORECAST_DATA.forecast ? FORECAST_DATA.forecast : {};
+}
+
+function setForecastView(segKey, view){
+  if(!view) return;
+  FORECAST_STATE.view = view;
+  const select = document.getElementById(segKey + '_forecast_view');
+  if(select) select.value = view;
+  const seg = document.getElementById('seg_' + segKey);
+  if(seg){
+    seg.querySelectorAll('.forecast-view').forEach(el=>{
+      const match = el.getAttribute('data-view') === view;
+      el.classList.toggle('active', match);
+      el.style.display = match ? '' : 'none';
+    });
+  }
+  if(STATE_MANAGER) STATE_MANAGER.queuePersist();
+}
+
+function applyForecastStateFromState(segKey){
+  if(FORECAST_STATE.stateApplied) return;
+  const state = STATE_MANAGER && STATE_MANAGER.state ? STATE_MANAGER.state : null;
+  if(!state || !state.filters) return;
+  const view = state.filters.view || '';
+  if(view && String(view).indexOf('forecast_') === 0){
+    const v = String(view);
+    if(v === 'forecast_ar' || v === 'forecast_ap' || v === 'forecast_po'){
+      setForecastView(segKey, v);
+    }else{
+      FORECAST_STATE.pendingAnchor = v;
+    }
+  }
+  const cust = state.filters.customer || '';
+  const vendor = state.filters.vendor || '';
+  const supplier = state.filters.supplier || '';
+  if(cust){
+    const el = document.getElementById(segKey + '_forecast_ar_search');
+    if(el) el.value = String(cust);
+  }
+  if(vendor){
+    const el = document.getElementById(segKey + '_forecast_ap_search');
+    if(el) el.value = String(vendor);
+  }
+  if(supplier){
+    const el = document.getElementById(segKey + '_forecast_po_search');
+    if(el) el.value = String(supplier);
+  }
+  FORECAST_STATE.stateApplied = true;
+}
+
+function forecastPagePrev(segKey, type){
+  const key = String(type);
+  if(!FORECAST_STATE.page[key]) FORECAST_STATE.page[key] = 1;
+  FORECAST_STATE.page[key] = Math.max(1, FORECAST_STATE.page[key] - 1);
+  renderForecast(segKey);
+}
+
+function forecastPageNext(segKey, type){
+  const key = String(type);
+  if(!FORECAST_STATE.page[key]) FORECAST_STATE.page[key] = 1;
+  FORECAST_STATE.page[key] += 1;
+  renderForecast(segKey);
+}
+
+function clearForecastSearch(segKey, type){
+  const key = String(type);
+  const map = {
+    ar: segKey + '_forecast_ar_search',
+    ap: segKey + '_forecast_ap_search',
+    po: segKey + '_forecast_po_search'
+  };
+  const el = document.getElementById(map[key]);
+  if(el) el.value = '';
+  FORECAST_STATE.page[key] = 1;
+  renderForecast(segKey);
+}
+
+function renderForecastTable(tableId, rows, columns, formatters){
+  const table = document.getElementById(tableId);
+  if(!table || !table.tBodies || !table.tBodies[0]) return;
+  const tbody = table.tBodies[0];
+  tbody.innerHTML = '';
+  if(!Array.isArray(rows) || rows.length === 0){
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.colSpan = columns.length;
+    td.textContent = '暂无数据';
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+  rows.forEach(row=>{
+    const tr = document.createElement('tr');
+    columns.forEach((col, idx)=>{
+      const td = document.createElement('td');
+      const val = row && row[col.key] !== undefined ? row[col.key] : null;
+      const fmt = formatters && typeof formatters[idx] === 'function' ? formatters[idx] : null;
+      td.textContent = fmt ? fmt(val, row) : (val == null ? '—' : String(val));
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+function renderForecast(segKey){
+  const forecast = getForecastRoot();
+  const kpiEl = document.getElementById(segKey + '_forecast_kpis');
+  if(!kpiEl) return;
+  applyForecastStateFromState(segKey);
+
+  const summary = forecast && forecast.recommendations ? forecast.recommendations.summary_kpi || {} : {};
+  const scenarios = forecast && forecast.scenarios ? forecast.scenarios : {};
+  const coverConfirmed = summary.cover_ratio_confirmed;
+  const coverEstimated = summary.cover_ratio_estimated;
+  const kpis = [
+    { label:'Base缺口', value: fmtWan(summary.base_gap_amount) },
+    { label:'Base最低余额', value: fmtWan(summary.base_min_balance) },
+    { label:'确认覆盖率', value: fmtPct(coverConfirmed === null || coverConfirmed === undefined ? null : coverConfirmed * 100) },
+    { label:'含估算覆盖率', value: fmtPct(coverEstimated === null || coverEstimated === undefined ? null : coverEstimated * 100) }
+  ];
+  const frag = document.createDocumentFragment();
+  kpis.forEach(item=>{
+    frag.appendChild(buildKpiCard(item.label, item.value || '—'));
+  });
+  kpiEl.replaceChildren(frag);
+
+  const scenarioRows = [
+    { name:'Base', data: scenarios.base || {} },
+    { name:'S1 回款延迟', data: scenarios.s1 || {} },
+    { name:'S2 需求下滑', data: scenarios.s2 || {} },
+    { name:'S3 库存积压', data: scenarios.s3 || {} }
+  ];
+  renderForecastTable(segKey + '_forecast_scenario_table', scenarioRows, [
+    { key:'name' },
+    { key:'gap_amount' },
+    { key:'min_balance' },
+    { key:'gap_day' }
+  ], [
+    (v)=>v,
+    (v, row)=>fmtWan(row.data ? row.data.gap_amount : null),
+    (v, row)=>fmtWan(row.data ? row.data.min_balance : null),
+    (v, row)=>row.data ? (row.data.gap_day || '—') : '—'
+  ]);
+
+  const componentRows = [
+    { metric:'AR可催收(14天)', value: summary.ar_collectable_14d },
+    { metric:'AP可延付(14天)', value: summary.ap_deferrable_14d },
+    { metric:'PO可减采(30天)', value: summary.po_reducible_30d }
+  ];
+  renderForecastTable(segKey + '_forecast_component_table', componentRows, [
+    { key:'metric' },
+    { key:'value' }
+  ], [
+    (v)=>v,
+    (v)=>fmtWan(v)
+  ]);
+
+  setForecastView(segKey, FORECAST_STATE.view);
+
+  const pageSize = 50;
+  const arRows = Array.isArray(forecast && forecast.ar_plan_rows) ? forecast.ar_plan_rows : [];
+  const apRows = Array.isArray(forecast && forecast.ap_plan_rows) ? forecast.ap_plan_rows : [];
+  const poRows = Array.isArray(forecast && forecast.po_plan_rows) ? forecast.po_plan_rows : [];
+
+  const arSearch = (document.getElementById(segKey + '_forecast_ar_search') || {}).value || '';
+  const apSearch = (document.getElementById(segKey + '_forecast_ap_search') || {}).value || '';
+  const poSearch = (document.getElementById(segKey + '_forecast_po_search') || {}).value || '';
+
+  if(FORECAST_STATE.search.ar !== arSearch){
+    FORECAST_STATE.search.ar = arSearch;
+    FORECAST_STATE.page.ar = 1;
+  }
+  if(FORECAST_STATE.search.ap !== apSearch){
+    FORECAST_STATE.search.ap = apSearch;
+    FORECAST_STATE.page.ap = 1;
+  }
+  if(FORECAST_STATE.search.po !== poSearch){
+    FORECAST_STATE.search.po = poSearch;
+    FORECAST_STATE.page.po = 1;
+  }
+
+  const arFiltered = arRows.filter(r=>{
+    if(!arSearch) return true;
+    const text = `${r.customer || ''} ${r.aging_bucket || ''}`.toLowerCase();
+    return text.indexOf(arSearch.toLowerCase()) !== -1;
+  });
+  const apFiltered = apRows.filter(r=>{
+    if(!apSearch) return true;
+    const text = `${r.vendor || ''}`.toLowerCase();
+    return text.indexOf(apSearch.toLowerCase()) !== -1;
+  });
+  const poFiltered = poRows.filter(r=>{
+    if(!poSearch) return true;
+    const text = `${r.supplier || ''} ${r.sku_or_category || ''}`.toLowerCase();
+    return text.indexOf(poSearch.toLowerCase()) !== -1;
+  });
+
+  const arPage = FORECAST_STATE.page.ar || 1;
+  const apPage = FORECAST_STATE.page.ap || 1;
+  const poPage = FORECAST_STATE.page.po || 1;
+  const arTotalPages = Math.max(1, Math.ceil(arFiltered.length / pageSize));
+  const apTotalPages = Math.max(1, Math.ceil(apFiltered.length / pageSize));
+  const poTotalPages = Math.max(1, Math.ceil(poFiltered.length / pageSize));
+  FORECAST_STATE.page.ar = Math.min(arPage, arTotalPages);
+  FORECAST_STATE.page.ap = Math.min(apPage, apTotalPages);
+  FORECAST_STATE.page.po = Math.min(poPage, poTotalPages);
+
+  const arStart = (FORECAST_STATE.page.ar - 1) * pageSize;
+  const apStart = (FORECAST_STATE.page.ap - 1) * pageSize;
+  const poStart = (FORECAST_STATE.page.po - 1) * pageSize;
+
+  renderForecastTable(segKey + '_forecast_ar_table', arFiltered.slice(arStart, arStart + pageSize), [
+    { key:'customer' },
+    { key:'aging_bucket' },
+    { key:'open_amount' },
+    { key:'planned_date' },
+    { key:'confidence' },
+    { key:'source_id' }
+  ], [
+    (v)=>v || '—',
+    (v)=>v || '—',
+    (v)=>fmtWan(v),
+    (v)=>v || '—',
+    (v)=>v == null ? '—' : (Number(v) * 100).toFixed(0) + '%',
+    (v)=>v || '—'
+  ]);
+
+  renderForecastTable(segKey + '_forecast_ap_table', apFiltered.slice(apStart, apStart + pageSize), [
+    { key:'vendor' },
+    { key:'due_date' },
+    { key:'planned_date' },
+    { key:'amount_due' },
+    { key:'confidence' },
+    { key:'source_id' }
+  ], [
+    (v)=>v || '—',
+    (v)=>v || '—',
+    (v)=>v || '—',
+    (v)=>fmtWan(v),
+    (v)=>v == null ? '—' : (Number(v) * 100).toFixed(0) + '%',
+    (v)=>v || '—'
+  ]);
+
+  renderForecastTable(segKey + '_forecast_po_table', poFiltered.slice(poStart, poStart + pageSize), [
+    { key:'supplier' },
+    { key:'sku_or_category' },
+    { key:'po_amount_open' },
+    { key:'eta_date' },
+    { key:'planned_pay_date' },
+    { key:'confidence' },
+    { key:'source_id' }
+  ], [
+    (v)=>v || '—',
+    (v)=>v || '—',
+    (v)=>fmtWan(v),
+    (v)=>v || '—',
+    (v)=>v || '—',
+    (v)=>v == null ? '—' : (Number(v) * 100).toFixed(0) + '%',
+    (v)=>v || '—'
+  ]);
+
+  const arPag = document.getElementById(segKey + '_forecast_ar_pagination');
+  if(arPag) arPag.textContent = `第 ${FORECAST_STATE.page.ar}/${arTotalPages} 页，共 ${arFiltered.length} 条`;
+  const apPag = document.getElementById(segKey + '_forecast_ap_pagination');
+  if(apPag) apPag.textContent = `第 ${FORECAST_STATE.page.ap}/${apTotalPages} 页，共 ${apFiltered.length} 条`;
+  const poPag = document.getElementById(segKey + '_forecast_po_pagination');
+  if(poPag) poPag.textContent = `第 ${FORECAST_STATE.page.po}/${poTotalPages} 页，共 ${poFiltered.length} 条`;
+
+  if(FORECAST_STATE.pendingAnchor){
+    const map = {
+      forecast_base: segKey + '_forecast_summary',
+      forecast_components: segKey + '_forecast_components',
+      forecast_scenarios: segKey + '_forecast_summary'
+    };
+    const targetId = map[FORECAST_STATE.pendingAnchor];
+    if(targetId){
+      const el = document.getElementById(targetId);
+      if(el) setTimeout(()=>el.scrollIntoView({ behavior:'smooth', block:'start' }), 80);
+    }
+    FORECAST_STATE.pendingAnchor = '';
+  }
+}
+
 function init(initialState){
   ['total','store','nonstore'].forEach(segKey=>{
     const segEl = document.getElementById('seg_'+segKey);
@@ -978,6 +1498,18 @@ function init(initialState){
     initDateRange(segKey);
   });
   if(STATE_MANAGER) STATE_MANAGER.applyStateToUI(initialState, {phase:'pre'});
+  if(initialState && initialState.filters && initialState.filters.view){
+    const view = String(initialState.filters.view);
+    if(view.indexOf('forecast_') === 0){
+      const segKey = initialState.seg || 'total';
+      if(view === 'forecast_ar' || view === 'forecast_ap' || view === 'forecast_po'){
+        FORECAST_STATE.view = view;
+      }else{
+        FORECAST_STATE.pendingAnchor = view;
+      }
+      tabState[segKey] = 'forecast';
+    }
+  }
   const targetSeg = (initialState && initialState.seg) ? initialState.seg : 'total';
   showSeg(targetSeg);
   if(STATE_MANAGER) STATE_MANAGER.applyStateToUI(initialState, {phase:'post'});
@@ -1238,6 +1770,9 @@ function showTab(segKey, tabKey){
   if(tabKey === 'finance' && typeof renderFinance === 'function'){
     try{ renderFinance(segKey); }catch(e){ console.error(e); }
   }
+  if(tabKey === 'forecast' && typeof renderForecast === 'function'){
+    try{ renderForecast(segKey); }catch(e){ console.error(e); }
+  }
   if(window.ChartManager){
     setTimeout(()=>ChartManager.resizeAll(), 40);
   }
@@ -1255,6 +1790,9 @@ function updateSeg(segKey){
   renderAbnormal(segKey);
   if(tabState[segKey] === 'finance' && typeof renderFinance === 'function'){
     try{ renderFinance(segKey); }catch(e){ console.error(e); }
+  }
+  if(tabState[segKey] === 'forecast' && typeof renderForecast === 'function'){
+    try{ renderForecast(segKey); }catch(e){ console.error(e); }
   }
 
   try{ installAllHeaderFilters(segKey); }catch(e){ console.error(e); }

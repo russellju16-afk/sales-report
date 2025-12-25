@@ -40,13 +40,72 @@
     gp_mom_drop_yellow:0.1,
     gp_mom_drop_red:0.2,
     gm_drop_pct_yellow:1.5,
-    gm_drop_pct_red:3
+    gm_drop_pct_red:3,
+    forecast_top_n:20,
+    forecast_ar_weights:{ amount:0.4, aging:0.3, concentration:0.2, sensitivity:0.1 },
+    forecast_ar_collect_ratio:{
+      '90+':0.2,
+      '61-90':0.35,
+      '31-60':0.5,
+      '1-30':0.7,
+      '未到期':0.6
+    },
+    forecast_ar_bucket_days:{
+      '90+':3,
+      '61-90':7,
+      '31-60':14,
+      '1-30':14,
+      '未到期':14
+    },
+    forecast_ap_deferral_ratio:0.5,
+    forecast_ap_deferral_days_top:7,
+    forecast_ap_deferral_days_normal:14,
+    forecast_po_reducible_ratio:0.3,
+    forecast_po_reducible_ratio_s3:0.5,
+    forecast_gap_threshold:500000,
+    forecast_action_coverage_threshold:0.8,
+    forecast_s1_gap_increase_ratio:0.3,
+    forecast_scenario_impact:{
+      ar:{ base:1, s1:0.7, s2:0.85, s3:0.75 },
+      ap:{ base:1, s1:1, s2:1, s3:1 },
+      po:{ base:1, s1:1, s2:1.05, s3:1.1 }
+    }
   };
 
   const ACTION_DAYS = {
     quick:7,
     mid:14,
     long:30
+  };
+  const TUNER_STORAGE_KEY = 'forecast-tuner-params-v1';
+  const TUNER_SCHEMA_VERSION = 1;
+  const DEFAULT_TUNER_PARAMS = {
+    version:TUNER_SCHEMA_VERSION,
+    ar:{
+      collect_ratio_not_due:0.25,
+      collect_ratio_1_30:0.45,
+      collect_ratio_31_60:0.3,
+      collect_ratio_61_90:0.2,
+      collect_ratio_90_plus:0.1,
+      delay_share_7d:0.15,
+      delay_share_14d:0.05,
+      delay_apply_to_bucket:'overdue_only'
+    },
+    ap:{
+      deferral_ratio:0.3,
+      deferral_days_top_vendor:7,
+      deferral_days_other:12,
+      top_vendor_threshold_ratio:0.25
+    },
+    po:{
+      reducible_ratio_base:0.15,
+      reducible_ratio_S3:0.25,
+      apply_scope:'all'
+    },
+    threshold:{
+      gap_amount_warn_wan:120,
+      min_balance_warn_wan:60
+    }
   };
   const SEG_LABELS = {
     total:'全部',
@@ -151,6 +210,18 @@
     return base + joiner + 'v=' + Date.now();
   }
 
+  function getForecastUrl(){
+    const base = './data/forecast_latest.json';
+    const joiner = base.includes('?') ? '&' : '?';
+    return base + joiner + 'v=' + Date.now();
+  }
+
+  function getForecastUrl(){
+    const base = './data/forecast_latest.json';
+    const joiner = base.includes('?') ? '&' : '?';
+    return base + joiner + 'v=' + Date.now();
+  }
+
   function setLoadingState(show, msg){
     const el = document.getElementById('loading_state');
     if(!el) return;
@@ -181,10 +252,12 @@
     const loadEl = document.getElementById('debug_load_time');
     const dataEl = document.getElementById('debug_data_status');
     const finEl = document.getElementById('debug_finance_status');
+    const forecastEl = document.getElementById('debug_forecast_status');
     const listEl = document.getElementById('debug_missing_list');
     if(loadEl) loadEl.textContent = `加载耗时：${info && info.loadMs ? info.loadMs.toFixed(0) : '—'} ms`;
     if(dataEl) dataEl.textContent = `latest.json：${info && info.dataOk ? '成功' : '失败'}`;
     if(finEl) finEl.textContent = `finance_latest.json：${info && info.financeOk ? '成功' : '失败'}`;
+    if(forecastEl) forecastEl.textContent = `forecast_latest.json：${info && info.forecastOk ? '成功' : '失败'}`;
     if(listEl){
       listEl.innerHTML = '';
       const items = (info && info.missingFields) ? info.missingFields : [];
@@ -212,7 +285,64 @@
     return cur;
   }
 
-  function collectMissingFields(dataRaw, financeRaw){
+  function setPath(obj, path, value){
+    const parts = String(path).split('.');
+    let cur = obj;
+    for(let i=0;i<parts.length;i++){
+      const key = parts[i];
+      if(i === parts.length - 1){
+        cur[key] = value;
+        return;
+      }
+      if(!cur[key] || typeof cur[key] !== 'object'){
+        cur[key] = {};
+      }
+      cur = cur[key];
+    }
+  }
+
+  function deepClone(obj){
+    return JSON.parse(JSON.stringify(obj));
+  }
+
+  function clampNumber(val, min, max, fallback){
+    const n = toNumber(val);
+    if(n === null) return fallback;
+    if(min !== null && n < min) return min;
+    if(max !== null && n > max) return max;
+    return n;
+  }
+
+  function debounce(fn, wait){
+    let t = null;
+    return function(){
+      const ctx = this, args = arguments;
+      clearTimeout(t);
+      t = setTimeout(()=>fn.apply(ctx, args), wait);
+    };
+  }
+
+  function base64UrlEncode(text){
+    const encoder = new TextEncoder();
+    const bytes = encoder.encode(text);
+    let binary = '';
+    bytes.forEach(b=>{ binary += String.fromCharCode(b); });
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  }
+
+  function base64UrlDecode(text){
+    const base = text.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base + '==='.slice((base.length + 3) % 4);
+    const binary = atob(padded);
+    const bytes = new Uint8Array(binary.length);
+    for(let i=0;i<binary.length;i++){
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const decoder = new TextDecoder();
+    return decoder.decode(bytes);
+  }
+
+  function collectMissingFields(dataRaw, financeRaw, forecastRaw){
     const missing = [];
     const checks = [
       ['latest.json:data.total.rows', 'data.total.rows'],
@@ -228,13 +358,30 @@
       ['finance_latest.json:ap.kpi.ending_net_ap', 'ap.kpi.ending_net_ap'],
       ['finance_latest.json:ap.trend.cash_payments', 'ap.trend.cash_payments'],
       ['finance_latest.json:inventory.kpi.inventory_end', 'inventory.kpi.inventory_end'],
-      ['finance_latest.json:po.top_suppliers', 'po.top_suppliers']
+      ['finance_latest.json:po.top_suppliers', 'po.top_suppliers'],
+      ['forecast_latest.json:forecast.recommendations.summary_kpi.base_gap_amount', 'forecast.recommendations.summary_kpi.base_gap_amount'],
+      ['forecast_latest.json:forecast.recommendations.ar_collection', 'forecast.recommendations.ar_collection'],
+      ['forecast_latest.json:forecast.recommendations.ap_deferral', 'forecast.recommendations.ap_deferral'],
+      ['forecast_latest.json:forecast.recommendations.po_reduction', 'forecast.recommendations.po_reduction'],
+      ['forecast_latest.json:forecast.ar_plan_rows', 'forecast.ar_plan_rows'],
+      ['forecast_latest.json:forecast.ap_plan_rows', 'forecast.ap_plan_rows'],
+      ['forecast_latest.json:forecast.po_plan_rows', 'forecast.po_plan_rows']
     ];
     const dataRoot = dataRaw && dataRaw.data ? dataRaw.data : (dataRaw || {});
     const financeRoot = financeRaw && financeRaw.data ? financeRaw.data : (financeRaw || {});
+    const forecastRoot = forecastRaw && forecastRaw.data ? forecastRaw.data : (forecastRaw || {});
     checks.forEach(([label, path])=>{
-      const source = path.startsWith('data.') ? dataRoot : financeRoot;
-      const rel = path.replace(/^data\./, '');
+      let source = financeRoot;
+      let rel = path;
+      if(path.startsWith('data.')){
+        source = dataRoot;
+        rel = path.replace(/^data\./, '');
+      }else if(path.startsWith('forecast.')){
+        source = forecastRoot;
+        rel = path.replace(/^forecast\./, '');
+      }else{
+        rel = path.replace(/^data\./, '');
+      }
       const val = getPath(source, rel);
       if(val === undefined || val === null || (Array.isArray(val) && !val.length)){
         missing.push(label);
@@ -277,6 +424,18 @@
       inventory: root.inventory || {},
       bank: root.bank || {},
       wc: root.wc || {}
+    };
+  }
+
+  function normalizeForecastData(raw){
+    const root = raw && raw.data ? raw.data : (raw || {});
+    const meta = (root.meta && typeof root.meta === 'object') ? root.meta : {};
+    if(!meta.generated_at){
+      meta.generated_at = root.generated_at || root.generatedAt || root.as_of || root.asOf || '';
+    }
+    return {
+      meta: meta,
+      forecast: root.forecast || {}
     };
   }
 
@@ -619,9 +778,16 @@
     const tab = opts && opts.tab ? opts.tab : 'overview';
     const state = { seg:seg, tabs:{} };
     state.tabs[seg] = tab;
+    if(opts && opts.subtab){
+      state.subtabs = state.subtabs || {};
+      state.subtabs[seg] = opts.subtab;
+    }
     if(opts && opts.tableId && opts.filterFirstColValue !== undefined && opts.filterFirstColValue !== null && String(opts.filterFirstColValue).trim() !== ''){
       state.headerFilters = {};
       state.headerFilters[opts.tableId] = padFilterValues([String(opts.filterFirstColValue)], 6);
+    }
+    if(opts && opts.filters){
+      state.filters = opts.filters;
     }
     let url = './dashboard.html?state=' + encodeURIComponent(JSON.stringify(state));
     if(opts && opts.anchor){
@@ -639,6 +805,406 @@
     a.rel = 'noopener';
     a.className = 'report-link';
     return a;
+  }
+
+  function fmtScore(val){
+    const n = toNumber(val);
+    if(n === null) return '—';
+    return Math.round(n).toString();
+  }
+
+  function fmtRatioSafe(val){
+    const n = toNumber(val);
+    if(n === null) return '—';
+    return (n * 100).toFixed(2) + '%';
+  }
+
+  function fmtRiskValue(val){
+    const n = toNumber(val);
+    if(n === null) return '—';
+    if(Math.abs(n) > 1) return n.toFixed(2);
+    return (n * 100).toFixed(2) + '%';
+  }
+
+  function renderRiskScores(risk){
+    const totalEl = document.getElementById('risk_score_total');
+    if(totalEl) totalEl.textContent = fmtScore(risk && risk.risk_score_total);
+    const scoreMap = {
+      unknown:'risk_score_unknown',
+      internal:'risk_score_internal',
+      concentration:'risk_score_concentration',
+      volatility:'risk_score_volatility',
+      recon:'risk_score_recon',
+      financing:'risk_score_financing'
+    };
+    const scores = risk && risk.risk_scores ? risk.risk_scores : {};
+    Object.keys(scoreMap).forEach(key=>{
+      const el = document.getElementById(scoreMap[key]);
+      if(el) el.textContent = fmtScore(scores[key]);
+    });
+  }
+
+  function renderRiskChart(risk){
+    const chartEl = document.getElementById('risk_chart');
+    if(!chartEl || !window.echarts) return;
+    const scores = risk && risk.risk_scores ? risk.risk_scores : {};
+    const labels = ['未知项','内部往来','集中度','波动','对账差异','筹资'];
+    const values = [
+      toNumber(scores.unknown),
+      toNumber(scores.internal),
+      toNumber(scores.concentration),
+      toNumber(scores.volatility),
+      toNumber(scores.recon),
+      toNumber(scores.financing)
+    ];
+    const chart = echarts.init(chartEl);
+    chart.setOption({
+      grid:{left:36,right:16,top:28,bottom:24},
+      xAxis:{type:'value',max:100,axisLabel:{formatter:'{value}'}},
+      yAxis:{type:'category',data:labels},
+      series:[{type:'bar',data:values,barWidth:14,itemStyle:{color:'#148a78'}}]
+    });
+  }
+
+  function renderRiskBreakdown(rows){
+    const tbody = document.getElementById('risk_breakdown_body');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+    const data = Array.isArray(rows) ? rows : [];
+    if(!data.length){
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 6;
+      td.textContent = '暂无评分明细';
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      return;
+    }
+    data.forEach(row=>{
+      const tr = document.createElement('tr');
+      const cols = [
+        fmtText(row.risk_item),
+        fmtText(row.formula),
+        fmtText(row.threshold),
+        fmtRiskValue(row.current_value),
+        fmtText(row.penalty)
+      ];
+      cols.forEach(text=>{
+        const td = document.createElement('td');
+        td.textContent = text;
+        tr.appendChild(td);
+      });
+      const linkTd = document.createElement('td');
+      if(row.evidence_state_link){
+        linkTd.appendChild(buildEvidenceLink(row.evidence_state_link, '查看证据'));
+      }else{
+        linkTd.textContent = '—';
+      }
+      tr.appendChild(linkTd);
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderAnomaliesTable(anomalies, periodEnd){
+    const list = Array.isArray(anomalies) ? anomalies.slice() : [];
+    const typeSelect = document.getElementById('risk_anomaly_type');
+    const sevSelect = document.getElementById('risk_anomaly_severity');
+    const classSelect = document.getElementById('risk_anomaly_class');
+    const memoInput = document.getElementById('risk_anomaly_search');
+    const pagination = document.getElementById('risk_anomaly_pagination');
+    const tbody = document.getElementById('risk_anomaly_body');
+    const emptyEl = document.getElementById('risk_anomaly_empty');
+    if(!tbody) return;
+
+    function uniqueVals(arr, key){
+      const set = new Set();
+      arr.forEach(r=>{ if(r && r[key]) set.add(String(r[key])); });
+      return [...set];
+    }
+
+    function setupSelect(select, values){
+      if(!select) return;
+      select.innerHTML = '<option value="">全部</option>' + values.map(v=>`<option value="${v}">${v}</option>`).join('');
+    }
+
+    setupSelect(typeSelect, uniqueVals(list, 'anomaly_type'));
+    setupSelect(sevSelect, uniqueVals(list, 'severity'));
+    setupSelect(classSelect, uniqueVals(list, 'cf_class'));
+
+    let page = 1;
+    const pageSize = 50;
+
+    function applyFilters(){
+      const typeVal = typeSelect ? typeSelect.value : '';
+      const sevVal = sevSelect ? sevSelect.value : '';
+      const classVal = classSelect ? classSelect.value : '';
+      const memoVal = memoInput ? memoInput.value.trim().toLowerCase() : '';
+      let filtered = list.filter(item=>{
+        if(typeVal && item.anomaly_type !== typeVal) return false;
+        if(sevVal && item.severity !== sevVal) return false;
+        if(classVal && item.cf_class !== classVal) return false;
+        if(memoVal){
+          const text = `${item.counterparty || ''} ${item.memo || ''}`.toLowerCase();
+          if(!text.includes(memoVal)) return false;
+        }
+        return true;
+      });
+      const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+      if(page > totalPages) page = totalPages;
+      const start = (page - 1) * pageSize;
+      const pageRows = filtered.slice(start, start + pageSize);
+
+      tbody.innerHTML = '';
+      if(!pageRows.length){
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 9;
+        td.textContent = '暂无异常';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        if(emptyEl) emptyEl.textContent = list.length ? '筛选结果为空' : '未发现异常（如需产生异常请补齐银行明细）。';
+      }else if(emptyEl){
+        emptyEl.textContent = '';
+      }
+
+      pageRows.forEach(item=>{
+        const tr = document.createElement('tr');
+        const cells = [
+          item.anomaly_type,
+          item.severity,
+          item.date,
+          item.counterparty || '—',
+          item.memo || '—',
+          item.amount !== null && item.amount !== undefined ? fmtWan(item.amount) : '—',
+          item.reason || '—',
+          item.suggested_action || '—'
+        ];
+        cells.forEach(text=>{
+          const td = document.createElement('td');
+          td.textContent = text;
+          tr.appendChild(td);
+        });
+        const linkTd = document.createElement('td');
+        if(item.evidence_state_link){
+          linkTd.appendChild(buildEvidenceLink(item.evidence_state_link, '查看证据'));
+        }else{
+          linkTd.textContent = '—';
+        }
+        tr.appendChild(linkTd);
+        tr.addEventListener('click', (e)=>{
+          if(e.target && e.target.tagName === 'A') return;
+          openAnomalyModal(item);
+        });
+        tbody.appendChild(tr);
+      });
+
+      if(pagination){
+        pagination.textContent = `第 ${page}/${totalPages} 页，共 ${filtered.length} 条`;
+      }
+      return filtered;
+    }
+
+    const handle = ()=>{ page = 1; applyFilters(); };
+    if(typeSelect) typeSelect.onchange = handle;
+    if(sevSelect) sevSelect.onchange = handle;
+    if(classSelect) classSelect.onchange = handle;
+    if(memoInput) memoInput.oninput = handle;
+
+    const prevBtn = document.getElementById('risk_anomaly_prev');
+    const nextBtn = document.getElementById('risk_anomaly_next');
+    if(prevBtn) prevBtn.onclick = ()=>{ page = Math.max(1, page - 1); applyFilters(); };
+    if(nextBtn) nextBtn.onclick = ()=>{ page += 1; applyFilters(); };
+
+    const filtered = applyFilters();
+    const exportBtn = document.getElementById('export_anomalies_btn');
+    if(exportBtn){
+      exportBtn.onclick = ()=>{
+        const rows = filtered.map(r=>({
+          anomaly_type:r.anomaly_type,
+          severity:r.severity,
+          date:r.date,
+          counterparty:r.counterparty,
+          memo:r.memo,
+          amount:r.amount,
+          reason:r.reason,
+          action:r.suggested_action,
+          link:r.evidence_state_link ? buildDrilldownLink(r.evidence_state_link) : ''
+        }));
+        const suffix = safeDateLabel(periodEnd) ? ('_' + safeDateLabel(periodEnd)) : '';
+        const csv = buildCsv(rows, ['anomaly_type','severity','date','counterparty','memo','amount','reason','action','link']);
+        downloadCsv('risk_anomalies' + suffix + '.csv', csv);
+      };
+    }
+  }
+
+  function openAnomalyModal(item){
+    const modal = document.getElementById('anomaly_modal');
+    if(!modal) return;
+    const title = document.getElementById('anomaly_modal_title');
+    const meta = document.getElementById('anomaly_modal_meta');
+    const body = document.getElementById('anomaly_modal_body');
+    if(title) title.textContent = item.anomaly_type || '异常明细';
+    if(meta) meta.textContent = `${item.severity || '—'}｜${item.date || '—'}`;
+    if(body){
+      body.innerHTML = '';
+      const rows = [
+        ['对方', item.counterparty || '—'],
+        ['金额', item.amount !== null && item.amount !== undefined ? fmtWan(item.amount) : '—'],
+        ['摘要', item.memo || '—'],
+        ['原因', item.reason || '—'],
+        ['建议动作', item.suggested_action || '—']
+      ];
+      rows.forEach(([label, value])=>{
+        const div = document.createElement('div');
+        div.className = 'kpi-detail-row';
+        const l = document.createElement('div');
+        l.className = 'label';
+        l.textContent = label;
+        const v = document.createElement('div');
+        v.className = 'value';
+        v.textContent = value;
+        div.appendChild(l);
+        div.appendChild(v);
+        body.appendChild(div);
+      });
+    }
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeAnomalyModal(){
+    const modal = document.getElementById('anomaly_modal');
+    if(!modal) return;
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
+  window.closeAnomalyModal = closeAnomalyModal;
+
+  function renderRiskCenter(bank, periodEnd, forecastRisk){
+    const risk = bank && bank.risk ? bank.risk : {};
+    renderRiskScores(risk);
+    renderRiskChart(risk);
+    renderForecastRiskScores(forecastRisk);
+    const baseRows = risk.risk_breakdown_rows || [];
+    const extraRows = forecastRisk && forecastRisk.breakdown_rows ? forecastRisk.breakdown_rows : [];
+    const mergedRows = baseRows.concat(extraRows);
+    renderRiskBreakdown(mergedRows);
+    renderAnomaliesTable(risk.anomalies || [], periodEnd);
+
+    const exportBtn = document.getElementById('export_risk_breakdown_btn');
+    if(exportBtn){
+      exportBtn.onclick = ()=>{
+        const rows = mergedRows.map(r=>({
+          risk_item:r.risk_item,
+          formula:r.formula,
+          threshold:r.threshold,
+          current_value:r.current_value,
+          penalty:r.penalty,
+          link:r.evidence_state_link ? buildDrilldownLink(r.evidence_state_link) : ''
+        }));
+        const suffix = safeDateLabel(periodEnd) ? ('_' + safeDateLabel(periodEnd)) : '';
+        const csv = buildCsv(rows, ['risk_item','formula','threshold','current_value','penalty','link']);
+        downloadCsv('risk_breakdown' + suffix + '.csv', csv);
+      };
+    }
+  }
+
+  function renderForecastRiskOverlay(baseRows, forecastRisk, periodEnd){
+    if(!forecastRisk) return;
+    renderForecastRiskScores(forecastRisk);
+    const mergedRows = (baseRows || []).concat(forecastRisk.breakdown_rows || []);
+    renderRiskBreakdown(mergedRows);
+    const exportBtn = document.getElementById('export_risk_breakdown_btn');
+    if(exportBtn){
+      exportBtn.onclick = ()=>{
+        const rows = mergedRows.map(r=>({
+          risk_item:r.risk_item,
+          formula:r.formula,
+          threshold:r.threshold,
+          current_value:r.current_value,
+          penalty:r.penalty,
+          link:r.evidence_state_link ? buildDrilldownLink(r.evidence_state_link) : ''
+        }));
+        const suffix = safeDateLabel(periodEnd) ? ('_' + safeDateLabel(periodEnd)) : '';
+        const csv = buildCsv(rows, ['risk_item','formula','threshold','current_value','penalty','link']);
+        downloadCsv('risk_breakdown' + suffix + '.csv', csv);
+      };
+    }
+  }
+
+  function renderBoardMemo(boardMemo, periodEnd){
+    const list = Array.isArray(boardMemo && boardMemo.memo_items) ? boardMemo.memo_items : [];
+    const container = document.getElementById('board_memo_list');
+    if(!container) return;
+    container.innerHTML = '';
+    if(!list.length){
+      const empty = document.createElement('div');
+      empty.className = 'report-empty';
+      empty.textContent = '暂无董事会口径';
+      container.appendChild(empty);
+      return;
+    }
+    list.forEach(item=>{
+      const card = document.createElement('div');
+      card.className = 'memo-card';
+      const title = document.createElement('div');
+      title.className = 'memo-title';
+      title.textContent = item.title || '结论';
+      const conclusion = document.createElement('div');
+      conclusion.className = 'memo-conclusion';
+      conclusion.textContent = item.conclusion || '—';
+      const evidence = document.createElement('div');
+      evidence.className = 'memo-evidence';
+      evidence.textContent = `证据：${item.evidence_metric || ''} ${item.evidence_value || '—'}`;
+      const action = document.createElement('div');
+      action.className = 'memo-action';
+      action.textContent = `动作：${item.action || '—'}｜DDL：${item.ddl_days || '—'}天`;
+      card.appendChild(title);
+      card.appendChild(conclusion);
+      card.appendChild(evidence);
+      card.appendChild(action);
+      if(item.evidence_state_link){
+        const linkWrap = document.createElement('div');
+        linkWrap.className = 'memo-link';
+        linkWrap.appendChild(buildEvidenceLink(item.evidence_state_link, '查看证据'));
+        card.appendChild(linkWrap);
+      }
+      container.appendChild(card);
+    });
+
+    const copyBtn = document.getElementById('copy_memo_btn');
+    if(copyBtn){
+      copyBtn.onclick = ()=>{
+        const lines = list.map(item=>{
+          const link = item.evidence_state_link ? buildDrilldownLink(item.evidence_state_link) : '';
+          return `${item.title}｜${item.conclusion}｜证据:${item.evidence_metric} ${item.evidence_value}｜动作:${item.action}｜DDL:${item.ddl_days}天｜${link}`;
+        });
+        copyText(lines.join('\n')).then(()=>showToast('已复制董事会口径'));
+      };
+    }
+
+    const exportTxtBtn = document.getElementById('export_memo_txt_btn');
+    if(exportTxtBtn){
+      exportTxtBtn.onclick = ()=>{
+        const lines = list.map(item=>{
+          const link = item.evidence_state_link ? buildDrilldownLink(item.evidence_state_link) : '';
+          return `${item.title}\n结论:${item.conclusion}\n证据:${item.evidence_metric} ${item.evidence_value}\n动作:${item.action}\nDDL:${item.ddl_days}天\n${link}`;
+        });
+        const suffix = safeDateLabel(periodEnd) ? ('_' + safeDateLabel(periodEnd)) : '';
+        const blob = new Blob([lines.join('\n\n')], {type:'text/plain;charset=utf-8'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'memo' + suffix + '.txt';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      };
+    }
+
+    const exportJsonBtn = document.getElementById('export_memo_json_btn');
+    if(exportJsonBtn){
+      exportJsonBtn.onclick = ()=>downloadJson('memo.json', { memo_items:list });
+    }
   }
 
   function formatAction(action){
@@ -1101,6 +1667,75 @@
     apply();
   }
 
+  function getActionSourceGroup(action){
+    const source = action && action.source ? String(action.source) : '';
+    const domain = action && action.domain ? String(action.domain) : '';
+    if(source.indexOf('forecast:') === 0) return 'forecast';
+    if(source.indexOf('预警') !== -1 || domain.indexOf('风险') !== -1 || source.indexOf('风险') !== -1) return 'risk';
+    if(domain.indexOf('现金') !== -1 || domain.indexOf('资金') !== -1 || source.indexOf('现金') !== -1) return 'cashflow';
+    if(domain.indexOf('毛利') !== -1 || domain.indexOf('收入') !== -1 || source.indexOf('毛利') !== -1) return 'margin';
+    return 'other';
+  }
+
+  function renderActionFilters(actions){
+    const sourceSelect = document.getElementById('action_filter_source');
+    const resetBtn = document.getElementById('action_filter_reset');
+    if(!sourceSelect) return ()=>{};
+    actions.forEach(a=>{ a.source_group = getActionSourceGroup(a); });
+    const apply = ()=>{
+      const sourceVal = sourceSelect.value || 'all';
+      const filtered = actions.filter(a=>sourceVal === 'all' || a.source_group === sourceVal);
+      renderActionTable(filtered);
+      const actionStats = document.getElementById('action_stats');
+      if(actionStats){
+        actionStats.textContent = `动作共 ${filtered.length}/${actions.length} 项（筛选：${sourceVal}）。`;
+      }
+    };
+    sourceSelect.onchange = apply;
+    if(resetBtn){
+      resetBtn.onclick = ()=>{
+        sourceSelect.value = 'all';
+        apply();
+      };
+    }
+    apply();
+    return apply;
+  }
+
+  function getScenarioImpact(action, key){
+    if(!action) return null;
+    if(key === 's1') return toNumber(action.expected_cash_impact_s1);
+    if(key === 's2') return toNumber(action.expected_cash_impact_s2);
+    if(key === 's3') return toNumber(action.expected_cash_impact_s3);
+    return toNumber(action.expected_cash_impact_base);
+  }
+
+  function renderForecastActionPack(forecastData, forecastResult, forecastActions){
+    const scenarioSelect = document.getElementById('forecast_action_scenario');
+    const gapEl = document.getElementById('forecast_action_gap');
+    const coverEl = document.getElementById('forecast_action_cover');
+    const topEl = document.getElementById('forecast_action_top');
+    if(!scenarioSelect || !gapEl || !coverEl || !topEl) return;
+    const scenarios = forecastData && forecastData.forecast && forecastData.forecast.scenarios ? forecastData.forecast.scenarios : {};
+    const gapMap = {
+      base: toNumber(forecastResult.base_gap_amount !== null ? forecastResult.base_gap_amount : (scenarios.base && scenarios.base.gap_amount)),
+      s1: toNumber(forecastResult.s1_gap_amount !== null ? forecastResult.s1_gap_amount : (scenarios.s1 && scenarios.s1.gap_amount))
+    };
+    const actions = (forecastActions || []).filter(a=>String(a.source || '').indexOf('forecast:') === 0);
+    function apply(key){
+      const gap = gapMap[key] !== undefined ? gapMap[key] : null;
+      const impacts = actions.map(a=>getScenarioImpact(a, key)).filter(v=>v !== null);
+      const totalImpact = impacts.reduce((sum, v)=>sum + v, 0);
+      const topImpact = impacts.sort((a,b)=>b-a).slice(0, 5).reduce((sum, v)=>sum + v, 0);
+      const cover = gap ? totalImpact / gap : null;
+      gapEl.textContent = fmtWan(gap);
+      coverEl.textContent = cover === null ? '—' : fmtRatio(cover);
+      topEl.textContent = fmtWan(topImpact);
+    }
+    scenarioSelect.onchange = ()=>apply(scenarioSelect.value || 'base');
+    apply(scenarioSelect.value || 'base');
+  }
+
   function bindTrafficPanel(warnings){
     const redBtn = document.getElementById('traffic_red');
     const yellowBtn = document.getElementById('traffic_yellow');
@@ -1120,9 +1755,1173 @@
     if(greenBtn) greenBtn.onclick = jump;
   }
 
-  function renderReport(dataRaw, financeRaw){
+  function bucketSeverity(bucket){
+    const key = String(bucket || '').trim();
+    if(key === '90+') return 5;
+    if(key === '61-90') return 4;
+    if(key === '31-60') return 3;
+    if(key === '1-30') return 2;
+    if(key === '未到期') return 1;
+    return 1;
+  }
+
+  function getCollectRatio(bucket, thresholds){
+    const key = String(bucket || '').trim();
+    if(thresholds && thresholds.forecast_ar_collect_ratio && thresholds.forecast_ar_collect_ratio[key] !== undefined){
+      return thresholds.forecast_ar_collect_ratio[key];
+    }
+    return 0.5;
+  }
+
+  function getBucketDays(bucket, thresholds){
+    const key = String(bucket || '').trim();
+    if(thresholds && thresholds.forecast_ar_bucket_days && thresholds.forecast_ar_bucket_days[key] !== undefined){
+      return thresholds.forecast_ar_bucket_days[key];
+    }
+    return 14;
+  }
+
+  function computeScenarioImpacts(baseImpact, type, thresholds){
+    const t = thresholds && thresholds.forecast_scenario_impact ? thresholds.forecast_scenario_impact : {};
+    const map = t[type] || { base:1, s1:1, s2:1, s3:1 };
+    return {
+      base: baseImpact * (map.base || 1),
+      s1: baseImpact * (map.s1 || 1),
+      s2: baseImpact * (map.s2 || 1),
+      s3: baseImpact * (map.s3 || 1)
+    };
+  }
+
+  function buildRecMap(list, keyFn){
+    const map = new Map();
+    (Array.isArray(list) ? list : []).forEach(item=>{
+      const key = keyFn(item);
+      if(key) map.set(key, item);
+    });
+    return map;
+  }
+
+  function generateForecastActions(forecastData, finance, thresholds){
+    const forecastRoot = forecastData && forecastData.forecast ? forecastData.forecast : {};
+    const rec = forecastRoot.recommendations || {};
+    const summary = rec.summary_kpi || {};
+    const scenarios = forecastRoot.scenarios || {};
+
+    const baseGap = toNumber(summary.base_gap_amount !== undefined ? summary.base_gap_amount : (scenarios.base && scenarios.base.gap_amount));
+    const baseMinBalance = toNumber(summary.base_min_balance !== undefined ? summary.base_min_balance : (scenarios.base && scenarios.base.min_balance));
+    const s1Gap = toNumber(scenarios.s1 && scenarios.s1.gap_amount);
+    const s1Sensitive = baseGap !== null && s1Gap !== null
+      ? ((s1Gap - baseGap) / Math.max(1, baseGap) > thresholds.forecast_s1_gap_increase_ratio)
+      : false;
+
+    const baseDate = (finance && finance.meta && finance.meta.period_end) ? finance.meta.period_end : formatDate(new Date());
+
+    const arRecMap = buildRecMap(rec.ar_collection, item=>`${item.customer || ''}__${item.aging_bucket || ''}`);
+    const apRecMap = buildRecMap(rec.ap_deferral, item=>String(item.vendor || ''));
+    const poRecMap = buildRecMap(rec.po_reduction, item=>String(item.supplier || ''));
+
+    let arRows = Array.isArray(forecastRoot.ar_plan_rows) ? forecastRoot.ar_plan_rows : [];
+    if(!arRows.length && Array.isArray(rec.ar_collection)){
+      arRows = rec.ar_collection.map(r=>({
+        customer: r.customer,
+        aging_bucket: r.aging_bucket,
+        open_amount: r.amount_open,
+        planned_date: r.suggested_collect_date,
+        confidence: r.expected_collect_ratio,
+        source_id: (r.source_ids && r.source_ids[0]) || ''
+      }));
+    }
+
+    let apRows = Array.isArray(forecastRoot.ap_plan_rows) ? forecastRoot.ap_plan_rows : [];
+    if(!apRows.length && Array.isArray(rec.ap_deferral)){
+      apRows = rec.ap_deferral.map(r=>({
+        vendor: r.vendor,
+        amount_due: r.amount_due_30d,
+        due_date: r.suggested_pay_date,
+        planned_date: r.suggested_pay_date,
+        confidence: r.deferral_days ? (r.deferral_days >= 14 ? 0.6 : 0.5) : null,
+        source_id: (r.source_ids && r.source_ids[0]) || ''
+      }));
+    }
+
+    let poRows = Array.isArray(forecastRoot.po_plan_rows) ? forecastRoot.po_plan_rows : [];
+    if(!poRows.length && Array.isArray(rec.po_reduction)){
+      poRows = rec.po_reduction.map(r=>({
+        supplier: r.supplier,
+        po_amount_open: r.po_amount_open,
+        eta_date: r.eta_date,
+        planned_pay_date: r.eta_date,
+        confidence: r.reducible_ratio,
+        source_id: (r.source_ids && r.source_ids[0]) || '',
+        sku_or_category: r.evidence_keys ? r.evidence_keys.sku_or_category : ''
+      }));
+    }
+
+    const arTotal = arRows.reduce((sum, r)=>sum + (toNumber(r.open_amount) || 0), 0);
+    const arByCustomer = {};
+    arRows.forEach(r=>{
+      const key = r.customer || '未知客户';
+      arByCustomer[key] = (arByCustomer[key] || 0) + (toNumber(r.open_amount) || 0);
+    });
+
+    const arActions = arRows.map(r=>{
+      const customer = fmtText(r.customer);
+      const bucket = fmtText(r.aging_bucket);
+      const amountOpen = toNumber(r.open_amount);
+      const recKey = `${customer}__${bucket}`;
+      const recItem = arRecMap.get(recKey) || {};
+      const collectRatio = recItem.expected_collect_ratio !== undefined ? recItem.expected_collect_ratio : getCollectRatio(bucket, thresholds);
+      const expectedCashIn = amountOpen !== null ? amountOpen * collectRatio : null;
+      const bucketDays = getBucketDays(bucket, thresholds);
+      const ddlDate = addDays(baseDate, bucketDays);
+      const suggestedDate = r.planned_date || recItem.suggested_collect_date || ddlDate;
+      const amountShare = (amountOpen !== null && arTotal) ? amountOpen / arTotal : 0;
+      const agingScore = bucketSeverity(bucket) / 5;
+      const concentration = arTotal ? (arByCustomer[customer] || 0) / arTotal : 0;
+      const weights = thresholds.forecast_ar_weights || { amount:0.4, aging:0.3, concentration:0.2, sensitivity:0.1 };
+      let score = weights.amount * amountShare + weights.aging * agingScore + weights.concentration * concentration + weights.sensitivity * (s1Sensitive ? 1 : 0);
+      if(s1Sensitive) score *= 1.1;
+      const reasonParts = [];
+      if(recItem.reason) reasonParts.push(recItem.reason);
+      if(s1Sensitive) reasonParts.push('对S1敏感');
+      const impacts = expectedCashIn !== null ? computeScenarioImpacts(expectedCashIn, 'ar', thresholds) : { base:null, s1:null, s2:null, s3:null };
+      return {
+        source:'forecast:AR_collection',
+        domain:'预测',
+        signal:`AR催收：${customer}，账龄${bucket}，未收${fmtWan(amountOpen)}`,
+        owner:'',
+        task:`催收客户【${customer}】，目标回款【${fmtWan(expectedCashIn)}】（账龄${bucket}），DDL ${ddlDate}`,
+        ddl: ddlDate,
+        impact:`预计现金影响 ${fmtWan(expectedCashIn)}`,
+        expected_cash_impact_base: impacts.base,
+        expected_cash_impact_s1: impacts.s1,
+        expected_cash_impact_s2: impacts.s2,
+        expected_cash_impact_s3: impacts.s3,
+        reason: reasonParts.join('；'),
+        evidence_metric:`未收${fmtWan(amountOpen)}，预计回款${fmtWan(expectedCashIn)}`,
+        link: buildEvidenceLink({
+          seg:'total',
+          tab:'forecast',
+          filters:{ view:'forecast_ar', customer: customer },
+          anchor:'total_forecast_ar_table'
+        }, '查看证据'),
+        priority_score: score,
+        suggested_date: suggestedDate
+      };
+    }).sort((a,b)=>b.priority_score - a.priority_score);
+
+    const apRowsFiltered = apRows.filter(r=>{
+      const due = parseDate(r.due_date);
+      if(!due) return true;
+      const base = parseDate(baseDate);
+      if(!base) return true;
+      const diff = Math.round((due.getTime() - base.getTime()) / 86400000);
+      return diff <= 30;
+    });
+    const apTotal = apRowsFiltered.reduce((sum, r)=>sum + (toNumber(r.amount_due) || 0), 0);
+    const apActions = apRowsFiltered.map(r=>{
+      const vendor = fmtText(r.vendor);
+      const amountDue = toNumber(r.amount_due);
+      const share = (amountDue !== null && apTotal) ? amountDue / apTotal : 0;
+      const isTop = share >= 0.2;
+      const deferralDays = isTop ? thresholds.forecast_ap_deferral_days_top : thresholds.forecast_ap_deferral_days_normal;
+      const expectedCashSaved = amountDue !== null ? amountDue * thresholds.forecast_ap_deferral_ratio : null;
+      const ddlDate = addDays(baseDate, 7);
+      const impacts = expectedCashSaved !== null ? computeScenarioImpacts(expectedCashSaved, 'ap', thresholds) : { base:null, s1:null, s2:null, s3:null };
+      return {
+        source:'forecast:AP_deferral',
+        domain:'预测',
+        signal:`AP延付：${vendor}，30天内到期${fmtWan(amountDue)}`,
+        owner:'',
+        task:`与供应商【${vendor}】协商延付【${deferralDays}天】，释放现金【${fmtWan(expectedCashSaved)}】，DDL ${ddlDate}`,
+        ddl: ddlDate,
+        impact:`预计现金影响 ${fmtWan(expectedCashSaved)}`,
+        expected_cash_impact_base: impacts.base,
+        expected_cash_impact_s1: impacts.s1,
+        expected_cash_impact_s2: impacts.s2,
+        expected_cash_impact_s3: impacts.s3,
+        evidence_metric:`30天内到期${fmtWan(amountDue)}`,
+        link: buildEvidenceLink({
+          seg:'total',
+          tab:'forecast',
+          filters:{ view:'forecast_ap', vendor: vendor },
+          anchor:'total_forecast_ap_table'
+        }, '查看证据'),
+        priority_score: share
+      };
+    }).sort((a,b)=>b.priority_score - a.priority_score);
+
+    const s3Trigger = baseGap !== null && scenarios.s3 && toNumber(scenarios.s3.gap_amount) !== null
+      ? toNumber(scenarios.s3.gap_amount) > baseGap * 1.1
+      : false;
+    const poActions = poRows.map(r=>{
+      const supplier = fmtText(r.supplier);
+      const amountOpen = toNumber(r.po_amount_open);
+      const recItem = poRecMap.get(supplier) || {};
+      const reducibleRatio = s3Trigger ? thresholds.forecast_po_reducible_ratio_s3 : thresholds.forecast_po_reducible_ratio;
+      const actionLabel = recItem.suggested_action || (reducibleRatio >= 0.5 ? 'pause' : 'reduce');
+      const terms = String(r.payment_terms || '').toLowerCase();
+      const termsCoef = terms.includes('delivery') || terms.includes('receipt') ? 1 : 0.9;
+      const expectedCashSaved = amountOpen !== null ? amountOpen * reducibleRatio * termsCoef : null;
+      const ddlDate = addDays(baseDate, 14);
+      const impacts = expectedCashSaved !== null ? computeScenarioImpacts(expectedCashSaved, 'po', thresholds) : { base:null, s1:null, s2:null, s3:null };
+      return {
+        source:'forecast:PO_reduction',
+        domain:'预测',
+        signal:`PO减采：${supplier}，未到货${fmtWan(amountOpen)}`,
+        owner:'',
+        task:`对供应商【${supplier}】未到货PO【金额${fmtWan(amountOpen)}】执行【${actionLabel}】（比例${Math.round(reducibleRatio * 100)}%），预计节省现金【${fmtWan(expectedCashSaved)}】，DDL ${ddlDate}`,
+        ddl: ddlDate,
+        impact:`预计现金影响 ${fmtWan(expectedCashSaved)}`,
+        expected_cash_impact_base: impacts.base,
+        expected_cash_impact_s1: impacts.s1,
+        expected_cash_impact_s2: impacts.s2,
+        expected_cash_impact_s3: impacts.s3,
+        evidence_metric:`未到货${fmtWan(amountOpen)}`,
+        link: buildEvidenceLink({
+          seg:'total',
+          tab:'forecast',
+          filters:{ view:'forecast_po', supplier: supplier },
+          anchor:'total_forecast_po_table'
+        }, '查看证据'),
+        priority_score: amountOpen || 0
+      };
+    }).sort((a,b)=>b.priority_score - a.priority_score);
+
+    const topN = thresholds.forecast_top_n || 20;
+    const actions = [
+      ...arActions.slice(0, topN),
+      ...apActions.slice(0, topN),
+      ...poActions.slice(0, topN)
+    ];
+
+    const impactBaseTotal = actions.reduce((sum, a)=>sum + (toNumber(a.expected_cash_impact_base) || 0), 0);
+    const coverageRatio = baseGap ? impactBaseTotal / baseGap : null;
+
+    if((baseMinBalance !== null && baseMinBalance < 0) || (baseGap !== null && baseGap > thresholds.forecast_gap_threshold)){
+      const topAr = arActions.slice(0, 5);
+      const topAp = apActions.slice(0, 5);
+      const topPo = poActions.slice(0, 5);
+      const emergencyImpact = [...topAr, ...topAp, ...topPo].reduce((sum, a)=>sum + (toNumber(a.expected_cash_impact_base) || 0), 0);
+      const impacts = computeScenarioImpacts(emergencyImpact, 'ar', thresholds);
+      actions.push({
+        source:'forecast:emergency_pack',
+        domain:'预测',
+        signal:'缺口应急包（Top5 AR/AP/PO）',
+        owner:'',
+        task:`汇总Top5 AR/AP/PO 动作，预计释放现金${fmtWan(emergencyImpact)}，DDL ${addDays(baseDate, 3)}`,
+        ddl:addDays(baseDate, 3),
+        impact:`预计现金影响 ${fmtWan(emergencyImpact)}`,
+        expected_cash_impact_base: impacts.base,
+        expected_cash_impact_s1: impacts.s1,
+        expected_cash_impact_s2: impacts.s2,
+        expected_cash_impact_s3: impacts.s3,
+        evidence_metric:`Top5动作合计${fmtWan(emergencyImpact)}`,
+        link: buildEvidenceLink({
+          seg:'total',
+          tab:'forecast',
+          filters:{ view:'forecast_base' },
+          anchor:'total_forecast_summary'
+        }, '查看证据')
+      });
+    }
+
+    if(coverageRatio !== null && coverageRatio < thresholds.forecast_action_coverage_threshold){
+      const target = baseGap ? baseGap * thresholds.forecast_action_coverage_threshold : null;
+      const gapDelta = target && impactBaseTotal ? Math.max(0, target - impactBaseTotal) : null;
+      const impacts = gapDelta !== null ? computeScenarioImpacts(gapDelta, 'ar', thresholds) : { base:null, s1:null, s2:null, s3:null };
+      actions.push({
+        source:'forecast:coverage_boost',
+        domain:'预测',
+        signal:'行动覆盖度不足',
+        owner:'',
+        task:`提升AR回款比例/PO减采比例，追加释放现金${fmtWan(gapDelta)}，DDL ${addDays(baseDate, 5)}`,
+        ddl:addDays(baseDate, 5),
+        impact:`预计现金影响 ${fmtWan(gapDelta)}`,
+        expected_cash_impact_base: impacts.base,
+        expected_cash_impact_s1: impacts.s1,
+        expected_cash_impact_s2: impacts.s2,
+        expected_cash_impact_s3: impacts.s3,
+        evidence_metric:`覆盖度${coverageRatio === null ? '—' : (coverageRatio * 100).toFixed(1) + '%'}`,
+        link: buildEvidenceLink({
+          seg:'total',
+          tab:'forecast',
+          filters:{ view:'forecast_components' },
+          anchor:'total_forecast_components'
+        }, '查看证据')
+      });
+    }
+
+    return {
+      actions,
+      base_gap_amount: baseGap,
+      base_min_balance: baseMinBalance,
+      s1_gap_amount: s1Gap,
+      coverage_ratio: coverageRatio,
+      impact_base_total: impactBaseTotal
+    };
+  }
+
+  function normalizeTunerParams(raw){
+    const base = deepClone(DEFAULT_TUNER_PARAMS);
+    const limits = {
+      'ar.collect_ratio_not_due':{min:0,max:1},
+      'ar.collect_ratio_1_30':{min:0,max:1},
+      'ar.collect_ratio_31_60':{min:0,max:1},
+      'ar.collect_ratio_61_90':{min:0,max:1},
+      'ar.collect_ratio_90_plus':{min:0,max:1},
+      'ar.delay_share_7d':{min:0,max:1},
+      'ar.delay_share_14d':{min:0,max:1},
+      'ap.deferral_ratio':{min:0,max:1},
+      'ap.deferral_days_top_vendor':{min:0,max:14},
+      'ap.deferral_days_other':{min:0,max:21},
+      'ap.top_vendor_threshold_ratio':{min:0,max:1},
+      'po.reducible_ratio_base':{min:0,max:1},
+      'po.reducible_ratio_S3':{min:0,max:1},
+      'threshold.gap_amount_warn_wan':{min:0,max:500},
+      'threshold.min_balance_warn_wan':{min:0,max:500}
+    };
+    const enums = {
+      'ar.delay_apply_to_bucket':['all','overdue_only','31plus'],
+      'po.apply_scope':['all','top_suppliers','low_turnover_sku_if_available']
+    };
+    if(raw && typeof raw === 'object'){
+      Object.keys(limits).forEach(path=>{
+        const lim = limits[path];
+        const val = getPath(raw, path);
+        if(val !== undefined){
+          const fallback = getPath(base, path);
+          setPath(base, path, clampNumber(val, lim.min, lim.max, fallback));
+        }
+      });
+      Object.keys(enums).forEach(path=>{
+        const val = getPath(raw, path);
+        if(val && enums[path].indexOf(val) !== -1){
+          setPath(base, path, val);
+        }
+      });
+    }
+    const share7 = base.ar.delay_share_7d;
+    const share14 = base.ar.delay_share_14d;
+    const total = share7 + share14;
+    if(total > 1){
+      const scale = 1 / total;
+      base.ar.delay_share_7d = Number((share7 * scale).toFixed(2));
+      base.ar.delay_share_14d = Number((share14 * scale).toFixed(2));
+    }
+    base.version = TUNER_SCHEMA_VERSION;
+    return base;
+  }
+
+  function readTunerParamsFromUrl(){
+    try{
+      const params = new URLSearchParams(window.location.search);
+      const raw = params.get('tuner');
+      if(!raw) return null;
+      const text = base64UrlDecode(raw);
+      return normalizeTunerParams(JSON.parse(text));
+    }catch(err){
+      return null;
+    }
+  }
+
+  function readTunerParamsFromStorage(){
+    try{
+      if(!window.localStorage) return null;
+      const raw = window.localStorage.getItem(TUNER_STORAGE_KEY);
+      if(!raw) return null;
+      return normalizeTunerParams(JSON.parse(raw));
+    }catch(err){
+      return null;
+    }
+  }
+
+  function writeTunerParamsToStorage(params){
+    try{
+      if(!window.localStorage) return;
+      window.localStorage.setItem(TUNER_STORAGE_KEY, JSON.stringify(params));
+    }catch(err){}
+  }
+
+  function buildTunerShareLink(params){
+    const base = window.location.href.split('?')[0].split('#')[0];
+    const qs = new URLSearchParams(window.location.search);
+    qs.set('tuner', base64UrlEncode(JSON.stringify(params)));
+    return base + '?' + qs.toString();
+  }
+
+  function getRowDate(row){
+    return row.planned_date || row.due_date || row.date || row.expected_date || row.plan_date || '';
+  }
+
+  function getRowAmount(row){
+    return Number(row.amount_open || row.amount || row.balance || row.amount_due || row.payable_amount || row.value) || 0;
+  }
+
+  function getVendorName(row){
+    return row.vendor || row.supplier || row.vendor_name || row.supplier_name || row.counterparty || '未知供应商';
+  }
+
+  function getCustomerName(row){
+    return row.customer || row.customer_name || row.client || row.counterparty || '未知客户';
+  }
+
+  function getArBucket(row){
+    const raw = String(row.aging_bucket || row.bucket || row.aging || row.aging_days || '').toLowerCase();
+    if(raw.includes('not') || raw.includes('未')) return 'not_due';
+    if(raw.includes('1') && raw.includes('30')) return '1_30';
+    if(raw.includes('31') && raw.includes('60')) return '31_60';
+    if(raw.includes('61') && raw.includes('90')) return '61_90';
+    if(raw.includes('90')) return '90_plus';
+    const days = Number(row.aging_days);
+    if(Number.isFinite(days)){
+      if(days <= 0) return 'not_due';
+      if(days <= 30) return '1_30';
+      if(days <= 60) return '31_60';
+      if(days <= 90) return '61_90';
+      return '90_plus';
+    }
+    return '1_30';
+  }
+
+  function bucketCollectRatio(params, bucket){
+    const ar = params.ar;
+    if(bucket === 'not_due') return ar.collect_ratio_not_due;
+    if(bucket === '1_30') return ar.collect_ratio_1_30;
+    if(bucket === '31_60') return ar.collect_ratio_31_60;
+    if(bucket === '61_90') return ar.collect_ratio_61_90;
+    return ar.collect_ratio_90_plus;
+  }
+
+  function shouldDelayBucket(params, bucket){
+    const mode = params.ar.delay_apply_to_bucket;
+    if(mode === 'all') return true;
+    if(mode === '31plus') return bucket === '31_60' || bucket === '61_90' || bucket === '90_plus';
+    return bucket !== 'not_due';
+  }
+
+  function buildDateList(startDate, days){
+    const list = [];
+    for(let i=0;i<days;i++){
+      list.push(addDays(startDate, i));
+    }
+    return list.filter(Boolean);
+  }
+
+  function accumulateByDate(map, date, amount){
+    if(!date) return;
+    if(!map[date]) map[date] = 0;
+    map[date] += amount;
+  }
+
+  function getOpeningBalance(forecast){
+    const meta = forecast && forecast.meta ? forecast.meta : {};
+    const base = forecast && forecast.base ? forecast.base : {};
+    const candidates = [
+      meta.opening_balance,
+      meta.starting_balance,
+      meta.start_balance,
+      base.opening_balance,
+      base.starting_balance,
+      base.start_balance
+    ];
+    for(let i=0;i<candidates.length;i++){
+      const n = toNumber(candidates[i]);
+      if(n !== null) return { value:n, inferred:false };
+    }
+    const baseDaily = base.daily || [];
+    if(baseDaily.length){
+      const first = baseDaily[0];
+      const ending = toNumber(first.ending_balance);
+      if(ending !== null){
+        let net = toNumber(first.net);
+        if(net === null){
+          const cin = toNumber(first.in);
+          const cout = toNumber(first.out);
+          if(cin !== null && cout !== null) net = cin - cout;
+        }
+        if(net === null) net = 0;
+        return { value: ending - net, inferred:true };
+      }
+    }
+    return { value:0, inferred:true };
+  }
+
+  function getForecastBaseDate(forecast){
+    const meta = forecast && forecast.meta ? forecast.meta : {};
+    const base = forecast && forecast.base ? forecast.base : {};
+    if(meta.base_date) return meta.base_date;
+    if(base.base_date) return base.base_date;
+    const baseDaily = base.daily || [];
+    if(baseDaily.length && baseDaily[0].date) return baseDaily[0].date;
+    return formatDate(new Date());
+  }
+
+  function calcArInflow(planRows, params, opts){
+    const extraDelayDays = opts && opts.extraDelayDays ? opts.extraDelayDays : 0;
+    const map = {};
+    const impacts = [];
+    planRows.forEach(row=>{
+      const date = getRowDate(row);
+      if(!date) return;
+      const bucket = getArBucket(row);
+      const ratio = bucketCollectRatio(params, bucket);
+      const amount = getRowAmount(row);
+      const collected = amount * ratio;
+      const shiftedBase = extraDelayDays ? addDays(date, extraDelayDays) : date;
+      let immediate = collected;
+      let delayed7 = 0;
+      let delayed14 = 0;
+      if(shouldDelayBucket(params, bucket)){
+        delayed7 = collected * params.ar.delay_share_7d;
+        delayed14 = collected * params.ar.delay_share_14d;
+        immediate = collected - delayed7 - delayed14;
+      }
+      accumulateByDate(map, shiftedBase, immediate);
+      if(delayed7) accumulateByDate(map, addDays(shiftedBase, 7), delayed7);
+      if(delayed14) accumulateByDate(map, addDays(shiftedBase, 14), delayed14);
+      impacts.push({
+        row: row,
+        bucket: bucket,
+        date: shiftedBase,
+        amount: collected
+      });
+    });
+    return { map, impacts };
+  }
+
+  function calcApOutflow(planRows, params){
+    const totals = {};
+    let totalAmt = 0;
+    planRows.forEach(row=>{
+      const amt = getRowAmount(row);
+      const vendor = getVendorName(row);
+      totals[vendor] = (totals[vendor] || 0) + amt;
+      totalAmt += amt;
+    });
+    const topVendors = {};
+    Object.keys(totals).forEach(vendor=>{
+      const share = totalAmt ? totals[vendor] / totalAmt : 0;
+      if(share >= params.ap.top_vendor_threshold_ratio){
+        topVendors[vendor] = true;
+      }
+    });
+    const map = {};
+    const impacts = [];
+    planRows.forEach(row=>{
+      const date = getRowDate(row);
+      if(!date) return;
+      const amt = getRowAmount(row);
+      const vendor = getVendorName(row);
+      const isTop = !!topVendors[vendor];
+      const deferralDays = isTop ? params.ap.deferral_days_top_vendor : params.ap.deferral_days_other;
+      const deferralAmt = amt * params.ap.deferral_ratio;
+      const keepAmt = amt - deferralAmt;
+      accumulateByDate(map, date, keepAmt);
+      if(deferralAmt){
+        accumulateByDate(map, addDays(date, deferralDays), deferralAmt);
+      }
+      impacts.push({
+        row: row,
+        vendor: vendor,
+        date: date,
+        deferred_date: addDays(date, deferralDays),
+        amount: deferralAmt
+      });
+    });
+    return { map, impacts, topVendors };
+  }
+
+  function detectLowTurnoverRows(planRows){
+    return planRows.filter(row=>{
+      const label = String(row.turnover_class || row.turnover_bucket || row.turnover_label || '').toLowerCase();
+      if(label.includes('low') || label.includes('slow')) return true;
+      const days = toNumber(row.turnover_days || row.dio_days);
+      if(days !== null && days > 120) return true;
+      return !!row.low_turnover;
+    });
+  }
+
+  function calcPoOutflow(planRows, params, scenarioKey){
+    const suppliers = {};
+    planRows.forEach(row=>{
+      const supplier = getVendorName(row);
+      suppliers[supplier] = (suppliers[supplier] || 0) + getRowAmount(row);
+    });
+    const supplierList = Object.keys(suppliers).map(key=>({ key, total: suppliers[key] }));
+    supplierList.sort((a,b)=>b.total - a.total);
+    const topCount = Math.max(1, Math.ceil(supplierList.length * 0.2));
+    const topSuppliers = {};
+    supplierList.slice(0, topCount).forEach(item=>{ topSuppliers[item.key] = true; });
+
+    const lowTurnoverRows = detectLowTurnoverRows(planRows);
+    const lowTurnoverSet = new Set(lowTurnoverRows.map(r=>r.sku || r.product || r.item || r.sku_code || r.id || r.name || ''));
+    const hasLowTurnover = lowTurnoverRows.length > 0;
+
+    const ratio = scenarioKey === 'S3' ? params.po.reducible_ratio_S3 : params.po.reducible_ratio_base;
+    const map = {};
+    const impacts = [];
+    planRows.forEach(row=>{
+      const date = getRowDate(row);
+      if(!date) return;
+      const supplier = getVendorName(row);
+      let inScope = true;
+      if(params.po.apply_scope === 'top_suppliers'){
+        inScope = !!topSuppliers[supplier];
+      }else if(params.po.apply_scope === 'low_turnover_sku_if_available'){
+        if(hasLowTurnover){
+          const key = row.sku || row.product || row.item || row.sku_code || row.id || row.name || '';
+          inScope = lowTurnoverSet.has(key);
+        }else{
+          inScope = true;
+        }
+      }
+      const amt = getRowAmount(row);
+      const reduced = inScope ? (amt * ratio) : 0;
+      const outAmt = amt - reduced;
+      accumulateByDate(map, date, outAmt);
+      impacts.push({
+        row: row,
+        supplier: supplier,
+        date: date,
+        reduced_amount: reduced,
+        in_scope: inScope
+      });
+    });
+    return { map, impacts, topSuppliers, hasLowTurnover };
+  }
+
+  function computeDailyRecalc(forecast, params, opts){
+    const baseDate = getForecastBaseDate(forecast);
+    const dateList = buildDateList(baseDate, 30);
+    const components = forecast && forecast.components ? forecast.components : forecast;
+    const arRows = Array.isArray(components && components.ar_plan_rows) ? components.ar_plan_rows : [];
+    const apRows = Array.isArray(components && components.ap_plan_rows) ? components.ap_plan_rows : [];
+    const poRows = Array.isArray(components && components.po_plan_rows) ? components.po_plan_rows : [];
+
+    const arCalc = calcArInflow(arRows, params, opts);
+    const apCalc = calcApOutflow(apRows, params);
+    const poCalc = calcPoOutflow(poRows, params, opts && opts.scenarioKey);
+    const balanceInfo = getOpeningBalance(forecast);
+    let running = balanceInfo.value;
+    const daily = dateList.map(date=>{
+      const inConfirmed = arCalc.map[date] || 0;
+      const outConfirmed = apCalc.map[date] || 0;
+      const outEstimated = poCalc.map[date] || 0;
+      const net = inConfirmed - outConfirmed - outEstimated;
+      running += net;
+      return {
+        date: date,
+        in: inConfirmed,
+        out: outConfirmed + outEstimated,
+        net: net,
+        ending_balance: running,
+        in_confirmed: inConfirmed,
+        out_confirmed: outConfirmed,
+        out_estimated: outEstimated
+      };
+    });
+    return {
+      daily_recalc: daily,
+      base_date: baseDate,
+      opening_balance: balanceInfo.value,
+      balance_inferred: balanceInfo.inferred,
+      impacts: {
+        ar: arCalc,
+        ap: apCalc,
+        po: poCalc
+      }
+    };
+  }
+
+  function getGapMetrics(daily){
+    let minBalance = null;
+    let minDate = '';
+    daily.forEach(row=>{
+      const bal = toNumber(row.ending_balance);
+      if(bal === null) return;
+      if(minBalance === null || bal < minBalance){
+        minBalance = bal;
+        minDate = row.date;
+      }
+    });
+    if(minBalance === null) minBalance = 0;
+    const maxGap = Math.max(0, -minBalance);
+    return { min_balance: minBalance, max_gap: maxGap, gap_day: maxGap > 0 ? minDate : '' };
+  }
+
+  function computeForecastCoverage(daily){
+    let confirmed = 0;
+    let estimated = 0;
+    daily.forEach(row=>{
+      confirmed += Number(row.out_confirmed) || 0;
+      estimated += Number(row.out_estimated) || 0;
+    });
+    const ratio = confirmed + estimated ? confirmed / (confirmed + estimated) : 1;
+    return { confirmed, estimated, ratio };
+  }
+
+  function recomputeForecastWithTuner(forecastRaw, tunerParams){
+    if(!forecastRaw) return null;
+    const params = normalizeTunerParams(tunerParams || {});
+    const base = computeDailyRecalc(forecastRaw, params, { scenarioKey:'Base' });
+    const scenarios = {};
+    const rawScenarios = forecastRaw && forecastRaw.scenarios ? forecastRaw.scenarios : {};
+    const scenarioKeys = Object.keys(rawScenarios);
+    if(!scenarioKeys.includes('S1')) scenarioKeys.unshift('S1');
+    scenarioKeys.forEach(key=>{
+      const opts = { scenarioKey:key, extraDelayDays: key === 'S1' ? 7 : 0 };
+      scenarios[key] = computeDailyRecalc(forecastRaw, params, opts);
+    });
+    const baseGap = getGapMetrics(base.daily_recalc);
+    const s1Gap = scenarios.S1 ? getGapMetrics(scenarios.S1.daily_recalc) : null;
+    const coverage = computeForecastCoverage(base.daily_recalc);
+    const gapWan = baseGap.max_gap / 10000;
+    const minBalWan = baseGap.min_balance / 10000;
+    const gapThreshold = params.threshold.gap_amount_warn_wan;
+    const minBalanceThreshold = params.threshold.min_balance_warn_wan;
+    const gapRisk = Math.min(100, Math.max(0, gapThreshold ? (gapWan / gapThreshold) * 100 : 0));
+    const minBalRisk = (minBalWan < minBalanceThreshold) ? Math.min(100, ((minBalanceThreshold - minBalWan) / Math.max(1, minBalanceThreshold)) * 100) : 0;
+    const liquidityRisk = Math.min(100, Math.round(gapRisk * 0.7 + minBalRisk * 0.6));
+    const coverageRisk = Math.min(100, Math.max(0, Math.round((1 - coverage.ratio) * 100)));
+    let sensitivityRisk = 0;
+    if(s1Gap){
+      const baseGapVal = baseGap.max_gap || 1;
+      const delta = (s1Gap.max_gap - baseGap.max_gap) / baseGapVal;
+      sensitivityRisk = Math.min(100, Math.max(0, Math.round(delta * 100)));
+    }
+    const breakdownRows = [
+      {
+        risk_item:'流动性缺口风险',
+        formula:'max_gap 与 min_balance 阈值扣分',
+        threshold:`缺口>=${gapThreshold}万 / 余额<=${minBalanceThreshold}万`,
+        current_value: gapWan > 0 ? gapWan : minBalWan,
+        penalty: liquidityRisk,
+        evidence_state_link:{ seg:'total', tab:'finance', tableId:'total_finance_bank_txn_table', anchor:'total_finance_bank_txn_table' }
+      },
+      {
+        risk_item:'预测覆盖度风险',
+        formula:'confirmed / (confirmed + estimated)',
+        threshold:'>= 80%',
+        current_value: coverage.ratio,
+        penalty: coverageRisk,
+        evidence_state_link:{ seg:'total', tab:'finance', tableId:'total_finance_ap_table', anchor:'total_finance_ap_table' }
+      },
+      {
+        risk_item:'情景敏感度风险',
+        formula:'S1 max_gap 相对 Base',
+        threshold:'<= 20%',
+        current_value: s1Gap ? ((s1Gap.max_gap - baseGap.max_gap) / Math.max(1, baseGap.max_gap)) : 0,
+        penalty: sensitivityRisk,
+        evidence_state_link:{ seg:'total', tab:'finance', tableId:'total_finance_ar_table', anchor:'total_finance_ar_table' }
+      }
+    ];
+
+    return {
+      base: base,
+      scenarios: scenarios,
+      recommendations_recalc: {
+        ar_collection: base.impacts.ar.impacts || [],
+        ap_deferral: base.impacts.ap.impacts || [],
+        po_reduction: base.impacts.po.impacts || [],
+        summary_kpi: {
+          gap_amount: baseGap.max_gap,
+          min_balance: baseGap.min_balance,
+          gap_day: baseGap.gap_day
+        }
+      },
+      risk_recalc: {
+        liquidity_gap_risk: liquidityRisk,
+        forecast_coverage_risk: coverageRisk,
+        scenario_sensitivity_risk: sensitivityRisk,
+        breakdown_rows: breakdownRows
+      }
+    };
+  }
+
+  function buildForecastActions(computed, params, baseDate){
+    const base = computed.base;
+    const gap = getGapMetrics(base.daily_recalc);
+    const gapDay = gap.gap_day;
+    const actions = [];
+    const arImpacts = base.impacts.ar.impacts || [];
+    const apImpacts = base.impacts.ap.impacts || [];
+    const poImpacts = base.impacts.po.impacts || [];
+
+    function arScore(item){
+      const mult = item.bucket === '90_plus' ? 1.6 : (item.bucket === '61_90' ? 1.4 : (item.bucket === '31_60' ? 1.2 : 1));
+      return item.amount * mult;
+    }
+
+    const arRows = arImpacts.map(item=>{
+      const dateOk = gapDay ? item.date <= gapDay : true;
+      return {
+        type:'ar',
+        name:getCustomerName(item.row),
+        amount:item.amount,
+        impact: dateOk ? item.amount : 0,
+        score: item.row.priority_score || arScore(item)
+      };
+    }).sort((a,b)=>b.score - a.score).slice(0, 20);
+
+    arRows.forEach(row=>{
+      actions.push({
+        source:'forecast:AR_collection',
+        domain:'预测',
+        signal:`回款策略：${row.name}`,
+        owner:'应收负责人',
+        task:'推进回款节奏并锁定对账窗口',
+        ddl:addDays(baseDate, ACTION_DAYS.quick),
+        impact:`预计现金影响 ${fmtWan(row.impact)}`,
+        expected_cash_impact: row.impact,
+        link: buildEvidenceLink({
+          seg:'total',
+          tab:'forecast',
+          filters:{ view:'forecast_ar', customer: row.name },
+          anchor:'total_forecast_ar_table'
+        }, '查看证据')
+      });
+    });
+
+    const apRows = apImpacts.map(item=>{
+      const hitGap = gapDay && item.date <= gapDay && item.deferred_date > gapDay;
+      const impact = hitGap ? item.amount : 0;
+      return {
+        type:'ap',
+        name:getVendorName(item.row),
+        amount:item.amount,
+        impact:impact,
+        score:item.row.priority_score || item.amount
+      };
+    }).sort((a,b)=>b.score - a.score).slice(0, 20);
+
+    apRows.forEach(row=>{
+      actions.push({
+        source:'forecast:AP_deferral',
+        domain:'预测',
+        signal:`延付策略：${row.name}`,
+        owner:'采购负责人',
+        task:'协商付款节奏并控制关键供应商关系',
+        ddl:addDays(baseDate, ACTION_DAYS.mid),
+        impact:`预计现金影响 ${fmtWan(row.impact)}`,
+        expected_cash_impact: row.impact,
+        link: buildEvidenceLink({
+          seg:'total',
+          tab:'forecast',
+          filters:{ view:'forecast_ap', vendor: row.name },
+          anchor:'total_forecast_ap_table'
+        }, '查看证据')
+      });
+    });
+
+    const poRows = poImpacts.map(item=>{
+      const impact = gapDay && item.date <= gapDay ? item.reduced_amount : 0;
+      return {
+        type:'po',
+        name:getVendorName(item.row),
+        amount:item.reduced_amount,
+        impact:impact,
+        score:item.row.priority_score || item.reduced_amount
+      };
+    }).sort((a,b)=>b.score - a.score).slice(0, 20);
+
+    poRows.forEach(row=>{
+      if(!row.amount) return;
+      actions.push({
+        source:'forecast:PO_reduction',
+        domain:'预测',
+        signal:`减采策略：${row.name}`,
+        owner:'供应链负责人',
+        task:'调整补货节奏并压降低周转SKU',
+        ddl:addDays(baseDate, ACTION_DAYS.mid),
+        impact:`预计现金影响 ${fmtWan(row.impact)}`,
+        expected_cash_impact: row.impact,
+        link: buildEvidenceLink({
+          seg:'total',
+          tab:'forecast',
+          filters:{ view:'forecast_po', supplier: row.name },
+          anchor:'total_forecast_po_table'
+        }, '查看证据')
+      });
+    });
+
+    const gapAmount = gap.max_gap;
+    const totalImpact = actions.reduce((sum,a)=>sum + (Number(a.expected_cash_impact) || 0), 0);
+    const coverageRatio = gapAmount ? totalImpact / gapAmount : 1;
+    if(gapAmount > 0 && coverageRatio < 0.8){
+      actions.push({
+        source:'forecast:coverage',
+        domain:'预测策略',
+        signal:'行动覆盖度不足',
+        owner:'财务负责人',
+        task:'提高策略强度或补充融资/减支方案',
+        ddl:addDays(baseDate, ACTION_DAYS.quick),
+        impact:`覆盖率 ${(coverageRatio * 100).toFixed(1)}%，缺口${fmtWan(gapAmount)}`,
+        expected_cash_impact: gapAmount * (0.8 - coverageRatio),
+        link: buildEvidenceLink({ seg:'total', tab:'overview' }, '查看证据')
+      });
+    }
+
+    actions.sort((a,b)=>(Number(b.expected_cash_impact)||0) - (Number(a.expected_cash_impact)||0));
+    return { actions, coverage_ratio: coverageRatio, total_impact: totalImpact, gap_amount: gapAmount };
+  }
+
+  function renderForecastChart(chart, daily, scenarios){
+    if(!chart || !daily) return;
+    const dates = daily.map(d=>d.date);
+    const baseSeries = daily.map(d=>d.ending_balance);
+    const series = [
+      { name:'Base', type:'line', data: baseSeries, smooth:true, lineStyle:{ width:2 } }
+    ];
+    if(scenarios){
+      Object.keys(scenarios).forEach(key=>{
+        if(key === 'Base') return;
+        const arr = scenarios[key].daily_recalc || [];
+        series.push({ name:key, type:'line', data: arr.map(d=>d.ending_balance), smooth:true, lineStyle:{ width:2, type:'dashed' } });
+      });
+    }
+    chart.setOption({
+      grid:{left:40,right:18,top:28,bottom:28},
+      tooltip:{trigger:'axis'},
+      legend:{data:series.map(s=>s.name),top:0},
+      xAxis:{type:'category',data:dates},
+      yAxis:{type:'value'},
+      series:series
+    }, { notMerge:false, lazyUpdate:true });
+  }
+
+  function renderForecastGapKpis(containerId, baseGap, coverageRatio){
+    const items = [
+      { label:'Base最低余额', value: fmtWan(baseGap.min_balance) },
+      { label:'Base缺口', value: fmtWan(baseGap.max_gap) },
+      { label:'缺口日', value: baseGap.gap_day || '—' },
+      { label:'行动覆盖率', value: coverageRatio !== null ? fmtRatio(coverageRatio) : '—' }
+    ];
+    renderMiniKpis(containerId, items);
+  }
+
+  function renderForecastSummaries(baseGap, s1Gap, coverage){
+    const baseEl = document.getElementById('tuner_base_summary');
+    if(baseEl){
+      baseEl.textContent = `Base：min_balance ${fmtWan(baseGap.min_balance)} / max_gap ${fmtWan(baseGap.max_gap)} / gap_day ${baseGap.gap_day || '—'}`;
+    }
+    const s1El = document.getElementById('tuner_s1_summary');
+    if(s1El && s1Gap){
+      s1El.textContent = `S1：min_balance ${fmtWan(s1Gap.min_balance)} / max_gap ${fmtWan(s1Gap.max_gap)} / gap_day ${s1Gap.gap_day || '—'}`;
+    }
+    const coverEl = document.getElementById('tuner_action_coverage');
+    if(coverEl){
+      coverEl.textContent = `actions_cover_ratio：${fmtRatio(coverage.coverage_ratio)}（impact ${fmtWan(coverage.total_impact)} / gap ${fmtWan(coverage.gap_amount)}）`;
+    }
+  }
+
+  function renderForecastCards(baseGap, s1Gap, sensitivity){
+    const baseCard = document.getElementById('forecast_base_card');
+    if(baseCard){
+      baseCard.innerHTML = '';
+      baseCard.appendChild(buildMiniCard('Base缺口', fmtWan(baseGap.max_gap), `最低余额 ${fmtWan(baseGap.min_balance)}｜${baseGap.gap_day || '—'}`));
+    }
+    const s1Card = document.getElementById('forecast_s1_card');
+    if(s1Card && s1Gap){
+      s1Card.innerHTML = '';
+      s1Card.appendChild(buildMiniCard('S1缺口', fmtWan(s1Gap.max_gap), `最低余额 ${fmtWan(s1Gap.min_balance)}｜${s1Gap.gap_day || '—'}`));
+    }
+    const sensCard = document.getElementById('forecast_sensitivity_card');
+    if(sensCard){
+      const delta = s1Gap ? (s1Gap.max_gap - baseGap.max_gap) : 0;
+      sensCard.innerHTML = '';
+      sensCard.appendChild(buildMiniCard('情景敏感度', fmtWan(delta), 'S1 vs Base 缺口变化'));
+    }
+    const sensNote = document.getElementById('forecast_sensitivity_note');
+    if(sensNote && s1Gap){
+      sensNote.textContent = `S1回款延迟导致缺口变化 ${fmtSignedWan(s1Gap.max_gap - baseGap.max_gap)}。`;
+    }
+  }
+
+  function renderForecastRiskScores(risk){
+    const gapEl = document.getElementById('risk_score_gap');
+    if(gapEl) gapEl.textContent = fmtScore(risk ? risk.liquidity_gap_risk : null);
+    const covEl = document.getElementById('risk_score_coverage');
+    if(covEl) covEl.textContent = fmtScore(risk ? risk.forecast_coverage_risk : null);
+    const senEl = document.getElementById('risk_score_sensitivity');
+    if(senEl) senEl.textContent = fmtScore(risk ? risk.scenario_sensitivity_risk : null);
+  }
+
+  function initForecastTuner(forecastRaw, finance, actions, baseDate){
+    const tunerPanel = document.getElementById('tuner_apply_btn');
+    if(!tunerPanel) return;
+    const forecast = forecastRaw || null;
+    const baseActions = actions.slice();
+    const baseRiskRows = (finance && finance.bank && finance.bank.risk && finance.bank.risk.risk_breakdown_rows)
+      ? finance.bank.risk.risk_breakdown_rows.slice() : [];
+    const chartEl = document.getElementById('forecast_balance_chart');
+    const chart = (chartEl && window.echarts) ? echarts.init(chartEl) : null;
+    const state = {
+      forecast: forecast,
+      finance: finance,
+      actions: actions,
+      baseActions: baseActions,
+      baseRiskRows: baseRiskRows,
+      chart: chart,
+      params: null
+    };
+
+    if(!forecast){
+      const hintEl = document.getElementById('forecast_balance_hint');
+      if(hintEl) hintEl.textContent = '缺少 forecast_latest.json，无法计算预测策略。';
+      const noteEl = document.getElementById('tuner_balance_note');
+      if(noteEl) noteEl.textContent = '余额口径：未加载预测数据';
+      return;
+    }
+
+    function syncControls(path, value){
+      const nodes = document.querySelectorAll(`.tuner-input[data-tuner-path="${path}"]`);
+      nodes.forEach(node=>{
+        if(node.tagName === 'SELECT'){
+          node.value = value;
+        }else{
+          node.value = value;
+        }
+      });
+    }
+
+    function applyParamsToControls(params){
+      document.querySelectorAll('.tuner-input').forEach(node=>{
+        const path = node.getAttribute('data-tuner-path');
+        if(!path) return;
+        const val = getPath(params, path);
+        if(val === undefined || val === null) return;
+        node.value = val;
+      });
+    }
+
+    function updateForecast(){
+      if(!state.forecast) return;
+      state.params = normalizeTunerParams(state.params || {});
+      applyParamsToControls(state.params);
+      writeTunerParamsToStorage(state.params);
+      const computed = recomputeForecastWithTuner(state.forecast, state.params);
+      if(!computed) return;
+      const baseGap = getGapMetrics(computed.base.daily_recalc);
+      const s1Gap = computed.scenarios && computed.scenarios.S1 ? getGapMetrics(computed.scenarios.S1.daily_recalc) : null;
+      const coverage = buildForecastActions(computed, state.params, baseDate);
+      if(computed.risk_recalc){
+        const penalty = coverage.coverage_ratio < 0.8 ? Math.round((0.8 - coverage.coverage_ratio) * 100) : 0;
+        const row = {
+          risk_item:'行动覆盖率',
+          formula:'Σ expected_cash_impact / gap_amount',
+          threshold:'>= 80%',
+          current_value: coverage.coverage_ratio,
+          penalty: penalty,
+          evidence_state_link:{ seg:'total', tab:'overview' }
+        };
+        computed.risk_recalc.breakdown_rows = (computed.risk_recalc.breakdown_rows || []).slice();
+        computed.risk_recalc.breakdown_rows.push(row);
+      }
+      const hintEl = document.getElementById('forecast_balance_hint');
+      if(hintEl){
+        const inferred = computed.base.balance_inferred ? '余额口径为反推' : '余额口径为期初余额';
+        hintEl.textContent = `${inferred}｜起始日 ${computed.base.base_date}`;
+      }
+      const balanceNote = document.getElementById('tuner_balance_note');
+      if(balanceNote){
+        balanceNote.textContent = computed.base.balance_inferred ? '余额口径：反推（基于首日余额）' : '余额口径：期初余额';
+      }
+      renderForecastGapKpis('forecast_gap_kpis', baseGap, coverage.coverage_ratio);
+      renderForecastSummaries(baseGap, s1Gap || baseGap, coverage);
+      renderForecastCards(baseGap, s1Gap || baseGap, computed.risk_recalc);
+      renderForecastChart(state.chart, computed.base.daily_recalc, computed.scenarios || {});
+      renderForecastRiskScores(computed.risk_recalc);
+
+      state.actions.length = 0;
+      coverage.actions.forEach(a=>state.actions.push(a));
+      state.baseActions.forEach(a=>state.actions.push(a));
+      renderActionTable(state.actions);
+      renderForecastRiskOverlay(state.baseRiskRows, computed.risk_recalc, baseDate);
+    }
+
+    const debouncedUpdate = debounce(updateForecast, 160);
+    const inputs = document.querySelectorAll('.tuner-input');
+    inputs.forEach(node=>{
+      node.addEventListener('input', ()=>{
+        const path = node.getAttribute('data-tuner-path');
+        if(!path) return;
+        if(!state.params) state.params = deepClone(DEFAULT_TUNER_PARAMS);
+        const val = node.tagName === 'SELECT' ? node.value : node.value;
+        setPath(state.params, path, val);
+        syncControls(path, val);
+        debouncedUpdate();
+      });
+      node.addEventListener('change', ()=>{
+        debouncedUpdate();
+      });
+    });
+
+    const applyBtn = document.getElementById('tuner_apply_btn');
+    if(applyBtn) applyBtn.onclick = ()=>updateForecast();
+
+    const resetBtn = document.getElementById('tuner_reset_btn');
+    if(resetBtn) resetBtn.onclick = ()=>{
+      state.params = deepClone(DEFAULT_TUNER_PARAMS);
+      applyParamsToControls(state.params);
+      updateForecast();
+    };
+
+    const copyBtn = document.getElementById('tuner_copy_btn');
+    if(copyBtn) copyBtn.onclick = ()=>{
+      copyText(JSON.stringify(state.params || DEFAULT_TUNER_PARAMS, null, 2)).then(()=>showToast('已复制参数JSON'));
+    };
+
+    const exportBtn = document.getElementById('tuner_export_btn');
+    if(exportBtn) exportBtn.onclick = ()=>{
+      downloadJson('tuner_params.json', state.params || DEFAULT_TUNER_PARAMS);
+    };
+
+    const importInput = document.getElementById('tuner_import_input');
+    if(importInput){
+      importInput.addEventListener('change', (e)=>{
+        const file = e.target.files && e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = ()=>{
+          try{
+            const raw = JSON.parse(reader.result);
+            if(raw.version && raw.version !== TUNER_SCHEMA_VERSION){
+              showToast('参数版本不匹配');
+              importInput.value = '';
+              return;
+            }
+            state.params = normalizeTunerParams(raw);
+            applyParamsToControls(state.params);
+            updateForecast();
+            showToast('已导入参数');
+            importInput.value = '';
+          }catch(err){
+            showToast('导入失败：JSON格式错误');
+            importInput.value = '';
+          }
+        };
+        reader.readAsText(file);
+      });
+    }
+
+    const shareBtn = document.getElementById('tuner_share_btn');
+    if(shareBtn) shareBtn.onclick = ()=>{
+      const link = buildTunerShareLink(state.params || DEFAULT_TUNER_PARAMS);
+      copyText(link).then(()=>showToast('分享链接已复制'));
+    };
+
+    const fromUrl = readTunerParamsFromUrl();
+    const fromStorage = readTunerParamsFromStorage();
+    state.params = fromUrl || fromStorage || deepClone(DEFAULT_TUNER_PARAMS);
+    applyParamsToControls(state.params);
+    updateForecast();
+  }
+
+  function renderReport(dataRaw, financeRaw, forecastRaw){
     const data = normalizeData(dataRaw);
     const finance = normalizeFinanceData(financeRaw);
+    const forecast = normalizeForecastData(forecastRaw || {});
     const seg = data.segments.total || { rows:[], months:[] };
     const rows = seg.rows || [];
 
@@ -1664,6 +3463,8 @@
     ]);
 
     const baseDate = periodEnd || range.end || formatDate(new Date());
+    const forecastResult = generateForecastActions(forecast, finance, THRESHOLDS);
+    const forecastActions = forecastResult.actions || [];
     const conclusions = {
       sec0: [],
       exec: [],
@@ -2223,10 +4024,11 @@
       });
     });
 
-    const actionStats = document.getElementById('action_stats');
-    if(actionStats){
-      actionStats.textContent = `动作共 ${actions.length} 项，来自结论与预警自动汇总。`;
-    }
+    forecastActions.forEach(a=>{
+      actions.push(a);
+    });
+
+    const applyActionFilters = renderActionFilters(actions);
 
     conclusions.sec11.push({
       source:'动作清单',
@@ -2250,7 +4052,79 @@
     renderConclusions('sec10_conclusions', conclusions.sec10);
     renderConclusions('sec11_conclusions', conclusions.sec11);
 
-    renderActionTable(actions);
+    const forecastSummary = forecast && forecast.forecast && forecast.forecast.recommendations ? forecast.forecast.recommendations.summary_kpi || {} : {};
+    const baseGap = toNumber(forecastResult.base_gap_amount);
+    const baseMinBalance = toNumber(forecastResult.base_min_balance);
+    const gapValue = baseGap !== null ? baseGap : (baseMinBalance !== null ? Math.abs(baseMinBalance) : null);
+    const gapPenalty = gapValue === null ? 0 : (gapValue > THRESHOLDS.forecast_gap_threshold * 2 ? 20 : (gapValue > THRESHOLDS.forecast_gap_threshold ? 10 : 0));
+    const coverConfirmed = toNumber(forecastSummary.cover_ratio_confirmed);
+    const coverPenalty = coverConfirmed === null ? 0 : (coverConfirmed < 0.4 ? 20 : (coverConfirmed < 0.6 ? 10 : 0));
+    const scenarioMap = forecast && forecast.forecast && forecast.forecast.scenarios ? forecast.forecast.scenarios : {};
+    const scenarioGaps = ['base','s1','s2','s3'].map(k=>toNumber(scenarioMap[k] && scenarioMap[k].gap_amount)).filter(v=>v !== null);
+    const maxGap = scenarioGaps.length ? Math.max.apply(null, scenarioGaps) : null;
+    const sensitivityVal = (maxGap !== null && baseGap !== null) ? (maxGap - baseGap) : null;
+    const sensitivityRatio = (sensitivityVal !== null && baseGap) ? sensitivityVal / baseGap : null;
+    const sensitivityPenalty = sensitivityRatio === null ? 0 : (sensitivityRatio > 0.6 ? 20 : (sensitivityRatio > 0.3 ? 10 : 0));
+    const forecastRisk = {
+      liquidity_gap_risk: gapPenalty,
+      forecast_coverage_risk: coverPenalty,
+      scenario_sensitivity_risk: sensitivityPenalty,
+      breakdown_rows: [
+        {
+          risk_item:'现金缺口风险',
+          formula:'base_gap_amount',
+          threshold:`${fmtWan(THRESHOLDS.forecast_gap_threshold)}/${fmtWan(THRESHOLDS.forecast_gap_threshold * 2)}`,
+          current_value: gapValue,
+          penalty: gapPenalty,
+          evidence_state_link:{ seg:'total', tab:'forecast', filters:{ view:'forecast_base', focus:'gap' }, anchor:'total_forecast_summary' }
+        },
+        {
+          risk_item:'预测覆盖率风险',
+          formula:'confirmed_cover_ratio',
+          threshold:'60%/40%',
+          current_value: coverConfirmed,
+          penalty: coverPenalty,
+          evidence_state_link:{ seg:'total', tab:'forecast', filters:{ view:'forecast_components' }, anchor:'total_forecast_components' }
+        },
+        {
+          risk_item:'情景敏感性风险',
+          formula:'max_gap - base_gap',
+          threshold:'30%/60%',
+          current_value: sensitivityVal,
+          penalty: sensitivityPenalty,
+          evidence_state_link:{ seg:'total', tab:'forecast', filters:{ view:'forecast_scenarios' }, anchor:'total_forecast_summary' }
+        }
+      ]
+    };
+    renderRiskCenter(finance.bank || {}, periodEnd, forecastRisk);
+    const riskCoverageEl = document.getElementById('risk_action_coverage');
+    if(riskCoverageEl){
+      const coverageRatio = forecastResult.coverage_ratio;
+      const label = coverageRatio === null ? '—' : (coverageRatio * 100).toFixed(1) + '%';
+      const note = coverageRatio !== null && coverageRatio < THRESHOLDS.forecast_action_coverage_threshold ? '（行动不足以覆盖缺口）' : '';
+      riskCoverageEl.textContent = `行动覆盖度：${label}${note}`;
+    }
+    renderBoardMemo(finance.bank ? finance.bank.board_memo : null, periodEnd);
+
+    if(!applyActionFilters) renderActionTable(actions);
+
+    renderForecastActionPack(forecast, forecastResult, forecastActions);
+
+    const forecastJump = document.getElementById('forecast_action_jump');
+    if(forecastJump){
+      forecastJump.onclick = (e)=>{
+        e.preventDefault();
+        const sourceSelect = document.getElementById('action_filter_source');
+        if(sourceSelect){
+          sourceSelect.value = 'forecast';
+          if(typeof applyActionFilters === 'function') applyActionFilters();
+        }
+        const target = document.getElementById('sec-11');
+        if(target) target.scrollIntoView({ behavior:'smooth', block:'start' });
+      };
+    }
+
+    initForecastTuner(forecastRaw, finance, actions, baseDate);
 
     const snapshot = {
       period_start: periodStart || '',
@@ -2283,6 +4157,10 @@
         task: a.task || '',
         ddl: a.ddl || '',
         impact: a.impact || '',
+        expected_cash_impact_base: a.expected_cash_impact_base || null,
+        expected_cash_impact_s1: a.expected_cash_impact_s1 || null,
+        expected_cash_impact_s2: a.expected_cash_impact_s2 || null,
+        expected_cash_impact_s3: a.expected_cash_impact_s3 || null,
         link: a.link ? a.link.href : ''
       }))
     };
@@ -2316,20 +4194,45 @@
     const periodLabel = safeDateLabel(periodEnd);
     const suffix = periodLabel ? ('_' + periodLabel) : '';
     const exportActionsBtn = document.getElementById('export_actions_btn');
+    const buildActionRows = (list)=>list.map(a=>({
+      source:a.source,
+      domain:a.domain,
+      signal:a.signal,
+      owner:a.owner,
+      task:a.task,
+      ddl:a.ddl,
+      impact:a.impact,
+      expected_cash_impact_base:a.expected_cash_impact_base,
+      expected_cash_impact_s1:a.expected_cash_impact_s1,
+      expected_cash_impact_s2:a.expected_cash_impact_s2,
+      expected_cash_impact_s3:a.expected_cash_impact_s3,
+      link:a.link ? a.link.href : ''
+    }));
+    const actionColumns = ['source','domain','signal','owner','task','ddl','impact','expected_cash_impact_base','expected_cash_impact_s1','expected_cash_impact_s2','expected_cash_impact_s3','link'];
     if(exportActionsBtn){
       exportActionsBtn.addEventListener('click', ()=>{
-        const rows = actions.map(a=>({
-          source:a.source,
-          domain:a.domain,
-          signal:a.signal,
-          owner:a.owner,
-          task:a.task,
-          ddl:a.ddl,
-          impact:a.impact,
-          link:a.link ? a.link.href : ''
-        }));
-        const csv = buildCsv(rows, ['source','domain','signal','owner','task','ddl','impact','link']);
-        downloadCsv('actions' + suffix + '.csv', csv);
+        const rows = buildActionRows(actions);
+        const csv = buildCsv(rows, actionColumns);
+        downloadCsv('actions_all' + suffix + '.csv', csv);
+      });
+    }
+
+    const exportActionsAllBtn = document.getElementById('export_actions_all_btn');
+    if(exportActionsAllBtn){
+      exportActionsAllBtn.addEventListener('click', ()=>{
+        const rows = buildActionRows(actions);
+        const csv = buildCsv(rows, actionColumns);
+        downloadCsv('actions_all' + suffix + '.csv', csv);
+      });
+    }
+
+    const exportActionsForecastBtn = document.getElementById('export_actions_forecast_btn');
+    if(exportActionsForecastBtn){
+      exportActionsForecastBtn.addEventListener('click', ()=>{
+        const allowed = new Set(['forecast:AR_collection','forecast:AP_deferral','forecast:PO_reduction']);
+        const rows = buildActionRows(actions.filter(a=>allowed.has(String(a.source || ''))));
+        const csv = buildCsv(rows, actionColumns);
+        downloadCsv('actions_forecast' + suffix + '.csv', csv);
       });
     }
 
@@ -2390,29 +4293,38 @@
   async function loadAll(){
     const startAt = (window.performance && performance.now) ? performance.now() : Date.now();
     setErrorState(false, '');
-    setLoadingState(true, '正在拉取 ./data/latest.json 与 ./data/finance_latest.json');
+    setLoadingState(true, '正在拉取 ./data/latest.json / ./data/finance_latest.json / ./data/forecast_latest.json');
     try{
-      const [dataResp, financeResp] = await Promise.all([
+      const results = await Promise.allSettled([
         fetch(getDataUrl(), { cache:'no-store' }),
-        fetch(getFinanceUrl(), { cache:'no-store' })
+        fetch(getFinanceUrl(), { cache:'no-store' }),
+        fetch(getForecastUrl(), { cache:'no-store' })
       ]);
 
-      if(!dataResp.ok) throw new Error('销售数据文件加载失败: HTTP ' + dataResp.status);
-      if(!financeResp.ok) throw new Error('财务数据文件加载失败: HTTP ' + financeResp.status);
+      const dataResp = results[0].status === 'fulfilled' ? results[0].value : null;
+      const financeResp = results[1].status === 'fulfilled' ? results[1].value : null;
+      const forecastResp = results[2].status === 'fulfilled' ? results[2].value : null;
+
+      if(!dataResp || !dataResp.ok) throw new Error('销售数据文件加载失败: HTTP ' + (dataResp ? dataResp.status : '加载失败'));
+      if(!financeResp || !financeResp.ok) throw new Error('财务数据文件加载失败: HTTP ' + (financeResp ? financeResp.status : '加载失败'));
+      if(!forecastResp || !forecastResp.ok) throw new Error('预测数据文件加载失败: HTTP ' + (forecastResp ? forecastResp.status : '加载失败'));
 
       const dataText = await dataResp.text();
       const financeText = await financeResp.text();
       const data = parseJsonWithNaN(dataText);
       const finance = parseJsonWithNaN(financeText);
+      const forecastText = await forecastResp.text();
+      const forecast = parseJsonWithNaN(forecastText);
 
       await waitForEcharts(1200);
-      renderReport(data, finance);
+      renderReport(data, finance, forecast);
       setLoadingState(false, '');
       updateDebugPanel({
         loadMs: ((window.performance && performance.now) ? performance.now() : Date.now()) - startAt,
         dataOk: true,
         financeOk: true,
-        missingFields: collectMissingFields(data, finance)
+        forecastOk: true,
+        missingFields: collectMissingFields(data, finance, forecast)
       });
     }catch(err){
       setLoadingState(false, '');
@@ -2421,6 +4333,7 @@
         loadMs: ((window.performance && performance.now) ? performance.now() : Date.now()) - startAt,
         dataOk: false,
         financeOk: false,
+        forecastOk: false,
         missingFields: []
       });
     }

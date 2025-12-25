@@ -11,7 +11,7 @@
   <div class="state-card">
     <div class="state-spinner"></div>
     <div class="state-title">数据加载中…</div>
-    <div class="state-msg">正在拉取 ./data/latest.json 与 ./data/finance_latest.json</div>
+    <div class="state-msg">正在拉取 ./data/latest.json / ./data/finance_latest.json / ./data/forecast_latest.json</div>
   </div>
 </div>
 
@@ -29,6 +29,7 @@
     <div id="debug_load_time">加载耗时：—</div>
     <div id="debug_data_status">latest.json：—</div>
     <div id="debug_finance_status">finance_latest.json：—</div>
+    <div id="debug_forecast_status">forecast_latest.json：—</div>
   </div>
   <div class="report-debug-title">缺失字段</div>
   <ul class="report-debug-list" id="debug_missing_list"></ul>
@@ -50,7 +51,7 @@
     <a class="btn" href="./reports/bp_latest.html" target="_blank" rel="noopener">打开预算报告</a>
     <button class="btn" id="export_snapshot_btn">下载本期摘要 JSON</button>
     <button class="btn" id="print_btn">打印</button>
-    <button class="btn" id="export_actions_btn">导出动作CSV</button>
+    <button class="btn" id="export_actions_btn">导出 actions_all.csv</button>
     <button class="btn" id="export_warnings_btn">导出预警CSV</button>
     <a class="btn" href="https://github.com/russellju16-afk/sales-report" target="_blank" rel="noopener">打开仓库/反馈</a>
   </div>
@@ -63,6 +64,9 @@
     <a href="#sec-1">1 经营摘要</a>
     <a href="#sec-2">2 收入与毛利</a>
     <a href="#sec-3">3 现金流与收付匹配</a>
+    <a href="#sec-forecast">3A 预测与压力测试</a>
+    <a href="#sec-risk">3B 风险中枢 Risk Center</a>
+    <a href="#sec-memo">3C 董事会口径 Board Memo</a>
     <a href="#sec-4">4 经营性应收</a>
     <a href="#sec-5">5 其他应收（专项清理）</a>
     <a href="#sec-6">6 经营性应付</a>
@@ -304,6 +308,289 @@
         </div>
       </div>
       <div class="report-conclusion-grid" id="sec3_conclusions"></div>
+    </section>
+
+    <section id="sec-forecast" class="report-section">
+      <div class="section-head">
+        <h2>3A 预测与压力测试 Forecast &amp; Stress</h2>
+        <div class="section-meta">未来30天现金流 / 策略可调参</div>
+      </div>
+      <div class="report-grid report-grid-2">
+        <div class="card report-card">
+          <div class="report-card-title">Forecast Action Pack KPI</div>
+          <div class="report-action-toolbar">
+            <label class="ctl">情景：
+              <select id="forecast_action_scenario">
+                <option value="base">Base</option>
+                <option value="s1">S1 回款延迟</option>
+              </select>
+            </label>
+          </div>
+          <ul class="report-list">
+            <li>缺口金额：<b id="forecast_action_gap">—</b></li>
+            <li>动作覆盖率：<b id="forecast_action_cover">—</b></li>
+            <li>Top动作释放现金：<b id="forecast_action_top">—</b></li>
+          </ul>
+          <div class="report-mini-note">用于检视动作包能否覆盖Rolling 30D缺口。</div>
+        </div>
+        <div class="card report-card">
+          <div class="report-card-title">行动清单锚点</div>
+          <div class="report-mini-note">点击下方按钮跳转统一 Action Tracker，并自动筛选 Forecast 来源。</div>
+          <a class="btn" href="#sec-11" id="forecast_action_jump">查看 Forecast 行动清单</a>
+        </div>
+      </div>
+      <details class="card report-card tuner-panel" open>
+        <summary>Forecast Strategy Tuner（预测策略可调参）</summary>
+        <div class="tuner-grid">
+          <div class="tuner-group">
+            <div class="tuner-group-title">AR 回款策略（影响未来流入）</div>
+            <div class="tuner-row">
+              <label>未到期回款比例</label>
+              <input type="range" class="tuner-input" data-tuner-path="ar.collect_ratio_not_due" min="0" max="1" step="0.05"/>
+              <input type="number" class="tuner-input" data-tuner-path="ar.collect_ratio_not_due" min="0" max="1" step="0.05"/>
+            </div>
+            <div class="tuner-row">
+              <label>1-30天回款比例</label>
+              <input type="range" class="tuner-input" data-tuner-path="ar.collect_ratio_1_30" min="0" max="1" step="0.05"/>
+              <input type="number" class="tuner-input" data-tuner-path="ar.collect_ratio_1_30" min="0" max="1" step="0.05"/>
+            </div>
+            <div class="tuner-row">
+              <label>31-60天回款比例</label>
+              <input type="range" class="tuner-input" data-tuner-path="ar.collect_ratio_31_60" min="0" max="1" step="0.05"/>
+              <input type="number" class="tuner-input" data-tuner-path="ar.collect_ratio_31_60" min="0" max="1" step="0.05"/>
+            </div>
+            <div class="tuner-row">
+              <label>61-90天回款比例</label>
+              <input type="range" class="tuner-input" data-tuner-path="ar.collect_ratio_61_90" min="0" max="1" step="0.05"/>
+              <input type="number" class="tuner-input" data-tuner-path="ar.collect_ratio_61_90" min="0" max="1" step="0.05"/>
+            </div>
+            <div class="tuner-row">
+              <label>90天+回款比例</label>
+              <input type="range" class="tuner-input" data-tuner-path="ar.collect_ratio_90_plus" min="0" max="1" step="0.05"/>
+              <input type="number" class="tuner-input" data-tuner-path="ar.collect_ratio_90_plus" min="0" max="1" step="0.05"/>
+            </div>
+            <div class="tuner-row">
+              <label>回款延迟比例（+7天）</label>
+              <input type="range" class="tuner-input" data-tuner-path="ar.delay_share_7d" min="0" max="1" step="0.05"/>
+              <input type="number" class="tuner-input" data-tuner-path="ar.delay_share_7d" min="0" max="1" step="0.05"/>
+            </div>
+            <div class="tuner-row">
+              <label>回款延迟比例（+14天）</label>
+              <input type="range" class="tuner-input" data-tuner-path="ar.delay_share_14d" min="0" max="1" step="0.05"/>
+              <input type="number" class="tuner-input" data-tuner-path="ar.delay_share_14d" min="0" max="1" step="0.05"/>
+            </div>
+            <div class="tuner-row">
+              <label>延迟适用账龄</label>
+              <select class="tuner-input" data-tuner-path="ar.delay_apply_to_bucket">
+                <option value="all">全部</option>
+                <option value="overdue_only">仅逾期</option>
+                <option value="31plus">31天+</option>
+              </select>
+              <div class="tuner-fixed">固定延迟：7天 / 14天</div>
+            </div>
+          </div>
+
+          <div class="tuner-group">
+            <div class="tuner-group-title">AP 延付策略（影响未来流出）</div>
+            <div class="tuner-row">
+              <label>可延付比例</label>
+              <input type="range" class="tuner-input" data-tuner-path="ap.deferral_ratio" min="0" max="1" step="0.05"/>
+              <input type="number" class="tuner-input" data-tuner-path="ap.deferral_ratio" min="0" max="1" step="0.05"/>
+            </div>
+            <div class="tuner-row">
+              <label>头部供应商延后天数</label>
+              <input type="range" class="tuner-input" data-tuner-path="ap.deferral_days_top_vendor" min="0" max="14" step="1"/>
+              <input type="number" class="tuner-input" data-tuner-path="ap.deferral_days_top_vendor" min="0" max="14" step="1"/>
+            </div>
+            <div class="tuner-row">
+              <label>其他供应商延后天数</label>
+              <input type="range" class="tuner-input" data-tuner-path="ap.deferral_days_other" min="0" max="21" step="1"/>
+              <input type="number" class="tuner-input" data-tuner-path="ap.deferral_days_other" min="0" max="21" step="1"/>
+            </div>
+            <div class="tuner-row">
+              <label>头部供应商阈值（付款占比）</label>
+              <input type="range" class="tuner-input" data-tuner-path="ap.top_vendor_threshold_ratio" min="0" max="1" step="0.05"/>
+              <input type="number" class="tuner-input" data-tuner-path="ap.top_vendor_threshold_ratio" min="0" max="1" step="0.05"/>
+            </div>
+          </div>
+
+          <div class="tuner-group">
+            <div class="tuner-group-title">PO 减采/暂停策略（影响估算流出）</div>
+            <div class="tuner-row">
+              <label>Base/S1/S2 减采比例</label>
+              <input type="range" class="tuner-input" data-tuner-path="po.reducible_ratio_base" min="0" max="1" step="0.05"/>
+              <input type="number" class="tuner-input" data-tuner-path="po.reducible_ratio_base" min="0" max="1" step="0.05"/>
+            </div>
+            <div class="tuner-row">
+              <label>S3 减采比例</label>
+              <input type="range" class="tuner-input" data-tuner-path="po.reducible_ratio_S3" min="0" max="1" step="0.05"/>
+              <input type="number" class="tuner-input" data-tuner-path="po.reducible_ratio_S3" min="0" max="1" step="0.05"/>
+            </div>
+            <div class="tuner-row">
+              <label>应用范围</label>
+              <select class="tuner-input" data-tuner-path="po.apply_scope">
+                <option value="all">全部</option>
+                <option value="top_suppliers">头部供应商</option>
+                <option value="low_turnover_sku_if_available">低周转SKU（如可用）</option>
+              </select>
+              <div class="tuner-fixed">按供应商/货号筛选</div>
+            </div>
+          </div>
+
+          <div class="tuner-group">
+            <div class="tuner-group-title">安全阈值（仅影响预警/动作触发）</div>
+            <div class="tuner-row">
+              <label>缺口预警阈值（万）</label>
+              <input type="range" class="tuner-input" data-tuner-path="threshold.gap_amount_warn_wan" min="0" max="500" step="10"/>
+              <input type="number" class="tuner-input" data-tuner-path="threshold.gap_amount_warn_wan" min="0" max="500" step="10"/>
+            </div>
+            <div class="tuner-row">
+              <label>最低余额预警阈值（万）</label>
+              <input type="range" class="tuner-input" data-tuner-path="threshold.min_balance_warn_wan" min="0" max="500" step="10"/>
+              <input type="number" class="tuner-input" data-tuner-path="threshold.min_balance_warn_wan" min="0" max="500" step="10"/>
+            </div>
+          </div>
+        </div>
+
+        <div class="report-action-toolbar tuner-actions">
+          <button class="btn btn-sm" id="tuner_apply_btn">应用参数</button>
+          <button class="btn btn-sm" id="tuner_reset_btn">重置为默认</button>
+          <button class="btn btn-sm" id="tuner_copy_btn">复制参数JSON</button>
+          <button class="btn btn-sm" id="tuner_export_btn">导出参数JSON</button>
+          <label class="btn btn-sm" for="tuner_import_input">导入参数JSON</label>
+          <input id="tuner_import_input" type="file" accept="application/json" class="hidden"/>
+          <button class="btn btn-sm" id="tuner_share_btn">生成分享链接</button>
+        </div>
+
+        <div class="tuner-summary">
+          <div class="tuner-summary-card" id="tuner_base_summary">Base：—</div>
+          <div class="tuner-summary-card" id="tuner_s1_summary">S1：—</div>
+          <div class="tuner-summary-card" id="tuner_action_coverage">actions_cover_ratio：—</div>
+          <div class="tuner-summary-note" id="tuner_balance_note">余额口径：—</div>
+        </div>
+      </details>
+
+      <div class="report-grid report-grid-2">
+        <div class="card report-card">
+          <div class="report-card-title">未来30天现金余额曲线</div>
+          <div class="report-kpi-row" id="forecast_gap_kpis"></div>
+          <div id="forecast_balance_chart" class="plot-sm report-plot"></div>
+          <div class="report-mini-note" id="forecast_balance_hint">—</div>
+        </div>
+        <div class="card report-card">
+          <div class="report-card-title">策略影响速览</div>
+          <div class="forecast-summary-grid">
+            <div class="report-mini-card" id="forecast_base_card"></div>
+            <div class="report-mini-card" id="forecast_s1_card"></div>
+            <div class="report-mini-card" id="forecast_sensitivity_card"></div>
+          </div>
+          <div class="report-mini-note" id="forecast_sensitivity_note">—</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="sec-risk" class="report-section">
+      <div class="section-head">
+        <h2>3B 风险中枢 Risk Center</h2>
+        <div class="section-meta">现金流风险评分 / 异常检测</div>
+      </div>
+      <div class="risk-grid">
+        <div class="risk-total">
+          <div class="label">现金流风险评分（0-100，越高越危险）</div>
+          <div class="value" id="risk_score_total">—</div>
+          <div class="section-meta">评分=100-Σpenalty</div>
+        </div>
+        <div class="risk-kpi"><div class="label">未知项风险</div><div class="value" id="risk_score_unknown">—</div></div>
+        <div class="risk-kpi"><div class="label">内部往来风险</div><div class="value" id="risk_score_internal">—</div></div>
+        <div class="risk-kpi"><div class="label">集中度风险</div><div class="value" id="risk_score_concentration">—</div></div>
+        <div class="risk-kpi"><div class="label">现金流波动风险</div><div class="value" id="risk_score_volatility">—</div></div>
+        <div class="risk-kpi"><div class="label">对账差异风险</div><div class="value" id="risk_score_recon">—</div></div>
+        <div class="risk-kpi"><div class="label">筹资风险</div><div class="value" id="risk_score_financing">—</div></div>
+      </div>
+      <div class="risk-action-coverage" id="risk_action_coverage">行动覆盖度：—</div>
+      <div class="risk-grid risk-forecast-grid">
+        <div class="risk-kpi"><div class="label">缺口风险</div><div class="value" id="risk_score_gap">—</div></div>
+        <div class="risk-kpi"><div class="label">覆盖度风险</div><div class="value" id="risk_score_coverage">—</div></div>
+        <div class="risk-kpi"><div class="label">情景敏感度风险</div><div class="value" id="risk_score_sensitivity">—</div></div>
+      </div>
+      <div class="report-grid report-grid-2">
+        <div class="card report-card">
+          <div class="report-card-title">风险评分图</div>
+          <div id="risk_chart" class="risk-chart"></div>
+        </div>
+        <div class="card report-card">
+          <div class="report-card-title">扣分项明细</div>
+          <div class="report-action-toolbar">
+            <button class="btn btn-sm" id="export_risk_breakdown_btn">导出 risk_breakdown.csv</button>
+          </div>
+          <div class="table-wrap dense-table risk-table-wrap">
+            <div class="table-scroll report-table-scroll">
+              <table class="risk-table">
+                <thead><tr>
+                  <th>风险项</th>
+                  <th>公式</th>
+                  <th>阈值</th>
+                  <th>当前值</th>
+                  <th>扣分</th>
+                  <th>证据</th>
+                </tr></thead>
+                <tbody id="risk_breakdown_body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card report-card">
+        <div class="report-card-title">异常清单</div>
+        <div class="risk-filters">
+          <label class="ctl">类型
+            <select id="risk_anomaly_type"></select>
+          </label>
+          <label class="ctl">严重度
+            <select id="risk_anomaly_severity"></select>
+          </label>
+          <label class="ctl">分类
+            <select id="risk_anomaly_class"></select>
+          </label>
+          <input id="risk_anomaly_search" type="text" placeholder="搜索对方/摘要" />
+          <button class="btn btn-sm" id="export_anomalies_btn">导出 risk_anomalies.csv</button>
+          <button class="btn btn-sm" id="risk_anomaly_prev">上一页</button>
+          <button class="btn btn-sm" id="risk_anomaly_next">下一页</button>
+          <span class="risk-pagination" id="risk_anomaly_pagination"></span>
+        </div>
+        <div class="table-wrap dense-table anomaly-table-wrap">
+          <div class="table-scroll report-table-scroll">
+            <table class="risk-table">
+              <thead><tr>
+                <th>类型</th>
+                <th>严重度</th>
+                <th>日期</th>
+                <th>对方</th>
+                <th>摘要</th>
+                <th>金额</th>
+                <th>原因</th>
+                <th>建议动作</th>
+                <th>证据</th>
+              </tr></thead>
+              <tbody id="risk_anomaly_body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="report-empty" id="risk_anomaly_empty"></div>
+      </div>
+    </section>
+
+    <section id="sec-memo" class="report-section">
+      <div class="section-head">
+        <h2>3C 董事会口径 Board Memo</h2>
+        <div class="section-meta">可复制 / 可导出（txt/json）</div>
+      </div>
+      <div class="report-action-toolbar">
+        <button class="btn" id="copy_memo_btn">复制董事会口径</button>
+        <button class="btn" id="export_memo_txt_btn">导出 memo.txt</button>
+        <button class="btn" id="export_memo_json_btn">导出 memo.json</button>
+      </div>
+      <div class="memo-grid" id="board_memo_list"></div>
     </section>
 
     <section id="sec-4" class="report-section">
@@ -562,6 +849,18 @@
         <div class="section-meta">动作跟踪（自动汇总）</div>
       </div>
       <div class="report-action-toolbar">
+        <label class="ctl">来源：
+          <select id="action_filter_source">
+            <option value="all">全部</option>
+            <option value="risk">Risk</option>
+            <option value="cashflow">Cashflow</option>
+            <option value="forecast">Forecast</option>
+            <option value="margin">Margin</option>
+          </select>
+        </label>
+        <button class="btn btn-sm" id="action_filter_reset">重置筛选</button>
+        <button class="btn btn-sm" id="export_actions_forecast_btn">导出 actions_forecast.csv</button>
+        <button class="btn btn-sm" id="export_actions_all_btn">导出 actions_all.csv</button>
         <button class="btn" id="copy_actions_btn">复制动作清单</button>
         <button class="btn" id="copy_warnings_btn">复制预警清单</button>
         <span class="report-mini-note" id="action_stats">加载中…</span>
@@ -589,6 +888,21 @@
 </div>
 
 <div id="toast" class="toast"></div>
+
+<div id="anomaly_modal" class="modal" aria-hidden="true" onclick="if(event.target===this) closeAnomalyModal()">
+  <div class="modal-wrap" role="dialog" aria-modal="true">
+    <div class="modal-hd">
+      <div class="modal-title">
+        <span id="anomaly_modal_title">异常明细</span>
+        <span class="meta" id="anomaly_modal_meta"></span>
+      </div>
+      <button class="modal-close" onclick="closeAnomalyModal()" aria-label="关闭">×</button>
+    </div>
+    <div class="modal-bd">
+      <div id="anomaly_modal_body" class="kpi-detail-summary"></div>
+    </div>
+  </div>
+</div>
 
 <div id="kpi_detail_modal" class="modal" aria-hidden="true">
   <div class="modal-wrap" role="dialog" aria-modal="true">

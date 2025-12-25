@@ -468,6 +468,84 @@
     ]);
   }
 
+  function applyBankTxnStateFilters(rows){
+    const state = window.StateManager && window.StateManager.state ? window.StateManager.state : null;
+    const filters = state && state.filters ? state.filters : null;
+    if(!filters) return rows;
+    return rows.filter(row=>{
+      if(filters.cf_class && row.cf_class !== filters.cf_class) return false;
+      if(filters.cf_subclass && row.cf_subclass !== filters.cf_subclass) return false;
+      if(filters.counterparty){
+        const cp = (row.counterparty || '').toLowerCase();
+        if(!cp.includes(String(filters.counterparty).toLowerCase())) return false;
+      }
+      if(filters.memo_contains){
+        const memo = (row.memo || '').toLowerCase();
+        if(!memo.includes(String(filters.memo_contains).toLowerCase())) return false;
+      }
+      if(filters.match_status){
+        const ms = (row.match_status || '').toLowerCase();
+        if(!ms.includes(String(filters.match_status).toLowerCase())) return false;
+      }
+      if(filters.anomaly_type){
+        const tags = row.anomaly_tags || [];
+        if(!tags.includes(filters.anomaly_type)) return false;
+      }
+      if(filters.txn_id && row.txn_id !== filters.txn_id) return false;
+      const range = filters.date_range;
+      if(range){
+        if(typeof range === 'string'){
+          if(!(row.date || '').includes(range)) return false;
+        }else{
+          if(range.month && row.month !== range.month) return false;
+          if(range.start && row.date < range.start) return false;
+          if(range.end && row.date > range.end) return false;
+        }
+      }
+      return true;
+    });
+  }
+
+  function renderBankTxns(segKey, bank){
+    const rows = Array.isArray(bank && bank.txns) ? bank.txns : [];
+    const filtered = applyBankTxnStateFilters(rows);
+    const mapped = filtered.map(r=>({
+      date: r.date,
+      counterparty: r.counterparty,
+      cf_class: r.cf_class,
+      cf_subclass: r.cf_subclass,
+      direction: r.direction === 'out' ? '支出' : '收入',
+      amount: r.amount,
+      memo: r.memo,
+      match_status: r.match_status,
+      anomaly_tags: Array.isArray(r.anomaly_tags) ? r.anomaly_tags.join(' / ') : '',
+      txn_id: r.txn_id
+    }));
+    renderTable(segKey + '_finance_bank_txn_table', mapped, [
+      { key:'date' },
+      { key:'counterparty' },
+      { key:'cf_class' },
+      { key:'cf_subclass' },
+      { key:'direction' },
+      { key:'amount' },
+      { key:'memo' },
+      { key:'match_status' },
+      { key:'anomaly_tags' },
+      { key:'txn_id' }
+    ], [
+      (v)=>fmtText(v),
+      (v)=>fmtText(v),
+      (v)=>fmtText(v),
+      (v)=>fmtText(v),
+      (v)=>fmtText(v),
+      (v)=>fmtWanSafe(v),
+      (v)=>fmtText(v),
+      (v)=>fmtText(v),
+      (v)=>fmtText(v),
+      (v)=>fmtText(v)
+    ]);
+  }
+
   function renderPoTopSuppliers(segKey, po){
     const rows = Array.isArray(po && po.top_suppliers) ? po.top_suppliers : [];
     renderTable(segKey + '_finance_po_sup_table', rows, [
@@ -861,6 +939,7 @@
     ]);
     renderBankChart(segKey, bank, currency);
     renderBankByType(segKey, bank);
+    renderBankTxns(segKey, bank);
 
     const recon = bank && bank.recon ? bank.recon : {};
     const recReceipts = buildReconCard(recon.diff_receipts, '收款');

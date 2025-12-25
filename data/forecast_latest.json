@@ -1,0 +1,432 @@
+{
+  "meta": {
+    "period_start": "2025-12-25",
+    "period_end": "2026-01-23",
+    "generated_at": "2025-12-24 10:05:00",
+    "currency": "CNY",
+    "unit": "元"
+  },
+  "scenarios": {
+    "base": {
+      "min_balance": -2200000,
+      "gap_amount": 1800000,
+      "gap_day": "2026-01-10"
+    },
+    "s1": {
+      "min_balance": -3500000,
+      "gap_amount": 2800000,
+      "gap_day": "2026-01-06"
+    },
+    "s2": {
+      "min_balance": -2600000,
+      "gap_amount": 2100000,
+      "gap_day": "2026-01-12"
+    },
+    "s3": {
+      "min_balance": -4200000,
+      "gap_amount": 3200000,
+      "gap_day": "2026-01-05"
+    }
+  },
+  "ar_plan_rows": [
+    {
+      "customer": "Alpha Catering",
+      "aging_bucket": "90+",
+      "open_amount": 980000,
+      "planned_date": "2025-12-27",
+      "confidence": 0.52,
+      "source_id": "AR-901"
+    },
+    {
+      "customer": "Bright School",
+      "aging_bucket": "61-90",
+      "open_amount": 760000,
+      "planned_date": "2025-12-31",
+      "confidence": 0.6,
+      "source_id": "AR-882"
+    },
+    {
+      "customer": "City Hospital",
+      "aging_bucket": "31-60",
+      "open_amount": 640000,
+      "planned_date": "2026-01-07",
+      "confidence": 0.64,
+      "source_id": "AR-865"
+    },
+    {
+      "customer": "Delta Retail",
+      "aging_bucket": "1-30",
+      "open_amount": 520000,
+      "planned_date": "2026-01-07",
+      "confidence": 0.7,
+      "source_id": "AR-841"
+    },
+    {
+      "customer": "Evergreen Food",
+      "aging_bucket": "未到期",
+      "open_amount": 430000,
+      "planned_date": "2026-01-08",
+      "confidence": 0.58,
+      "source_id": "AR-832"
+    }
+  ],
+  "ap_plan_rows": [
+    {
+      "vendor": "North Grain",
+      "amount_due": 620000,
+      "due_date": "2025-12-31",
+      "planned_date": "2026-01-07",
+      "confidence": 0.55,
+      "source_id": "AP-302"
+    },
+    {
+      "vendor": "Sun Oil",
+      "amount_due": 480000,
+      "due_date": "2026-01-03",
+      "planned_date": "2026-01-10",
+      "confidence": 0.58,
+      "source_id": "AP-288"
+    },
+    {
+      "vendor": "West Logistics",
+      "amount_due": 360000,
+      "due_date": "2026-01-05",
+      "planned_date": "2026-01-10",
+      "confidence": 0.5,
+      "source_id": "AP-266"
+    }
+  ],
+  "po_plan_rows": [
+    {
+      "supplier": "River Milling",
+      "po_amount_open": 1100000,
+      "eta_date": "2026-01-15",
+      "planned_pay_date": "2026-01-22",
+      "confidence": 0.62,
+      "source_id": "PO-701",
+      "sku_or_category": "Flour",
+      "payment_terms": "on_delivery"
+    },
+    {
+      "supplier": "Harvest Foods",
+      "po_amount_open": 820000,
+      "eta_date": "2026-01-18",
+      "planned_pay_date": "2026-01-25",
+      "confidence": 0.6,
+      "source_id": "PO-688",
+      "sku_or_category": "Rice",
+      "payment_terms": "on_delivery"
+    },
+    {
+      "supplier": "Sun Oil",
+      "po_amount_open": 760000,
+      "eta_date": "2026-01-20",
+      "planned_pay_date": "2026-01-28",
+      "confidence": 0.57,
+      "source_id": "PO-679",
+      "sku_or_category": "Oil",
+      "payment_terms": "on_delivery"
+    }
+  ],
+  "forecast": {
+    "scenarios": {
+      "base": {
+        "min_balance": -2200000,
+        "gap_amount": 1800000,
+        "gap_day": "2026-01-10"
+      },
+      "s1": {
+        "min_balance": -3500000,
+        "gap_amount": 2800000,
+        "gap_day": "2026-01-06"
+      },
+      "s2": {
+        "min_balance": -2600000,
+        "gap_amount": 2100000,
+        "gap_day": "2026-01-12"
+      },
+      "s3": {
+        "min_balance": -4200000,
+        "gap_amount": 3200000,
+        "gap_day": "2026-01-05"
+      }
+    },
+    "recommendations": {
+      "ar_collection": [
+        {
+          "customer": "Alpha Catering",
+          "amount_open": 980000,
+          "aging_bucket": "90+",
+          "suggested_collect_date": "2025-12-27",
+          "expected_collect_ratio": 0.2,
+          "expected_cash_in": 196000,
+          "priority_score": 0.92,
+          "reason": "高账龄+集中度较高",
+          "evidence_keys": {
+            "customer": "Alpha Catering",
+            "aging_bucket": "90+"
+          },
+          "source_ids": ["AR-901","AR-907"]
+        },
+        {
+          "customer": "Bright School",
+          "amount_open": 760000,
+          "aging_bucket": "61-90",
+          "suggested_collect_date": "2025-12-31",
+          "expected_collect_ratio": 0.35,
+          "expected_cash_in": 266000,
+          "priority_score": 0.78,
+          "reason": "金额占比高",
+          "evidence_keys": {
+            "customer": "Bright School",
+            "aging_bucket": "61-90"
+          },
+          "source_ids": ["AR-882"]
+        },
+        {
+          "customer": "City Hospital",
+          "amount_open": 640000,
+          "aging_bucket": "31-60",
+          "suggested_collect_date": "2026-01-07",
+          "expected_collect_ratio": 0.5,
+          "expected_cash_in": 320000,
+          "priority_score": 0.71,
+          "reason": "回款周期偏长",
+          "evidence_keys": {
+            "customer": "City Hospital",
+            "aging_bucket": "31-60"
+          },
+          "source_ids": ["AR-865"]
+        },
+        {
+          "customer": "Delta Retail",
+          "amount_open": 520000,
+          "aging_bucket": "1-30",
+          "suggested_collect_date": "2026-01-07",
+          "expected_collect_ratio": 0.7,
+          "expected_cash_in": 364000,
+          "priority_score": 0.64,
+          "reason": "回款集中度偏高",
+          "evidence_keys": {
+            "customer": "Delta Retail",
+            "aging_bucket": "1-30"
+          },
+          "source_ids": ["AR-841"]
+        },
+        {
+          "customer": "Evergreen Food",
+          "amount_open": 430000,
+          "aging_bucket": "未到期",
+          "suggested_collect_date": "2026-01-07",
+          "expected_collect_ratio": 0.6,
+          "expected_cash_in": 258000,
+          "priority_score": 0.58,
+          "reason": "未到期但金额集中",
+          "evidence_keys": {
+            "customer": "Evergreen Food",
+            "aging_bucket": "未到期"
+          },
+          "source_ids": ["AR-832"]
+        }
+      ],
+      "ap_deferral": [
+        {
+          "vendor": "North Grain",
+          "amount_due_30d": 620000,
+          "suggested_pay_date": "2026-01-07",
+          "deferral_days": 7,
+          "expected_cash_saved": 310000,
+          "priority_score": 0.74,
+          "reason": "Top供应商，需控制节奏",
+          "evidence_keys": {
+            "vendor": "North Grain"
+          },
+          "source_ids": ["AP-302"]
+        },
+        {
+          "vendor": "Sun Oil",
+          "amount_due_30d": 480000,
+          "suggested_pay_date": "2026-01-10",
+          "deferral_days": 14,
+          "expected_cash_saved": 240000,
+          "priority_score": 0.63,
+          "reason": "付款集中",
+          "evidence_keys": {
+            "vendor": "Sun Oil"
+          },
+          "source_ids": ["AP-288"]
+        },
+        {
+          "vendor": "West Logistics",
+          "amount_due_30d": 360000,
+          "suggested_pay_date": "2026-01-10",
+          "deferral_days": 14,
+          "expected_cash_saved": 180000,
+          "priority_score": 0.52,
+          "reason": "可协商延期",
+          "evidence_keys": {
+            "vendor": "West Logistics"
+          },
+          "source_ids": ["AP-266"]
+        }
+      ],
+      "po_reduction": [
+        {
+          "supplier": "River Milling",
+          "po_amount_open": 1100000,
+          "eta_date": "2026-01-15",
+          "suggested_action": "pause",
+          "reducible_ratio": 0.3,
+          "expected_cash_saved": 330000,
+          "priority_score": 0.68,
+          "reason": "库存偏高",
+          "evidence_keys": {
+            "supplier": "River Milling",
+            "sku_or_category": "Flour"
+          },
+          "source_ids": ["PO-701"]
+        },
+        {
+          "supplier": "Harvest Foods",
+          "po_amount_open": 820000,
+          "eta_date": "2026-01-18",
+          "suggested_action": "reduce",
+          "reducible_ratio": 0.3,
+          "expected_cash_saved": 246000,
+          "priority_score": 0.59,
+          "reason": "需求预期下修",
+          "evidence_keys": {
+            "supplier": "Harvest Foods",
+            "sku_or_category": "Rice"
+          },
+          "source_ids": ["PO-688"]
+        },
+        {
+          "supplier": "Sun Oil",
+          "po_amount_open": 760000,
+          "eta_date": "2026-01-20",
+          "suggested_action": "reduce",
+          "reducible_ratio": 0.3,
+          "expected_cash_saved": 228000,
+          "priority_score": 0.55,
+          "reason": "同类供应可替代",
+          "evidence_keys": {
+            "supplier": "Sun Oil",
+            "sku_or_category": "Oil"
+          },
+          "source_ids": ["PO-679"]
+        }
+      ],
+      "summary_kpi": {
+        "base_min_balance": -2200000,
+        "base_gap_amount": 1800000,
+        "base_gap_day": "2026-01-10",
+        "cover_ratio_confirmed": 0.48,
+        "cover_ratio_estimated": 0.66,
+        "ar_collectable_14d": 3200000,
+        "ap_deferrable_14d": 1800000,
+        "po_reducible_30d": 2400000
+      }
+    },
+    "ar_plan_rows": [
+      {
+        "customer": "Alpha Catering",
+        "aging_bucket": "90+",
+        "open_amount": 980000,
+        "planned_date": "2025-12-27",
+        "confidence": 0.52,
+        "source_id": "AR-901"
+      },
+      {
+        "customer": "Bright School",
+        "aging_bucket": "61-90",
+        "open_amount": 760000,
+        "planned_date": "2025-12-31",
+        "confidence": 0.6,
+        "source_id": "AR-882"
+      },
+      {
+        "customer": "City Hospital",
+        "aging_bucket": "31-60",
+        "open_amount": 640000,
+        "planned_date": "2026-01-07",
+        "confidence": 0.64,
+        "source_id": "AR-865"
+      },
+      {
+        "customer": "Delta Retail",
+        "aging_bucket": "1-30",
+        "open_amount": 520000,
+        "planned_date": "2026-01-07",
+        "confidence": 0.7,
+        "source_id": "AR-841"
+      },
+      {
+        "customer": "Evergreen Food",
+        "aging_bucket": "未到期",
+        "open_amount": 430000,
+        "planned_date": "2026-01-08",
+        "confidence": 0.58,
+        "source_id": "AR-832"
+      }
+    ],
+    "ap_plan_rows": [
+      {
+        "vendor": "North Grain",
+        "amount_due": 620000,
+        "due_date": "2025-12-31",
+        "planned_date": "2026-01-07",
+        "confidence": 0.55,
+        "source_id": "AP-302"
+      },
+      {
+        "vendor": "Sun Oil",
+        "amount_due": 480000,
+        "due_date": "2026-01-03",
+        "planned_date": "2026-01-10",
+        "confidence": 0.58,
+        "source_id": "AP-288"
+      },
+      {
+        "vendor": "West Logistics",
+        "amount_due": 360000,
+        "due_date": "2026-01-05",
+        "planned_date": "2026-01-10",
+        "confidence": 0.5,
+        "source_id": "AP-266"
+      }
+    ],
+    "po_plan_rows": [
+      {
+        "supplier": "River Milling",
+        "po_amount_open": 1100000,
+        "eta_date": "2026-01-15",
+        "planned_pay_date": "2026-01-22",
+        "confidence": 0.62,
+        "source_id": "PO-701",
+        "sku_or_category": "Flour",
+        "payment_terms": "on_delivery"
+      },
+      {
+        "supplier": "Harvest Foods",
+        "po_amount_open": 820000,
+        "eta_date": "2026-01-18",
+        "planned_pay_date": "2026-01-25",
+        "confidence": 0.6,
+        "source_id": "PO-688",
+        "sku_or_category": "Rice",
+        "payment_terms": "on_delivery"
+      },
+      {
+        "supplier": "Sun Oil",
+        "po_amount_open": 760000,
+        "eta_date": "2026-01-20",
+        "planned_pay_date": "2026-01-28",
+        "confidence": 0.57,
+        "source_id": "PO-679",
+        "sku_or_category": "Oil",
+        "payment_terms": "on_delivery"
+      }
+    ]
+  }
+}

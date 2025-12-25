@@ -12,6 +12,15 @@ import pandas as pd
 
 
 TOP_N = 20
+RISK_THRESHOLDS = {
+    'unknown_outflow_ratio': (0.10, 0.20),
+    'internal_net_ratio': (0.02, 0.05),
+    'top1_outflow_ratio': (0.25, 0.35),
+    'cashflow_volatility': (1.0, 2.0),
+    'recon_diff_ratio': (0.05, 0.10),
+    'financing_net_ratio': (0.30, 0.60)
+}
+ANOMALY_KEYWORDS = ['借', '贷', '押金', '保证金', '承兑', '理财', '代付', '代收', '私']
 
 
 def normalize_text(val):
@@ -129,6 +138,31 @@ def safe_div(num, denom):
     return n / d
 
 
+def clamp(val, low, high):
+    if val is None:
+        return None
+    return max(low, min(high, val))
+
+
+def percentile(values, p):
+    vals = [safe_number(v) for v in values if safe_number(v) is not None]
+    if not vals:
+        return None
+    vals.sort()
+    if p <= 0:
+        return vals[0]
+    if p >= 100:
+        return vals[-1]
+    k = (len(vals) - 1) * p / 100.0
+    f = math.floor(k)
+    c = math.ceil(k)
+    if f == c:
+        return vals[int(k)]
+    d0 = vals[int(f)] * (c - k)
+    d1 = vals[int(c)] * (k - f)
+    return d0 + d1
+
+
 def parse_date_series(series):
     dt = pd.to_datetime(series, errors='coerce')
     return dt
@@ -191,6 +225,36 @@ def detect_segment_column(df):
     ])
 
 
+def detect_cf_class(counterparty, memo, txn_type):
+    text = ' '.join([normalize_text(counterparty), normalize_text(memo), normalize_text(txn_type)])
+    if not text:
+        return 'unknown'
+    if any(k in text for k in ['内部', '关联', '往来', '同名', '调拨']):
+        return 'internal'
+    if any(k in text for k in ['融资', '借款', '贷款', '还款', '利息', '担保', '保证金', '承兑', '票据']):
+        return 'financing'
+    if any(k in text for k in ['投资', '理财', '股权', '固定资产', '设备', '装修', '购置']):
+        return 'investing'
+    if any(k in text for k in ['其他', '杂项', '未知', '暂挂']):
+        return 'unknown'
+    return 'operating'
+
+
+def detect_cf_subclass(txn_type, memo):
+    if txn_type:
+        return normalize_text(txn_type)
+    if memo:
+        return normalize_text(memo)[:16]
+    return '未分类'
+
+
+def fmt_num(val, digits=0):
+    n = safe_number(val)
+    if n is None:
+        return '—'
+    return f"{n:.{digits}f}"
+
+
 def build_top_list(rows, key, top_n=TOP_N):
     rows = [r for r in rows if safe_number(r.get(key)) not in (None, 0)]
     rows.sort(key=lambda r: safe_number(r.get(key)) or 0, reverse=True)
@@ -219,6 +283,92 @@ def build_last_date_map(bank_df, date_col, name_col, amount_col, direction='in')
         if cur is None or d > cur:
             records[key] = d
     return records
+
+
+def build_bank_txns(df_bank, period_start, period_end):
+    if df_bank is None or df_bank.empty:
+        return []
+    date_col = find_column(df_bank, [['日期'], ['记账日期'], ['业务日期']])
+    income_col = find_column(df_bank, [['收入', '本位币'], ['收入金额'], ['收款']])
+    out_col = find_column(df_bank, [['支出', '本位币'], ['支出金额'], ['付款']])
+    type_col = find_column(df_bank, [['类型'], ['业务类型'], ['单据类型']])
+    name_col = find_column(df_bank, [['对方单位'], ['对方名称'], ['往来单位'], ['对方']])
+    memo_col = find_column(df_bank, [['摘要'], ['用途'], ['备注'], ['说明']])
+    match_col = find_column(df_bank, [['对账状态'], ['匹配状态'], ['核对状态'], ['勾稽状态']])
+
+    dates = parse_date_series(df_bank[date_col]) if date_col else pd.Series([pd.NaT] * len(df_bank))
+    incomes = pd.to_numeric(df_bank[income_col], errors='coerce').fillna(0) if income_col else pd.Series([0] * len(df_bank))
+    outs = pd.to_numeric(df_bank[out_col], errors='coerce').fillna(0).abs() if out_col else pd.Series([0] * len(df_bank))
+    names = df_bank[name_col].fillna('') if name_col else pd.Series([''] * len(df_bank))
+    memos = df_bank[memo_col].fillna('') if memo_col else pd.Series([''] * len(df_bank))
+    types = df_bank[type_col].fillna('') if type_col else pd.Series([''] * len(df_bank))
+    matches = df_bank[match_col].fillna('') if match_col else pd.Series([''] * len(df_bank))
+
+    start_dt = datetime.strptime(period_start, '%Y-%m-%d').date() if period_start else None
+    end_dt = datetime.strptime(period_end, '%Y-%m-%d').date() if period_end else None
+
+    txns = []
+    for idx, (d, inc, out, name, memo, typ, match_status) in enumerate(zip(dates, incomes, outs, names, memos, types, matches)):
+        if pd.isna(d):
+            continue
+        d_date = d.date()
+        if start_dt and d_date < start_dt:
+            continue
+        if end_dt and d_date > end_dt:
+            continue
+        inc_val = safe_number(inc) or 0
+        out_val = safe_number(out) or 0
+        if inc_val == 0 and out_val == 0:
+            continue
+        direction = 'in' if inc_val >= out_val else 'out'
+        amount = inc_val if inc_val >= out_val else -out_val
+        counterparty = normalize_text(name)
+        memo_text = normalize_text(memo)
+        txn_type = normalize_text(typ)
+        cf_class = detect_cf_class(counterparty, memo_text, txn_type)
+        cf_subclass = detect_cf_subclass(txn_type, memo_text)
+        txns.append({
+            'txn_id': f"BK{idx + 1:06d}",
+            'date': d.strftime('%Y-%m-%d'),
+            'month': d.strftime('%Y-%m'),
+            'direction': direction,
+            'amount': amount,
+            'amount_abs': abs(amount),
+            'counterparty': counterparty,
+            'memo': memo_text,
+            'cf_class': cf_class,
+            'cf_subclass': cf_subclass,
+            'match_status': normalize_text(match_status)
+        })
+    return txns
+
+
+def build_monthly_from_txns(txns):
+    monthly_totals = {}
+    monthly_by_class = {}
+    for t in txns:
+        month = t.get('month')
+        if not month:
+            continue
+        amt = safe_number(t.get('amount')) or 0
+        inflow = amt if amt > 0 else 0
+        outflow = -amt if amt < 0 else 0
+        if month not in monthly_totals:
+            monthly_totals[month] = {'month': month, 'inflow': 0, 'outflow': 0, 'net': 0}
+        monthly_totals[month]['inflow'] += inflow
+        monthly_totals[month]['outflow'] += outflow
+        monthly_totals[month]['net'] += amt
+
+        cf_class = t.get('cf_class') or 'unknown'
+        key = (month, cf_class)
+        if key not in monthly_by_class:
+            monthly_by_class[key] = {'month': month, 'cf_class': cf_class, 'inflow': 0, 'outflow': 0, 'net': 0}
+        monthly_by_class[key]['inflow'] += inflow
+        monthly_by_class[key]['outflow'] += outflow
+        monthly_by_class[key]['net'] += amt
+    totals = sorted(monthly_totals.values(), key=lambda r: r['month'])
+    by_class = sorted(monthly_by_class.values(), key=lambda r: (r['month'], r['cf_class']))
+    return totals, by_class
 
 
 def match_last_date(name, last_date_map):
@@ -443,6 +593,420 @@ def build_bank(df_bank, period_start, period_end):
         'trend': trend,
         'by_type': by_type
     }
+
+
+def calc_penalty(value, t1, t2):
+    if value is None:
+        return 0
+    if value > t2:
+        return 20
+    if value > t1:
+        return 10
+    return 0
+
+
+def build_risk_and_anomalies(bank, txns):
+    kpi = bank.get('kpi', {}) if bank else {}
+    trend = bank.get('trend', {}) if bank else {}
+    recon = bank.get('recon', {}) if bank else {}
+
+    total_outflow = sum((safe_number(t.get('amount_abs')) or 0) for t in txns if t.get('direction') == 'out')
+    unknown_outflow = sum((safe_number(t.get('amount_abs')) or 0) for t in txns if t.get('direction') == 'out' and t.get('cf_class') == 'unknown')
+    unknown_ratio = safe_div(unknown_outflow, total_outflow)
+
+    internal_in = sum((safe_number(t.get('amount')) or 0) for t in txns if t.get('cf_class') == 'internal' and t.get('amount', 0) > 0)
+    internal_out = sum((safe_number(t.get('amount_abs')) or 0) for t in txns if t.get('cf_class') == 'internal' and t.get('amount', 0) < 0)
+    internal_net_abs = abs((internal_in or 0) - (internal_out or 0))
+    net_cash = abs(safe_number(kpi.get('period_net_cash')) or 0)
+    internal_ratio = safe_div(internal_net_abs, net_cash if net_cash else None)
+
+    counterparty_out = {}
+    for t in txns:
+        if t.get('direction') != 'out':
+            continue
+        name = t.get('counterparty') or '未命名'
+        counterparty_out[name] = counterparty_out.get(name, 0) + (safe_number(t.get('amount_abs')) or 0)
+    top1_outflow = max(counterparty_out.values()) if counterparty_out else None
+    top1_ratio = safe_div(top1_outflow, total_outflow)
+
+    net_series = [safe_number(v) or 0 for v in (trend.get('net_cash') or [])]
+    volatility = None
+    if net_series:
+        mean = sum(net_series) / len(net_series)
+        if mean != 0:
+            variance = sum((v - mean) ** 2 for v in net_series) / len(net_series)
+            std = math.sqrt(variance)
+            volatility = abs(std / mean) if mean != 0 else None
+
+    diff_receipts = safe_number(recon.get('diff_receipts'))
+    diff_payments = safe_number(recon.get('diff_payments'))
+    bank_cash_in = safe_number(recon.get('bank_cash_in')) or safe_number(kpi.get('period_cash_in'))
+    bank_cash_out = safe_number(recon.get('bank_cash_out')) or safe_number(kpi.get('period_cash_out'))
+    diff_receipts_ratio = safe_div(abs(diff_receipts) if diff_receipts is not None else None, bank_cash_in)
+    diff_payments_ratio = safe_div(abs(diff_payments) if diff_payments is not None else None, bank_cash_out)
+    recon_ratio = max([r for r in [diff_receipts_ratio, diff_payments_ratio] if r is not None], default=None)
+
+    financing_net = sum((safe_number(t.get('amount')) or 0) for t in txns if t.get('cf_class') == 'financing')
+    financing_ratio = safe_div(abs(financing_net), net_cash if net_cash else None)
+
+    penalties = {
+        'unknown': calc_penalty(unknown_ratio, *RISK_THRESHOLDS['unknown_outflow_ratio']),
+        'internal': calc_penalty(internal_ratio, *RISK_THRESHOLDS['internal_net_ratio']),
+        'concentration': calc_penalty(top1_ratio, *RISK_THRESHOLDS['top1_outflow_ratio']),
+        'volatility': calc_penalty(volatility, *RISK_THRESHOLDS['cashflow_volatility']),
+        'recon': calc_penalty(recon_ratio, *RISK_THRESHOLDS['recon_diff_ratio']),
+        'financing': calc_penalty(financing_ratio, *RISK_THRESHOLDS['financing_net_ratio'])
+    }
+
+    total_penalty = sum(penalties.values())
+    risk_score_total = clamp(100 - total_penalty, 0, 100)
+    risk_scores = {k: clamp(100 - v * 4, 0, 100) for k, v in penalties.items()}
+
+    def build_state(filters):
+        return {'tab': 'finance', 'subtab': 'bank', 'filters': filters}
+
+    breakdown_rows = [
+        {
+            'risk_item': '未知项风险',
+            'formula': 'unknown_outflow / total_outflow',
+            'threshold': '10%/20%',
+            'current_value': unknown_ratio,
+            'penalty': penalties['unknown'],
+            'evidence_state_link': build_state({'cf_class': 'unknown', 'direction': 'out'})
+        },
+        {
+            'risk_item': '内部往来风险',
+            'formula': 'abs(internal_in - internal_out) / |net_cash|',
+            'threshold': '2%/5%',
+            'current_value': internal_ratio,
+            'penalty': penalties['internal'],
+            'evidence_state_link': build_state({'cf_class': 'internal'})
+        },
+        {
+            'risk_item': '集中度风险',
+            'formula': 'top1_outflow / total_outflow',
+            'threshold': '25%/35%',
+            'current_value': top1_ratio,
+            'penalty': penalties['concentration'],
+            'evidence_state_link': build_state({'direction': 'out'})
+        },
+        {
+            'risk_item': '现金流波动风险',
+            'formula': 'std(net_cash) / |mean(net_cash)|',
+            'threshold': '1.0/2.0',
+            'current_value': volatility,
+            'penalty': penalties['volatility'],
+            'evidence_state_link': build_state({'metric': 'net_cash'})
+        },
+        {
+            'risk_item': '对账差异风险',
+            'formula': 'max(diff_receipts_ratio, diff_payments_ratio)',
+            'threshold': '5%/10%',
+            'current_value': recon_ratio,
+            'penalty': penalties['recon'],
+            'evidence_state_link': build_state({'match_status': '差异'})
+        },
+        {
+            'risk_item': '筹资风险',
+            'formula': 'financing_net / |net_cash|',
+            'threshold': '30%/60%',
+            'current_value': financing_ratio,
+            'penalty': penalties['financing'],
+            'evidence_state_link': build_state({'cf_class': 'financing'})
+        }
+    ]
+
+    anomalies = []
+    if txns:
+        target_txns = [t for t in txns if t.get('direction') == 'out' and t.get('cf_class') in ('operating', 'unknown', 'internal')]
+        amounts = [t.get('amount_abs') for t in target_txns]
+        p95 = percentile(amounts, 95)
+        for t in target_txns:
+            amt = safe_number(t.get('amount_abs'))
+            if p95 is not None and amt is not None and amt > p95:
+                anomalies.append({
+                    'anomaly_type': '金额异常',
+                    'severity': 'high',
+                    'txn_id': t.get('txn_id'),
+                    'cf_class': t.get('cf_class'),
+                    'counterparty': t.get('counterparty'),
+                    'memo': t.get('memo'),
+                    'amount': amt,
+                    'date': t.get('date'),
+                    'reason': f'单笔金额 {amt:.0f} > P95({p95:.0f})',
+                    'suggested_action': '核对交易性质与审批链，确认是否需要重新归类。',
+                    'evidence_state_link': build_state({'txn_id': t.get('txn_id')})
+                })
+
+        month_list = sorted(set([t.get('month') for t in txns if t.get('month')]))
+        if month_list:
+            last_month = month_list[-1]
+            prev_month = month_list[-2] if len(month_list) > 1 else None
+            last_counts = {}
+            prev_counts = {}
+            for t in txns:
+                name = t.get('counterparty') or '未命名'
+                if t.get('month') == last_month:
+                    last_counts[name] = last_counts.get(name, 0) + 1
+                elif prev_month and t.get('month') == prev_month:
+                    prev_counts[name] = prev_counts.get(name, 0) + 1
+            p95_cnt = percentile(list(last_counts.values()), 95) if last_counts else None
+            for name, cnt in last_counts.items():
+                prev = prev_counts.get(name, 0)
+                if (p95_cnt is not None and cnt > p95_cnt) or (prev > 0 and cnt / prev > 2):
+                    anomalies.append({
+                        'anomaly_type': '频次异常',
+                        'severity': 'medium',
+                        'txn_id': None,
+                        'cf_class': None,
+                        'counterparty': name,
+                        'memo': '',
+                        'amount': None,
+                        'date': last_month,
+                        'reason': f'本期笔数 {cnt} (上期 {prev})',
+                        'suggested_action': '核对该对手方是否集中支付或异常拆分付款。',
+                        'evidence_state_link': build_state({'counterparty': name, 'date_range': {'month': last_month}})
+                    })
+
+            if prev_month:
+                history_months = month_list[-4:-1]
+                history_set = set()
+                for t in txns:
+                    if t.get('month') in history_months:
+                        if t.get('counterparty'):
+                            history_set.add(t.get('counterparty'))
+                last_amounts = {}
+                for t in txns:
+                    if t.get('month') != last_month:
+                        continue
+                    name = t.get('counterparty') or ''
+                    if not name or name in history_set:
+                        continue
+                    last_amounts[name] = last_amounts.get(name, 0) + (safe_number(t.get('amount_abs')) or 0)
+                top_new = sorted(last_amounts.items(), key=lambda x: x[1], reverse=True)[:20]
+                for name, amt in top_new:
+                    anomalies.append({
+                        'anomaly_type': '新对手方异常',
+                        'severity': 'medium',
+                        'txn_id': None,
+                        'cf_class': None,
+                        'counterparty': name,
+                        'memo': '',
+                        'amount': amt,
+                        'date': last_month,
+                        'reason': '历史3个月未出现且金额进入Top20',
+                        'suggested_action': '补齐供应商/客户准入资料并确认交易背景。',
+                        'evidence_state_link': build_state({'counterparty': name, 'date_range': {'month': last_month}})
+                    })
+
+        for t in txns:
+            memo = t.get('memo') or ''
+            if t.get('cf_class') != 'operating' or not memo:
+                continue
+            if any(k in memo for k in ANOMALY_KEYWORDS):
+                anomalies.append({
+                    'anomaly_type': '备注关键词异常',
+                    'severity': 'low',
+                    'txn_id': t.get('txn_id'),
+                    'cf_class': t.get('cf_class'),
+                    'counterparty': t.get('counterparty'),
+                    'memo': memo,
+                    'amount': safe_number(t.get('amount_abs')),
+                    'date': t.get('date'),
+                    'reason': '备注包含敏感关键词但被归为经营性现金流',
+                    'suggested_action': '核对资金性质，必要时调整现金流分类。',
+                    'evidence_state_link': build_state({'txn_id': t.get('txn_id'), 'memo_contains': memo})
+                })
+
+    risk = {
+        'risk_score_total': risk_score_total,
+        'risk_scores': {
+            'unknown': risk_scores.get('unknown'),
+            'internal': risk_scores.get('internal'),
+            'concentration': risk_scores.get('concentration'),
+            'volatility': risk_scores.get('volatility'),
+            'recon': risk_scores.get('recon'),
+            'financing': risk_scores.get('financing')
+        },
+        'risk_breakdown_rows': breakdown_rows,
+        'anomalies': anomalies
+    }
+    if txns and anomalies:
+        tag_map = {}
+        for a in anomalies:
+            tid = a.get('txn_id')
+            if not tid:
+                continue
+            tag_map.setdefault(tid, set()).add(a.get('anomaly_type'))
+        for t in txns:
+            tags = tag_map.get(t.get('txn_id'))
+            if tags:
+                t['anomaly_tags'] = list(tags)
+    return risk
+
+
+def build_board_memo(finance, bank, txns, risk):
+    memo_items = []
+    kpi = bank.get('kpi', {}) if bank else {}
+    recon = bank.get('recon', {}) if bank else {}
+    wc = finance.get('wc', {}) if finance else {}
+    wc_kpi = wc.get('kpi', {})
+
+    def add_item(title, conclusion, metric, value, filters, action, ddl_days, owner=None):
+        memo_items.append({
+            'title': title,
+            'conclusion': conclusion,
+            'evidence_metric': metric,
+            'evidence_value': value,
+            'evidence_state_link': {'tab': 'finance', 'subtab': 'bank', 'filters': filters},
+            'action': action,
+            'ddl_days': ddl_days,
+            'owner': owner
+        })
+
+    net_cash = safe_number(kpi.get('period_net_cash'))
+    add_item(
+        '期间净现金流',
+        f"期间净现金流 {fmt_num(net_cash)} 元，需关注结构贡献。",
+        'period_net_cash',
+        net_cash,
+        {'metric': 'net_cash'},
+        '复核现金流结构并确认主要驱动。',
+        7,
+        '资金负责人'
+    )
+
+    if txns:
+        by_class = {}
+        for t in txns:
+            by_class.setdefault(t.get('cf_class') or 'unknown', 0)
+            by_class[t.get('cf_class') or 'unknown'] += safe_number(t.get('amount')) or 0
+        top_class = sorted(by_class.items(), key=lambda x: abs(x[1]), reverse=True)[:3]
+        structure_text = ' / '.join([f"{k}:{fmt_num(v)}" for k, v in top_class])
+        add_item(
+            '现金流结构',
+            f"结构贡献集中在 {structure_text}。",
+            'cf_structure',
+            structure_text,
+            {'cf_class': top_class[0][0] if top_class else ''},
+            '拆解结构贡献并设定结构优化目标。',
+            14,
+            '财务BP'
+        )
+    else:
+        add_item(
+            '现金流结构',
+            '未提供明细分类，暂无法拆解经营/投资/筹资结构。',
+            'cf_structure',
+            'N/A',
+            {'cf_class': 'unknown'},
+            '补齐银行明细现金流分类字段。',
+            7,
+            '财务BP'
+        )
+
+    add_item(
+        '周转驱动',
+        f"DSO {fmt_num(wc_kpi.get('dso_days_est'), 1)} 天，DPO {fmt_num(wc_kpi.get('dpo_days_est'), 1)} 天，DIO {fmt_num(wc_kpi.get('dio_days_est'), 1)} 天。",
+        'wc_days',
+        f"DSO {wc_kpi.get('dso_days_est')} / DPO {wc_kpi.get('dpo_days_est')} / DIO {wc_kpi.get('dio_days_est')}",
+        {'metric': 'wc_days'},
+        '锁定周转驱动的变化来源并制定改善计划。',
+        14,
+        '营运负责人'
+    )
+
+    diff_receipts = safe_number(recon.get('diff_receipts'))
+    diff_payments = safe_number(recon.get('diff_payments'))
+    add_item(
+        '对账差异',
+        f"收款差异 {fmt_num(diff_receipts)}，付款差异 {fmt_num(diff_payments)}。",
+        'recon_diff',
+        f"{fmt_num(diff_receipts)} / {fmt_num(diff_payments)}",
+        {'match_status': '差异'},
+        '对账差异需拆分至单笔并闭环。',
+        7,
+        '出纳'
+    )
+
+    unknown_top = [t for t in txns if t.get('cf_class') == 'unknown'][:3]
+    if unknown_top:
+        top_text = '；'.join([f"{t.get('counterparty')} {fmt_num(t.get('amount_abs'))}" for t in unknown_top])
+        add_item(
+            'Unknown Tracker',
+            f"Unknown Top3：{top_text}。",
+            'unknown_top3',
+            top_text,
+            {'cf_class': 'unknown'},
+            '建立未知项清单并按周复核归类。',
+            7,
+            '资金负责人'
+        )
+    else:
+        add_item(
+            'Unknown Tracker',
+            '未知项明细缺失或为0，需确认分类逻辑。',
+            'unknown_top3',
+            'N/A',
+            {'cf_class': 'unknown'},
+            '补齐未知项明细或确认分类归属。',
+            14,
+            '资金负责人'
+        )
+
+    internal_net = None
+    if txns:
+        internal_in = sum((safe_number(t.get('amount')) or 0) for t in txns if t.get('cf_class') == 'internal' and t.get('amount', 0) > 0)
+        internal_out = sum((safe_number(t.get('amount_abs')) or 0) for t in txns if t.get('cf_class') == 'internal' and t.get('amount', 0) < 0)
+        internal_net = internal_in - internal_out
+    add_item(
+        '内部往来闭环',
+        f"内部往来净额 {fmt_num(internal_net)}，需确认是否已闭环。",
+        'internal_net',
+        internal_net,
+        {'cf_class': 'internal'},
+        '核对内部往来并确保账务闭环。',
+        14,
+        '财务负责人'
+    )
+
+    top1_ratio = risk.get('risk_breakdown_rows', [])[2].get('current_value') if risk else None
+    add_item(
+        '集中度风险',
+        f"单一对手方流出占比 {fmt_num(top1_ratio, 2)}。",
+        'top1_outflow_ratio',
+        top1_ratio,
+        {'direction': 'out'},
+        '设定Top1/Top5控制线并建立备份供应商。',
+        30,
+        '采购负责人'
+    )
+
+    anomaly_count = len(risk.get('anomalies', [])) if risk else 0
+    add_item(
+        '异常检测',
+        f"异常清单 {anomaly_count} 条，需逐条闭环。",
+        'anomaly_count',
+        anomaly_count,
+        {'anomaly_type': ''},
+        '建立异常跟踪表并按DDL推进。',
+        7,
+        '风控PM'
+    )
+
+    financing_ratio = risk.get('risk_breakdown_rows', [])[-1].get('current_value') if risk else None
+    add_item(
+        '筹资依赖度',
+        f"筹资净额占净现金流比例 {fmt_num(financing_ratio, 2)}。",
+        'financing_net_ratio',
+        financing_ratio,
+        {'cf_class': 'financing'},
+        '明确筹资用途并设定还款计划。',
+        30,
+        '融资负责人'
+    )
+
+    return {'memo_items': memo_items[:12]}
 
 
 def build_inventory(df_inv, period_start, period_end):
@@ -983,6 +1547,11 @@ REQUIRED_FIELDS = [
     'bank.trend.net_cash',
     'bank.trend.cum_net_cash',
     'bank.by_type',
+    'bank.monthly.monthly_totals',
+    'bank.risk.risk_score_total',
+    'bank.risk.risk_breakdown_rows',
+    'bank.risk.anomalies',
+    'bank.board_memo.memo_items',
     'inventory.kpi.ending_inventory',
     'inventory.kpi.avg_inventory',
     'inventory.kpi.period_cogs',
@@ -1030,6 +1599,22 @@ def main():
 
     sales_trend = compute_sales_trend(df_sales, df_bank, period_start, period_end)
     bank = build_bank(df_bank, period_start, period_end)
+    bank_txns = build_bank_txns(df_bank, period_start, period_end)
+    monthly_totals, monthly_by_class = build_monthly_from_txns(bank_txns)
+    if not monthly_totals:
+        months = bank.get('trend', {}).get('months', [])
+        cash_in = bank.get('trend', {}).get('cash_in', [])
+        cash_out = bank.get('trend', {}).get('cash_out', [])
+        net_cash = bank.get('trend', {}).get('net_cash', [])
+        monthly_totals = [
+            {'month': m, 'inflow': safe_number(cin) or 0, 'outflow': safe_number(cout) or 0, 'net': safe_number(net) or 0}
+            for m, cin, cout, net in zip(months, cash_in, cash_out, net_cash)
+        ]
+    bank['txns'] = bank_txns
+    bank['monthly'] = {
+        'monthly_totals': monthly_totals,
+        'monthly_by_class': monthly_by_class
+    }
     po = build_po(df_po, period_start, period_end)
 
     po_trend = {
@@ -1064,6 +1649,9 @@ def main():
         meta_notes.insert(0, '【SEG】除 AR 外均为总口径；segment 无法拆分，本期沿用 total。')
         meta['notes'] = meta_notes[:6]
 
+    risk = build_risk_and_anomalies(bank, bank_txns)
+    bank['risk'] = risk
+
     finance = {
         'meta': meta,
         'bp': {
@@ -1080,6 +1668,8 @@ def main():
         'wc': wc,
         'notes': structured_notes
     }
+
+    bank['board_memo'] = build_board_memo(finance, bank, bank_txns, risk)
 
     finance = sanitize(finance)
 

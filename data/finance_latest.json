@@ -1495,6 +1495,273 @@
       "bank_cash_out": 65196138.36,
       "diff_receipts": -1698161.53,
       "diff_payments": -2074708.42
+    },
+    "txns": [],
+    "monthly": {
+      "monthly_totals": [
+        {
+          "month": "2025-08",
+          "inflow": 9267187.79,
+          "outflow": 12942509.0,
+          "net": -3675321.21
+        },
+        {
+          "month": "2025-09",
+          "inflow": 11463358.61,
+          "outflow": 14853672.06,
+          "net": -3390313.45
+        },
+        {
+          "month": "2025-10",
+          "inflow": 13967086.39,
+          "outflow": 13108071.42,
+          "net": 859014.97
+        },
+        {
+          "month": "2025-11",
+          "inflow": 14495321.2,
+          "outflow": 15673140.3,
+          "net": -1177819.1
+        },
+        {
+          "month": "2025-12",
+          "inflow": 10851601.28,
+          "outflow": 8618745.58,
+          "net": 2232855.7
+        }
+      ],
+      "monthly_by_class": []
+    },
+    "risk": {
+      "risk_score_total": 100,
+      "risk_scores": {
+        "unknown": 100,
+        "internal": 100,
+        "concentration": 100,
+        "volatility": 100,
+        "recon": 100,
+        "financing": 100
+      },
+      "risk_breakdown_rows": [
+        {
+          "risk_item": "未知项风险",
+          "formula": "unknown_outflow / total_outflow",
+          "threshold": "10%/20%",
+          "current_value": null,
+          "penalty": 0,
+          "evidence_state_link": {
+            "tab": "finance",
+            "subtab": "bank",
+            "filters": {
+              "cf_class": "unknown",
+              "direction": "out"
+            }
+          }
+        },
+        {
+          "risk_item": "内部往来风险",
+          "formula": "abs(internal_in - internal_out) / |net_cash|",
+          "threshold": "2%/5%",
+          "current_value": null,
+          "penalty": 0,
+          "evidence_state_link": {
+            "tab": "finance",
+            "subtab": "bank",
+            "filters": {
+              "cf_class": "internal"
+            }
+          }
+        },
+        {
+          "risk_item": "集中度风险",
+          "formula": "top1_outflow / total_outflow",
+          "threshold": "25%/35%",
+          "current_value": null,
+          "penalty": 0,
+          "evidence_state_link": {
+            "tab": "finance",
+            "subtab": "bank",
+            "filters": {
+              "direction": "out"
+            }
+          }
+        },
+        {
+          "risk_item": "现金流波动风险",
+          "formula": "std(net_cash) / |mean(net_cash)|",
+          "threshold": "1.0/2.0",
+          "current_value": null,
+          "penalty": 0,
+          "evidence_state_link": {
+            "tab": "finance",
+            "subtab": "bank",
+            "filters": {
+              "metric": "net_cash"
+            }
+          }
+        },
+        {
+          "risk_item": "对账差异风险",
+          "formula": "max(diff_receipts_ratio, diff_payments_ratio)",
+          "threshold": "5%/10%",
+          "current_value": null,
+          "penalty": 0,
+          "evidence_state_link": {
+            "tab": "finance",
+            "subtab": "bank",
+            "filters": {
+              "match_status": "差异"
+            }
+          }
+        },
+        {
+          "risk_item": "筹资风险",
+          "formula": "financing_net / |net_cash|",
+          "threshold": "30%/60%",
+          "current_value": null,
+          "penalty": 0,
+          "evidence_state_link": {
+            "tab": "finance",
+            "subtab": "bank",
+            "filters": {
+              "cf_class": "financing"
+            }
+          }
+        }
+      ],
+      "anomalies": []
+    },
+    "board_memo": {
+      "memo_items": [
+        {
+          "title": "期间净现金流",
+          "conclusion": "期间净现金流 -5151583.09 元，需关注结构贡献。",
+          "evidence_metric": "period_net_cash",
+          "evidence_value": -5151583.09,
+          "evidence_state_link": {
+            "tab": "finance",
+            "subtab": "bank",
+            "filters": {
+              "metric": "net_cash"
+            }
+          },
+          "action": "复核现金流结构并确认主要驱动。",
+          "ddl_days": 7,
+          "owner": "资金负责人"
+        },
+        {
+          "title": "现金流结构",
+          "conclusion": "未提供明细分类，暂无法拆解经营/投资/筹资结构。",
+          "evidence_metric": "cf_structure",
+          "evidence_value": "N/A",
+          "evidence_state_link": {
+            "tab": "finance",
+            "subtab": "bank",
+            "filters": {
+              "cf_class": "unknown"
+            }
+          },
+          "action": "补齐银行明细现金流分类字段。",
+          "ddl_days": 7,
+          "owner": "财务BP"
+        },
+        {
+          "title": "周转驱动",
+          "conclusion": "DSO 186.8 天，DPO 346.0 天，DIO 6.29 天。",
+          "evidence_metric": "wc_days",
+          "evidence_value": "DSO 186.8 / DPO 346.0 / DIO 6.29",
+          "evidence_state_link": {
+            "tab": "finance",
+            "subtab": "bank",
+            "filters": {
+              "metric": "wc_days"
+            }
+          },
+          "action": "锁定周转驱动的变化来源并制定改善计划。",
+          "ddl_days": 14,
+          "owner": "营运负责人"
+        },
+        {
+          "title": "Unknown Tracker",
+          "conclusion": "未知项明细缺失或为0，需确认分类逻辑。",
+          "evidence_metric": "unknown_top3",
+          "evidence_value": "N/A",
+          "evidence_state_link": {
+            "tab": "finance",
+            "subtab": "bank",
+            "filters": {
+              "cf_class": "unknown"
+            }
+          },
+          "action": "补齐未知项明细或确认分类归属。",
+          "ddl_days": 14,
+          "owner": "资金负责人"
+        },
+        {
+          "title": "内部往来闭环",
+          "conclusion": "内部往来净额缺少明细，需确认是否闭环。",
+          "evidence_metric": "internal_net",
+          "evidence_value": "N/A",
+          "evidence_state_link": {
+            "tab": "finance",
+            "subtab": "bank",
+            "filters": {
+              "cf_class": "internal"
+            }
+          },
+          "action": "核对内部往来并确保账务闭环。",
+          "ddl_days": 14,
+          "owner": "财务负责人"
+        },
+        {
+          "title": "对账差异",
+          "conclusion": "收款差异 -1698161.53，付款差异 -2074708.42。",
+          "evidence_metric": "recon_diff",
+          "evidence_value": "-1698161.53 / -2074708.42",
+          "evidence_state_link": {
+            "tab": "finance",
+            "subtab": "bank",
+            "filters": {
+              "match_status": "差异"
+            }
+          },
+          "action": "对账差异需拆分至单笔并闭环。",
+          "ddl_days": 7,
+          "owner": "出纳"
+        },
+        {
+          "title": "集中度风险",
+          "conclusion": "单一对手方流出占比待明细补齐。",
+          "evidence_metric": "top1_outflow_ratio",
+          "evidence_value": "N/A",
+          "evidence_state_link": {
+            "tab": "finance",
+            "subtab": "bank",
+            "filters": {
+              "direction": "out"
+            }
+          },
+          "action": "设定Top1/Top5控制线并建立备份供应商。",
+          "ddl_days": 30,
+          "owner": "采购负责人"
+        },
+        {
+          "title": "异常检测",
+          "conclusion": "异常清单 0 条（缺少银行明细）。",
+          "evidence_metric": "anomaly_count",
+          "evidence_value": 0,
+          "evidence_state_link": {
+            "tab": "finance",
+            "subtab": "bank",
+            "filters": {
+              "anomaly_type": ""
+            }
+          },
+          "action": "补齐明细后重新运行异常检测。",
+          "ddl_days": 7,
+          "owner": "风控PM"
+        }
+      ]
     }
   },
   "wc": {
