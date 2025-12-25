@@ -78,7 +78,7 @@ function normalizeData(raw){
 
 function normalizeFinanceData(raw){
   const root = raw && raw.data ? raw.data : (raw || {});
-  const meta = root.meta || {};
+  const meta = (root.meta && typeof root.meta === 'object') ? root.meta : {};
   if(!meta.generated_at){
     meta.generated_at = root.generated_at || root.generatedAt || root.as_of || root.asOf || '';
   }
@@ -92,6 +92,24 @@ function normalizeFinanceData(raw){
     wc: root.wc || {},
     bp: root.bp || {}
   };
+}
+
+function getFinanceVersion(){
+  if(!FINANCE_DATA) return '';
+  const meta = FINANCE_DATA.meta || {};
+  return meta.generated_at || meta.generatedAt || FINANCE_DATA.generated_at || FINANCE_DATA.generatedAt || FINANCE_DATA.as_of || FINANCE_DATA.asOf || '';
+}
+
+function updateDataStatusLine(){
+  const ts = DATA_META.generatedAt ? ('数据更新时间：' + DATA_META.generatedAt) : '数据已加载';
+  let msg = ts;
+  if(FINANCE_ERROR){
+    msg += ' ｜ 财务数据加载失败';
+  }else{
+    const finVer = getFinanceVersion();
+    if(finVer) msg += ' ｜ 财务版本：' + finVer;
+  }
+  showDataStatus(true, msg);
 }
 
 function showDataStatus(ok, msg){
@@ -163,8 +181,7 @@ async function bootstrap(){
     window.FINANCE_DATA = FINANCE_DATA;
     window.FINANCE_ERROR = FINANCE_ERROR;
 
-    const ts = DATA_META.generatedAt ? ('数据更新时间：' + DATA_META.generatedAt) : '数据已加载';
-    showDataStatus(true, ts);
+    updateDataStatusLine();
     const initialState = STATE_MANAGER ? STATE_MANAGER.readState() : null;
     if(STATE_MANAGER) STATE_MANAGER.setState(initialState);
     updatePageMeta();
@@ -197,6 +214,7 @@ async function reloadFinanceData(){
     window.FINANCE_ERROR = FINANCE_ERROR;
     FINANCE_LOADING = false;
     window.FINANCE_LOADING = false;
+    updateDataStatusLine();
     if(typeof renderFinance === 'function'){
       try{ renderFinance(window.currentSeg || 'total'); }catch(err){ console.error(err); }
     }
