@@ -845,170 +845,6 @@ def build_risk_and_anomalies(bank, txns):
     return risk
 
 
-def build_board_memo(finance, bank, txns, risk):
-    memo_items = []
-    kpi = bank.get('kpi', {}) if bank else {}
-    recon = bank.get('recon', {}) if bank else {}
-    wc = finance.get('wc', {}) if finance else {}
-    wc_kpi = wc.get('kpi', {})
-
-    def add_item(title, conclusion, metric, value, filters, action, ddl_days, owner=None):
-        memo_items.append({
-            'title': title,
-            'conclusion': conclusion,
-            'evidence_metric': metric,
-            'evidence_value': value,
-            'evidence_state_link': {'tab': 'finance', 'subtab': 'bank', 'filters': filters},
-            'action': action,
-            'ddl_days': ddl_days,
-            'owner': owner
-        })
-
-    net_cash = safe_number(kpi.get('period_net_cash'))
-    add_item(
-        '期间净现金流',
-        f"期间净现金流 {fmt_num(net_cash)} 元，需关注结构贡献。",
-        'period_net_cash',
-        net_cash,
-        {'metric': 'net_cash'},
-        '复核现金流结构并确认主要驱动。',
-        7,
-        '资金负责人'
-    )
-
-    if txns:
-        by_class = {}
-        for t in txns:
-            by_class.setdefault(t.get('cf_class') or 'unknown', 0)
-            by_class[t.get('cf_class') or 'unknown'] += safe_number(t.get('amount')) or 0
-        top_class = sorted(by_class.items(), key=lambda x: abs(x[1]), reverse=True)[:3]
-        structure_text = ' / '.join([f"{k}:{fmt_num(v)}" for k, v in top_class])
-        add_item(
-            '现金流结构',
-            f"结构贡献集中在 {structure_text}。",
-            'cf_structure',
-            structure_text,
-            {'cf_class': top_class[0][0] if top_class else ''},
-            '拆解结构贡献并设定结构优化目标。',
-            14,
-            '财务BP'
-        )
-    else:
-        add_item(
-            '现金流结构',
-            '未提供明细分类，暂无法拆解经营/投资/筹资结构。',
-            'cf_structure',
-            'N/A',
-            {'cf_class': 'unknown'},
-            '补齐银行明细现金流分类字段。',
-            7,
-            '财务BP'
-        )
-
-    add_item(
-        '周转驱动',
-        f"DSO {fmt_num(wc_kpi.get('dso_days_est'), 1)} 天，DPO {fmt_num(wc_kpi.get('dpo_days_est'), 1)} 天，DIO {fmt_num(wc_kpi.get('dio_days_est'), 1)} 天。",
-        'wc_days',
-        f"DSO {wc_kpi.get('dso_days_est')} / DPO {wc_kpi.get('dpo_days_est')} / DIO {wc_kpi.get('dio_days_est')}",
-        {'metric': 'wc_days'},
-        '锁定周转驱动的变化来源并制定改善计划。',
-        14,
-        '营运负责人'
-    )
-
-    diff_receipts = safe_number(recon.get('diff_receipts'))
-    diff_payments = safe_number(recon.get('diff_payments'))
-    add_item(
-        '对账差异',
-        f"收款差异 {fmt_num(diff_receipts)}，付款差异 {fmt_num(diff_payments)}。",
-        'recon_diff',
-        f"{fmt_num(diff_receipts)} / {fmt_num(diff_payments)}",
-        {'match_status': '差异'},
-        '对账差异需拆分至单笔并闭环。',
-        7,
-        '出纳'
-    )
-
-    unknown_top = [t for t in txns if t.get('cf_class') == 'unknown'][:3]
-    if unknown_top:
-        top_text = '；'.join([f"{t.get('counterparty')} {fmt_num(t.get('amount_abs'))}" for t in unknown_top])
-        add_item(
-            'Unknown Tracker',
-            f"Unknown Top3：{top_text}。",
-            'unknown_top3',
-            top_text,
-            {'cf_class': 'unknown'},
-            '建立未知项清单并按周复核归类。',
-            7,
-            '资金负责人'
-        )
-    else:
-        add_item(
-            'Unknown Tracker',
-            '未知项明细缺失或为0，需确认分类逻辑。',
-            'unknown_top3',
-            'N/A',
-            {'cf_class': 'unknown'},
-            '补齐未知项明细或确认分类归属。',
-            14,
-            '资金负责人'
-        )
-
-    internal_net = None
-    if txns:
-        internal_in = sum((safe_number(t.get('amount')) or 0) for t in txns if t.get('cf_class') == 'internal' and t.get('amount', 0) > 0)
-        internal_out = sum((safe_number(t.get('amount_abs')) or 0) for t in txns if t.get('cf_class') == 'internal' and t.get('amount', 0) < 0)
-        internal_net = internal_in - internal_out
-    add_item(
-        '内部往来闭环',
-        f"内部往来净额 {fmt_num(internal_net)}，需确认是否已闭环。",
-        'internal_net',
-        internal_net,
-        {'cf_class': 'internal'},
-        '核对内部往来并确保账务闭环。',
-        14,
-        '财务负责人'
-    )
-
-    top1_ratio = risk.get('risk_breakdown_rows', [])[2].get('current_value') if risk else None
-    add_item(
-        '集中度风险',
-        f"单一对手方流出占比 {fmt_num(top1_ratio, 2)}。",
-        'top1_outflow_ratio',
-        top1_ratio,
-        {'direction': 'out'},
-        '设定Top1/Top5控制线并建立备份供应商。',
-        30,
-        '采购负责人'
-    )
-
-    anomaly_count = len(risk.get('anomalies', [])) if risk else 0
-    add_item(
-        '异常检测',
-        f"异常清单 {anomaly_count} 条，需逐条闭环。",
-        'anomaly_count',
-        anomaly_count,
-        {'anomaly_type': ''},
-        '建立异常跟踪表并按DDL推进。',
-        7,
-        '风控PM'
-    )
-
-    financing_ratio = risk.get('risk_breakdown_rows', [])[-1].get('current_value') if risk else None
-    add_item(
-        '筹资依赖度',
-        f"筹资净额占净现金流比例 {fmt_num(financing_ratio, 2)}。",
-        'financing_net_ratio',
-        financing_ratio,
-        {'cf_class': 'financing'},
-        '明确筹资用途并设定还款计划。',
-        30,
-        '融资负责人'
-    )
-
-    return {'memo_items': memo_items[:12]}
-
-
 def build_inventory(df_inv, period_start, period_end):
     date_col = find_column(df_inv, [['日期'], ['业务日期'], ['单据日期']])
     inbound_col = find_column(df_inv, [['入库', '成本'], ['入库', '金额'], ['采购入库']])
@@ -1551,7 +1387,6 @@ REQUIRED_FIELDS = [
     'bank.risk.risk_score_total',
     'bank.risk.risk_breakdown_rows',
     'bank.risk.anomalies',
-    'bank.board_memo.memo_items',
     'inventory.kpi.ending_inventory',
     'inventory.kpi.avg_inventory',
     'inventory.kpi.period_cogs',
@@ -1656,7 +1491,7 @@ def main():
         'meta': meta,
         'bp': {
             'latest_path': './reports/bp_latest.html',
-            'title': f"BP报告（{period_end}）"
+            'title': f"预算报告（{period_end}）"
         },
         'ar': {
             'segments': ar_segments
@@ -1668,8 +1503,6 @@ def main():
         'wc': wc,
         'notes': structured_notes
     }
-
-    bank['board_memo'] = build_board_memo(finance, bank, bank_txns, risk)
 
     finance = sanitize(finance)
 

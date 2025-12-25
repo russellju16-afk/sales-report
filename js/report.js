@@ -254,10 +254,10 @@
     const finEl = document.getElementById('debug_finance_status');
     const forecastEl = document.getElementById('debug_forecast_status');
     const listEl = document.getElementById('debug_missing_list');
-    if(loadEl) loadEl.textContent = `加载耗时：${info && info.loadMs ? info.loadMs.toFixed(0) : '—'} ms`;
-    if(dataEl) dataEl.textContent = `latest.json：${info && info.dataOk ? '成功' : '失败'}`;
-    if(finEl) finEl.textContent = `finance_latest.json：${info && info.financeOk ? '成功' : '失败'}`;
-    if(forecastEl) forecastEl.textContent = `forecast_latest.json：${info && info.forecastOk ? '成功' : '失败'}`;
+    if(loadEl) loadEl.textContent = `加载耗时：${info && info.loadMs ? info.loadMs.toFixed(0) : '—'} 毫秒`;
+    if(dataEl) dataEl.textContent = `经营数据：${info && info.dataOk ? '成功' : '失败'}`;
+    if(finEl) finEl.textContent = `财务数据：${info && info.financeOk ? '成功' : '失败'}`;
+    if(forecastEl) forecastEl.textContent = `预测数据：${info && info.forecastOk ? '成功' : '失败'}`;
     if(listEl){
       listEl.innerHTML = '';
       const items = (info && info.missingFields) ? info.missingFields : [];
@@ -345,27 +345,27 @@
   function collectMissingFields(dataRaw, financeRaw, forecastRaw){
     const missing = [];
     const checks = [
-      ['latest.json:data.total.rows', 'data.total.rows'],
-      ['latest.json:data.total.months', 'data.total.months'],
-      ['finance_latest.json:meta.period_end', 'meta.period_end'],
-      ['finance_latest.json:meta.currency', 'meta.currency'],
-      ['finance_latest.json:bank.kpi.period_net_cash', 'bank.kpi.period_net_cash'],
-      ['finance_latest.json:bank.trend.cash_in', 'bank.trend.cash_in'],
-      ['finance_latest.json:bank.trend.cash_out', 'bank.trend.cash_out'],
-      ['finance_latest.json:bank.by_type', 'bank.by_type'],
-      ['finance_latest.json:ar.segments.total.kpi.ending_net_ar', 'ar.segments.total.kpi.ending_net_ar'],
-      ['finance_latest.json:ar.segments.total.trend.cash_receipts', 'ar.segments.total.trend.cash_receipts'],
-      ['finance_latest.json:ap.kpi.ending_net_ap', 'ap.kpi.ending_net_ap'],
-      ['finance_latest.json:ap.trend.cash_payments', 'ap.trend.cash_payments'],
-      ['finance_latest.json:inventory.kpi.inventory_end', 'inventory.kpi.inventory_end'],
-      ['finance_latest.json:po.top_suppliers', 'po.top_suppliers'],
-      ['forecast_latest.json:forecast.recommendations.summary_kpi.base_gap_amount', 'forecast.recommendations.summary_kpi.base_gap_amount'],
-      ['forecast_latest.json:forecast.recommendations.ar_collection', 'forecast.recommendations.ar_collection'],
-      ['forecast_latest.json:forecast.recommendations.ap_deferral', 'forecast.recommendations.ap_deferral'],
-      ['forecast_latest.json:forecast.recommendations.po_reduction', 'forecast.recommendations.po_reduction'],
-      ['forecast_latest.json:forecast.ar_plan_rows', 'forecast.ar_plan_rows'],
-      ['forecast_latest.json:forecast.ap_plan_rows', 'forecast.ap_plan_rows'],
-      ['forecast_latest.json:forecast.po_plan_rows', 'forecast.po_plan_rows']
+      ['经营数据:data.total.rows', 'data.total.rows'],
+      ['经营数据:data.total.months', 'data.total.months'],
+      ['财务数据:meta.period_end', 'meta.period_end'],
+      ['财务数据:meta.currency', 'meta.currency'],
+      ['财务数据:bank.kpi.period_net_cash', 'bank.kpi.period_net_cash'],
+      ['财务数据:bank.trend.cash_in', 'bank.trend.cash_in'],
+      ['财务数据:bank.trend.cash_out', 'bank.trend.cash_out'],
+      ['财务数据:bank.by_type', 'bank.by_type'],
+      ['财务数据:ar.segments.total.kpi.ending_net_ar', 'ar.segments.total.kpi.ending_net_ar'],
+      ['财务数据:ar.segments.total.trend.cash_receipts', 'ar.segments.total.trend.cash_receipts'],
+      ['财务数据:ap.kpi.ending_net_ap', 'ap.kpi.ending_net_ap'],
+      ['财务数据:ap.trend.cash_payments', 'ap.trend.cash_payments'],
+      ['财务数据:inventory.kpi.inventory_end', 'inventory.kpi.inventory_end'],
+      ['财务数据:po.top_suppliers', 'po.top_suppliers'],
+      ['预测数据:forecast.recommendations.summary_kpi.base_gap_amount', 'forecast.recommendations.summary_kpi.base_gap_amount'],
+      ['预测数据:forecast.recommendations.ar_collection', 'forecast.recommendations.ar_collection'],
+      ['预测数据:forecast.recommendations.ap_deferral', 'forecast.recommendations.ap_deferral'],
+      ['预测数据:forecast.recommendations.po_reduction', 'forecast.recommendations.po_reduction'],
+      ['预测数据:forecast.ar_plan_rows', 'forecast.ar_plan_rows'],
+      ['预测数据:forecast.ap_plan_rows', 'forecast.ap_plan_rows'],
+      ['预测数据:forecast.po_plan_rows', 'forecast.po_plan_rows']
     ];
     const dataRoot = dataRaw && dataRaw.data ? dataRaw.data : (dataRaw || {});
     const financeRoot = financeRaw && financeRaw.data ? financeRaw.data : (financeRaw || {});
@@ -1020,19 +1020,19 @@
     if(exportBtn){
       exportBtn.onclick = ()=>{
         const rows = filtered.map(r=>({
-          anomaly_type:r.anomaly_type,
-          severity:r.severity,
-          date:r.date,
-          counterparty:r.counterparty,
-          memo:r.memo,
-          amount:r.amount,
-          reason:r.reason,
-          action:r.suggested_action,
-          link:r.evidence_state_link ? buildDrilldownLink(r.evidence_state_link) : ''
+          '类型':r.anomaly_type,
+          '严重度':r.severity,
+          '日期':r.date,
+          '对方':r.counterparty,
+          '摘要':r.memo,
+          '金额':r.amount,
+          '原因':r.reason,
+          '建议动作':r.suggested_action,
+          '证据链接':r.evidence_state_link ? buildDrilldownLink(r.evidence_state_link) : ''
         }));
         const suffix = safeDateLabel(periodEnd) ? ('_' + safeDateLabel(periodEnd)) : '';
-        const csv = buildCsv(rows, ['anomaly_type','severity','date','counterparty','memo','amount','reason','action','link']);
-        downloadCsv('risk_anomalies' + suffix + '.csv', csv);
+        const csv = buildCsv(rows, ['类型','严重度','日期','对方','摘要','金额','原因','建议动作','证据链接']);
+        downloadCsv('异常清单' + suffix + '.csv', csv);
       };
     }
   }
@@ -1096,16 +1096,16 @@
     if(exportBtn){
       exportBtn.onclick = ()=>{
         const rows = mergedRows.map(r=>({
-          risk_item:r.risk_item,
-          formula:r.formula,
-          threshold:r.threshold,
-          current_value:r.current_value,
-          penalty:r.penalty,
-          link:r.evidence_state_link ? buildDrilldownLink(r.evidence_state_link) : ''
+          '风险项':r.risk_item,
+          '公式':r.formula,
+          '阈值':r.threshold,
+          '当前值':r.current_value,
+          '扣分':r.penalty,
+          '证据链接':r.evidence_state_link ? buildDrilldownLink(r.evidence_state_link) : ''
         }));
         const suffix = safeDateLabel(periodEnd) ? ('_' + safeDateLabel(periodEnd)) : '';
-        const csv = buildCsv(rows, ['risk_item','formula','threshold','current_value','penalty','link']);
-        downloadCsv('risk_breakdown' + suffix + '.csv', csv);
+        const csv = buildCsv(rows, ['风险项','公式','阈值','当前值','扣分','证据链接']);
+        downloadCsv('风险扣分明细' + suffix + '.csv', csv);
       };
     }
   }
@@ -1119,97 +1119,41 @@
     if(exportBtn){
       exportBtn.onclick = ()=>{
         const rows = mergedRows.map(r=>({
-          risk_item:r.risk_item,
-          formula:r.formula,
-          threshold:r.threshold,
-          current_value:r.current_value,
-          penalty:r.penalty,
-          link:r.evidence_state_link ? buildDrilldownLink(r.evidence_state_link) : ''
+          '风险项':r.risk_item,
+          '公式':r.formula,
+          '阈值':r.threshold,
+          '当前值':r.current_value,
+          '扣分':r.penalty,
+          '证据链接':r.evidence_state_link ? buildDrilldownLink(r.evidence_state_link) : ''
         }));
         const suffix = safeDateLabel(periodEnd) ? ('_' + safeDateLabel(periodEnd)) : '';
-        const csv = buildCsv(rows, ['risk_item','formula','threshold','current_value','penalty','link']);
-        downloadCsv('risk_breakdown' + suffix + '.csv', csv);
+        const csv = buildCsv(rows, ['风险项','公式','阈值','当前值','扣分','证据链接']);
+        downloadCsv('风险扣分明细' + suffix + '.csv', csv);
       };
     }
   }
 
-  function renderBoardMemo(boardMemo, periodEnd){
-    const list = Array.isArray(boardMemo && boardMemo.memo_items) ? boardMemo.memo_items : [];
-    const container = document.getElementById('board_memo_list');
-    if(!container) return;
-    container.innerHTML = '';
-    if(!list.length){
-      const empty = document.createElement('div');
-      empty.className = 'report-empty';
-      empty.textContent = '暂无董事会口径';
-      container.appendChild(empty);
-      return;
-    }
-    list.forEach(item=>{
-      const card = document.createElement('div');
-      card.className = 'memo-card';
-      const title = document.createElement('div');
-      title.className = 'memo-title';
-      title.textContent = item.title || '结论';
-      const conclusion = document.createElement('div');
-      conclusion.className = 'memo-conclusion';
-      conclusion.textContent = item.conclusion || '—';
-      const evidence = document.createElement('div');
-      evidence.className = 'memo-evidence';
-      evidence.textContent = `证据：${item.evidence_metric || ''} ${item.evidence_value || '—'}`;
-      const action = document.createElement('div');
-      action.className = 'memo-action';
-      action.textContent = `动作：${item.action || '—'}｜DDL：${item.ddl_days || '—'}天`;
-      card.appendChild(title);
-      card.appendChild(conclusion);
-      card.appendChild(evidence);
-      card.appendChild(action);
-      if(item.evidence_state_link){
-        const linkWrap = document.createElement('div');
-        linkWrap.className = 'memo-link';
-        linkWrap.appendChild(buildEvidenceLink(item.evidence_state_link, '查看证据'));
-        card.appendChild(linkWrap);
-      }
-      container.appendChild(card);
-    });
-
-    const copyBtn = document.getElementById('copy_memo_btn');
-    if(copyBtn){
-      copyBtn.onclick = ()=>{
-        const lines = list.map(item=>{
-          const link = item.evidence_state_link ? buildDrilldownLink(item.evidence_state_link) : '';
-          return `${item.title}｜${item.conclusion}｜证据:${item.evidence_metric} ${item.evidence_value}｜动作:${item.action}｜DDL:${item.ddl_days}天｜${link}`;
-        });
-        copyText(lines.join('\n')).then(()=>showToast('已复制董事会口径'));
+  function formatActionSource(source){
+    const raw = String(source || '').trim();
+    if(!raw) return '—';
+    if(raw.indexOf('forecast:') === 0){
+      const key = raw.replace('forecast:', '');
+      const map = {
+        AR_collection:'预测-应收回款',
+        AP_deferral:'预测-应付延付',
+        PO_reduction:'预测-采购减采',
+        emergency_pack:'预测-缺口应急包',
+        coverage_boost:'预测-覆盖率提升',
+        coverage:'预测-覆盖不足'
       };
+      return map[key] || '预测';
     }
-
-    const exportTxtBtn = document.getElementById('export_memo_txt_btn');
-    if(exportTxtBtn){
-      exportTxtBtn.onclick = ()=>{
-        const lines = list.map(item=>{
-          const link = item.evidence_state_link ? buildDrilldownLink(item.evidence_state_link) : '';
-          return `${item.title}\n结论:${item.conclusion}\n证据:${item.evidence_metric} ${item.evidence_value}\n动作:${item.action}\nDDL:${item.ddl_days}天\n${link}`;
-        });
-        const suffix = safeDateLabel(periodEnd) ? ('_' + safeDateLabel(periodEnd)) : '';
-        const blob = new Blob([lines.join('\n\n')], {type:'text/plain;charset=utf-8'});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'memo' + suffix + '.txt';
-        a.click();
-        URL.revokeObjectURL(a.href);
-      };
-    }
-
-    const exportJsonBtn = document.getElementById('export_memo_json_btn');
-    if(exportJsonBtn){
-      exportJsonBtn.onclick = ()=>downloadJson('memo.json', { memo_items:list });
-    }
+    return raw;
   }
 
   function formatAction(action){
     if(!action) return '—';
-    return `负责人：${action.owner}；动作：${action.task}；DDL：${action.ddl}；预期影响：${action.impact}`;
+    return `负责人：${action.owner}；动作：${action.task}；截止日期：${action.ddl}；预期影响：${action.impact}`;
   }
 
   function buildOtherSuggestion(amount, net, type){
@@ -1358,7 +1302,7 @@
     actions.forEach(a=>{
       const tr = document.createElement('tr');
       const fields = [
-        a.source || '—',
+        formatActionSource(a.source),
         a.domain || '—',
         a.signal || '—',
         a.owner || '—',
@@ -1682,13 +1626,22 @@
     const resetBtn = document.getElementById('action_filter_reset');
     if(!sourceSelect) return ()=>{};
     actions.forEach(a=>{ a.source_group = getActionSourceGroup(a); });
+    const sourceLabels = {
+      all:'全部',
+      risk:'风险',
+      cashflow:'现金流',
+      forecast:'预测',
+      margin:'毛利',
+      other:'其他'
+    };
     const apply = ()=>{
       const sourceVal = sourceSelect.value || 'all';
       const filtered = actions.filter(a=>sourceVal === 'all' || a.source_group === sourceVal);
       renderActionTable(filtered);
       const actionStats = document.getElementById('action_stats');
       if(actionStats){
-        actionStats.textContent = `动作共 ${filtered.length}/${actions.length} 项（筛选：${sourceVal}）。`;
+        const sourceLabel = sourceLabels[sourceVal] || sourceVal;
+        actionStats.textContent = `动作共 ${filtered.length}/${actions.length} 项（筛选：${sourceLabel}）。`;
       }
     };
     sourceSelect.onchange = apply;
@@ -1883,14 +1836,14 @@
       if(s1Sensitive) score *= 1.1;
       const reasonParts = [];
       if(recItem.reason) reasonParts.push(recItem.reason);
-      if(s1Sensitive) reasonParts.push('对S1敏感');
+      if(s1Sensitive) reasonParts.push('对情景1敏感');
       const impacts = expectedCashIn !== null ? computeScenarioImpacts(expectedCashIn, 'ar', thresholds) : { base:null, s1:null, s2:null, s3:null };
       return {
         source:'forecast:AR_collection',
         domain:'预测',
         signal:`AR催收：${customer}，账龄${bucket}，未收${fmtWan(amountOpen)}`,
         owner:'',
-        task:`催收客户【${customer}】，目标回款【${fmtWan(expectedCashIn)}】（账龄${bucket}），DDL ${ddlDate}`,
+        task:`催收客户【${customer}】，目标回款【${fmtWan(expectedCashIn)}】（账龄${bucket}），截止日期 ${ddlDate}`,
         ddl: ddlDate,
         impact:`预计现金影响 ${fmtWan(expectedCashIn)}`,
         expected_cash_impact_base: impacts.base,
@@ -1933,7 +1886,7 @@
         domain:'预测',
         signal:`AP延付：${vendor}，30天内到期${fmtWan(amountDue)}`,
         owner:'',
-        task:`与供应商【${vendor}】协商延付【${deferralDays}天】，释放现金【${fmtWan(expectedCashSaved)}】，DDL ${ddlDate}`,
+        task:`与供应商【${vendor}】协商延付【${deferralDays}天】，释放现金【${fmtWan(expectedCashSaved)}】，截止日期 ${ddlDate}`,
         ddl: ddlDate,
         impact:`预计现金影响 ${fmtWan(expectedCashSaved)}`,
         expected_cash_impact_base: impacts.base,
@@ -1970,7 +1923,7 @@
         domain:'预测',
         signal:`PO减采：${supplier}，未到货${fmtWan(amountOpen)}`,
         owner:'',
-        task:`对供应商【${supplier}】未到货PO【金额${fmtWan(amountOpen)}】执行【${actionLabel}】（比例${Math.round(reducibleRatio * 100)}%），预计节省现金【${fmtWan(expectedCashSaved)}】，DDL ${ddlDate}`,
+        task:`对供应商【${supplier}】未到货PO【金额${fmtWan(amountOpen)}】执行【${actionLabel}】（比例${Math.round(reducibleRatio * 100)}%），预计节省现金【${fmtWan(expectedCashSaved)}】，截止日期 ${ddlDate}`,
         ddl: ddlDate,
         impact:`预计现金影响 ${fmtWan(expectedCashSaved)}`,
         expected_cash_impact_base: impacts.base,
@@ -2007,16 +1960,16 @@
       actions.push({
         source:'forecast:emergency_pack',
         domain:'预测',
-        signal:'缺口应急包（Top5 AR/AP/PO）',
+        signal:'缺口应急包（前5应收/应付/采购）',
         owner:'',
-        task:`汇总Top5 AR/AP/PO 动作，预计释放现金${fmtWan(emergencyImpact)}，DDL ${addDays(baseDate, 3)}`,
+        task:`汇总前5应收/应付/采购动作，预计释放现金${fmtWan(emergencyImpact)}，截止日期 ${addDays(baseDate, 3)}`,
         ddl:addDays(baseDate, 3),
         impact:`预计现金影响 ${fmtWan(emergencyImpact)}`,
         expected_cash_impact_base: impacts.base,
         expected_cash_impact_s1: impacts.s1,
         expected_cash_impact_s2: impacts.s2,
         expected_cash_impact_s3: impacts.s3,
-        evidence_metric:`Top5动作合计${fmtWan(emergencyImpact)}`,
+        evidence_metric:`前5动作合计${fmtWan(emergencyImpact)}`,
         link: buildEvidenceLink({
           seg:'total',
           tab:'forecast',
@@ -2035,7 +1988,7 @@
         domain:'预测',
         signal:'行动覆盖度不足',
         owner:'',
-        task:`提升AR回款比例/PO减采比例，追加释放现金${fmtWan(gapDelta)}，DDL ${addDays(baseDate, 5)}`,
+        task:`提升应收回款比例/采购减采比例，追加释放现金${fmtWan(gapDelta)}，截止日期 ${addDays(baseDate, 5)}`,
         ddl:addDays(baseDate, 5),
         impact:`预计现金影响 ${fmtWan(gapDelta)}`,
         expected_cash_impact_base: impacts.base,
@@ -2509,7 +2462,7 @@
       },
       {
         risk_item:'情景敏感度风险',
-        formula:'S1 max_gap 相对 Base',
+        formula:'情景1最大缺口相对基准',
         threshold:'<= 20%',
         current_value: s1Gap ? ((s1Gap.max_gap - baseGap.max_gap) / Math.max(1, baseGap.max_gap)) : 0,
         penalty: sensitivityRisk,
@@ -2632,7 +2585,7 @@
         domain:'预测',
         signal:`减采策略：${row.name}`,
         owner:'供应链负责人',
-        task:'调整补货节奏并压降低周转SKU',
+        task:'调整补货节奏并压降低周转货号',
         ddl:addDays(baseDate, ACTION_DAYS.mid),
         impact:`预计现金影响 ${fmtWan(row.impact)}`,
         expected_cash_impact: row.impact,
@@ -2670,14 +2623,22 @@
     if(!chart || !daily) return;
     const dates = daily.map(d=>d.date);
     const baseSeries = daily.map(d=>d.ending_balance);
+    const scenarioName = (key)=>{
+      if(!key) return '';
+      if(key === 'Base') return '基准';
+      if(key === 'S1') return '情景1';
+      if(key === 'S2') return '情景2';
+      if(key === 'S3') return '情景3';
+      return key;
+    };
     const series = [
-      { name:'Base', type:'line', data: baseSeries, smooth:true, lineStyle:{ width:2 } }
+      { name:'基准', type:'line', data: baseSeries, smooth:true, lineStyle:{ width:2 } }
     ];
     if(scenarios){
       Object.keys(scenarios).forEach(key=>{
         if(key === 'Base') return;
         const arr = scenarios[key].daily_recalc || [];
-        series.push({ name:key, type:'line', data: arr.map(d=>d.ending_balance), smooth:true, lineStyle:{ width:2, type:'dashed' } });
+        series.push({ name:scenarioName(key), type:'line', data: arr.map(d=>d.ending_balance), smooth:true, lineStyle:{ width:2, type:'dashed' } });
       });
     }
     chart.setOption({
@@ -2692,8 +2653,8 @@
 
   function renderForecastGapKpis(containerId, baseGap, coverageRatio){
     const items = [
-      { label:'Base最低余额', value: fmtWan(baseGap.min_balance) },
-      { label:'Base缺口', value: fmtWan(baseGap.max_gap) },
+      { label:'基准最低余额', value: fmtWan(baseGap.min_balance) },
+      { label:'基准缺口', value: fmtWan(baseGap.max_gap) },
       { label:'缺口日', value: baseGap.gap_day || '—' },
       { label:'行动覆盖率', value: coverageRatio !== null ? fmtRatio(coverageRatio) : '—' }
     ];
@@ -2703,15 +2664,15 @@
   function renderForecastSummaries(baseGap, s1Gap, coverage){
     const baseEl = document.getElementById('tuner_base_summary');
     if(baseEl){
-      baseEl.textContent = `Base：min_balance ${fmtWan(baseGap.min_balance)} / max_gap ${fmtWan(baseGap.max_gap)} / gap_day ${baseGap.gap_day || '—'}`;
+      baseEl.textContent = `基准：最低余额 ${fmtWan(baseGap.min_balance)} / 缺口 ${fmtWan(baseGap.max_gap)} / 缺口日 ${baseGap.gap_day || '—'}`;
     }
     const s1El = document.getElementById('tuner_s1_summary');
     if(s1El && s1Gap){
-      s1El.textContent = `S1：min_balance ${fmtWan(s1Gap.min_balance)} / max_gap ${fmtWan(s1Gap.max_gap)} / gap_day ${s1Gap.gap_day || '—'}`;
+      s1El.textContent = `情景1：最低余额 ${fmtWan(s1Gap.min_balance)} / 缺口 ${fmtWan(s1Gap.max_gap)} / 缺口日 ${s1Gap.gap_day || '—'}`;
     }
     const coverEl = document.getElementById('tuner_action_coverage');
     if(coverEl){
-      coverEl.textContent = `actions_cover_ratio：${fmtRatio(coverage.coverage_ratio)}（impact ${fmtWan(coverage.total_impact)} / gap ${fmtWan(coverage.gap_amount)}）`;
+      coverEl.textContent = `动作覆盖率：${fmtRatio(coverage.coverage_ratio)}（覆盖现金 ${fmtWan(coverage.total_impact)} / 缺口 ${fmtWan(coverage.gap_amount)}）`;
     }
   }
 
@@ -2719,22 +2680,22 @@
     const baseCard = document.getElementById('forecast_base_card');
     if(baseCard){
       baseCard.innerHTML = '';
-      baseCard.appendChild(buildMiniCard('Base缺口', fmtWan(baseGap.max_gap), `最低余额 ${fmtWan(baseGap.min_balance)}｜${baseGap.gap_day || '—'}`));
+      baseCard.appendChild(buildMiniCard('基准缺口', fmtWan(baseGap.max_gap), `最低余额 ${fmtWan(baseGap.min_balance)}｜${baseGap.gap_day || '—'}`));
     }
     const s1Card = document.getElementById('forecast_s1_card');
     if(s1Card && s1Gap){
       s1Card.innerHTML = '';
-      s1Card.appendChild(buildMiniCard('S1缺口', fmtWan(s1Gap.max_gap), `最低余额 ${fmtWan(s1Gap.min_balance)}｜${s1Gap.gap_day || '—'}`));
+      s1Card.appendChild(buildMiniCard('情景1缺口', fmtWan(s1Gap.max_gap), `最低余额 ${fmtWan(s1Gap.min_balance)}｜${s1Gap.gap_day || '—'}`));
     }
     const sensCard = document.getElementById('forecast_sensitivity_card');
     if(sensCard){
       const delta = s1Gap ? (s1Gap.max_gap - baseGap.max_gap) : 0;
       sensCard.innerHTML = '';
-      sensCard.appendChild(buildMiniCard('情景敏感度', fmtWan(delta), 'S1 vs Base 缺口变化'));
+      sensCard.appendChild(buildMiniCard('情景敏感度', fmtWan(delta), '情景1对比基准缺口变化'));
     }
     const sensNote = document.getElementById('forecast_sensitivity_note');
     if(sensNote && s1Gap){
-      sensNote.textContent = `S1回款延迟导致缺口变化 ${fmtSignedWan(s1Gap.max_gap - baseGap.max_gap)}。`;
+      sensNote.textContent = `情景1回款延迟导致缺口变化 ${fmtSignedWan(s1Gap.max_gap - baseGap.max_gap)}。`;
     }
   }
 
@@ -2768,7 +2729,7 @@
 
     if(!forecast){
       const hintEl = document.getElementById('forecast_balance_hint');
-      if(hintEl) hintEl.textContent = '缺少 forecast_latest.json，无法计算预测策略。';
+      if(hintEl) hintEl.textContent = '缺少预测数据，无法计算预测策略。';
       const noteEl = document.getElementById('tuner_balance_note');
       if(noteEl) noteEl.textContent = '余额口径：未加载预测数据';
       return;
@@ -2809,7 +2770,7 @@
         const penalty = coverage.coverage_ratio < 0.8 ? Math.round((0.8 - coverage.coverage_ratio) * 100) : 0;
         const row = {
           risk_item:'行动覆盖率',
-          formula:'Σ expected_cash_impact / gap_amount',
+          formula:'Σ预期现金影响 / 缺口金额',
           threshold:'>= 80%',
           current_value: coverage.coverage_ratio,
           penalty: penalty,
@@ -2869,12 +2830,12 @@
 
     const copyBtn = document.getElementById('tuner_copy_btn');
     if(copyBtn) copyBtn.onclick = ()=>{
-      copyText(JSON.stringify(state.params || DEFAULT_TUNER_PARAMS, null, 2)).then(()=>showToast('已复制参数JSON'));
+      copyText(JSON.stringify(state.params || DEFAULT_TUNER_PARAMS, null, 2)).then(()=>showToast('已复制参数数据'));
     };
 
     const exportBtn = document.getElementById('tuner_export_btn');
     if(exportBtn) exportBtn.onclick = ()=>{
-      downloadJson('tuner_params.json', state.params || DEFAULT_TUNER_PARAMS);
+      downloadJson('预测参数.json', state.params || DEFAULT_TUNER_PARAMS);
     };
 
     const importInput = document.getElementById('tuner_import_input');
@@ -2897,7 +2858,7 @@
             showToast('已导入参数');
             importInput.value = '';
           }catch(err){
-            showToast('导入失败：JSON格式错误');
+            showToast('导入失败：参数文件格式错误');
             importInput.value = '';
           }
         };
@@ -3353,19 +3314,19 @@
     const reconReceipts = document.getElementById('bank_recon_receipts');
     if(reconReceipts){
       reconReceipts.innerHTML = '';
-      reconReceipts.appendChild(buildMiniCard('应收回款与银行流入差异', fmtWan(reconReceiptsDiff), '对比口径：应收回款(ar.trend.cash_receipts) vs 银行流入(bank.trend.cash_in)'));
+      reconReceipts.appendChild(buildMiniCard('应收回款与银行流入差异', fmtWan(reconReceiptsDiff), '对比口径：应收回款对比银行流入'));
     }
     const reconPayments = document.getElementById('bank_recon_payments');
     if(reconPayments){
       reconPayments.innerHTML = '';
-      reconPayments.appendChild(buildMiniCard('应付付款与银行流出差异', fmtWan(reconPaymentsDiff), '对比口径：应付付款(ap.trend.cash_payments) vs 银行流出(bank.trend.cash_out)'));
+      reconPayments.appendChild(buildMiniCard('应付付款与银行流出差异', fmtWan(reconPaymentsDiff), '对比口径：应付付款对比银行流出'));
     }
 
     const reconExplain = document.getElementById('bank_recon_explain');
     if(reconExplain){
       reconExplain.innerHTML = '';
       if(!bankType.length){
-        reconExplain.textContent = '缺少 bank.by_type 数据，无法给出差异解释候选。';
+        reconExplain.textContent = '缺少银行类型汇总数据，无法给出差异解释候选。';
       }else{
         const nonOps = bankType.filter(r=>{
           const name = String(r.type || '').trim();
@@ -4033,7 +3994,7 @@
     conclusions.sec11.push({
       source:'动作清单',
       domain:'执行',
-      title:'动作清单需设定负责人并按DDL跟踪。',
+      title:'动作清单需设定负责人并按截止日期跟踪。',
       evidence:`动作共${actions.length}项，建议按周复盘。`,
       action:{ owner:'运营PMO', task:'建立动作追踪看板并每周更新进展', ddl:addDays(baseDate, ACTION_DAYS.quick), impact:'确保动作落地' },
       link: buildEvidenceLink({ seg:'total', tab:'overview' }, '查看证据')
@@ -4104,7 +4065,6 @@
       const note = coverageRatio !== null && coverageRatio < THRESHOLDS.forecast_action_coverage_threshold ? '（行动不足以覆盖缺口）' : '';
       riskCoverageEl.textContent = `行动覆盖度：${label}${note}`;
     }
-    renderBoardMemo(finance.bank ? finance.bank.board_memo : null, periodEnd);
 
     if(!applyActionFilters) renderActionTable(actions);
 
@@ -4195,25 +4155,25 @@
     const suffix = periodLabel ? ('_' + periodLabel) : '';
     const exportActionsBtn = document.getElementById('export_actions_btn');
     const buildActionRows = (list)=>list.map(a=>({
-      source:a.source,
-      domain:a.domain,
-      signal:a.signal,
-      owner:a.owner,
-      task:a.task,
-      ddl:a.ddl,
-      impact:a.impact,
-      expected_cash_impact_base:a.expected_cash_impact_base,
-      expected_cash_impact_s1:a.expected_cash_impact_s1,
-      expected_cash_impact_s2:a.expected_cash_impact_s2,
-      expected_cash_impact_s3:a.expected_cash_impact_s3,
-      link:a.link ? a.link.href : ''
+      '来源':formatActionSource(a.source),
+      '领域':a.domain,
+      '结论/信号':a.signal,
+      '负责人':a.owner,
+      '动作':a.task,
+      '截止日期':a.ddl,
+      '预期影响':a.impact,
+      '基准预期现金影响':a.expected_cash_impact_base,
+      '情景1预期现金影响':a.expected_cash_impact_s1,
+      '情景2预期现金影响':a.expected_cash_impact_s2,
+      '情景3预期现金影响':a.expected_cash_impact_s3,
+      '证据链接':a.link ? a.link.href : ''
     }));
-    const actionColumns = ['source','domain','signal','owner','task','ddl','impact','expected_cash_impact_base','expected_cash_impact_s1','expected_cash_impact_s2','expected_cash_impact_s3','link'];
+    const actionColumns = ['来源','领域','结论/信号','负责人','动作','截止日期','预期影响','基准预期现金影响','情景1预期现金影响','情景2预期现金影响','情景3预期现金影响','证据链接'];
     if(exportActionsBtn){
       exportActionsBtn.addEventListener('click', ()=>{
         const rows = buildActionRows(actions);
         const csv = buildCsv(rows, actionColumns);
-        downloadCsv('actions_all' + suffix + '.csv', csv);
+        downloadCsv('动作清单' + suffix + '.csv', csv);
       });
     }
 
@@ -4222,7 +4182,7 @@
       exportActionsAllBtn.addEventListener('click', ()=>{
         const rows = buildActionRows(actions);
         const csv = buildCsv(rows, actionColumns);
-        downloadCsv('actions_all' + suffix + '.csv', csv);
+        downloadCsv('动作清单' + suffix + '.csv', csv);
       });
     }
 
@@ -4232,7 +4192,7 @@
         const allowed = new Set(['forecast:AR_collection','forecast:AP_deferral','forecast:PO_reduction']);
         const rows = buildActionRows(actions.filter(a=>allowed.has(String(a.source || ''))));
         const csv = buildCsv(rows, actionColumns);
-        downloadCsv('actions_forecast' + suffix + '.csv', csv);
+        downloadCsv('预测动作清单' + suffix + '.csv', csv);
       });
     }
 
@@ -4240,25 +4200,25 @@
     if(exportWarningsBtn){
       exportWarningsBtn.addEventListener('click', ()=>{
         const rows = warnings.map(w=>({
-          level:w.level,
-          domain:w.domain,
-          signal:w.signal,
-          evidence:w.evidence,
-          owner:w.action.owner,
-          task:w.action.task,
-          ddl:w.action.ddl,
-          impact:w.action.impact,
-          link:w.link ? w.link.href : ''
+          '等级':w.level,
+          '领域':w.domain,
+          '信号':w.signal,
+          '证据':w.evidence,
+          '负责人':w.action.owner,
+          '动作':w.action.task,
+          '截止日期':w.action.ddl,
+          '预期影响':w.action.impact,
+          '证据链接':w.link ? w.link.href : ''
         }));
-        const csv = buildCsv(rows, ['level','domain','signal','evidence','owner','task','ddl','impact','link']);
-        downloadCsv('warnings' + suffix + '.csv', csv);
+        const csv = buildCsv(rows, ['等级','领域','信号','证据','负责人','动作','截止日期','预期影响','证据链接']);
+        downloadCsv('预警清单' + suffix + '.csv', csv);
       });
     }
 
     const exportSnapshotBtn = document.getElementById('export_snapshot_btn');
     if(exportSnapshotBtn){
       exportSnapshotBtn.addEventListener('click', ()=>{
-        downloadJson('report_snapshot.json', snapshot || {});
+        downloadJson('报告摘要.json', snapshot || {});
       });
     }
 
@@ -4266,9 +4226,9 @@
     if(copyActionsBtn){
       copyActionsBtn.addEventListener('click', ()=>{
         const lines = actions.map(a=>[
-          a.source, a.domain, a.signal, a.owner, a.task, a.ddl, a.impact, a.link ? a.link.href : ''
+          formatActionSource(a.source), a.domain, a.signal, a.owner, a.task, a.ddl, a.impact, a.link ? a.link.href : ''
         ].join('\t'));
-        const text = ['来源','领域','结论/信号','负责人','动作','DDL','预期影响','证据链接'].join('\t') + '\n' + lines.join('\n');
+        const text = ['来源','领域','结论/信号','负责人','动作','截止日期','预期影响','证据链接'].join('\t') + '\n' + lines.join('\n');
         copyText(text).then(()=>showToast('已复制动作清单'));
       });
     }
@@ -4293,7 +4253,7 @@
   async function loadAll(){
     const startAt = (window.performance && performance.now) ? performance.now() : Date.now();
     setErrorState(false, '');
-    setLoadingState(true, '正在拉取 ./data/latest.json / ./data/finance_latest.json / ./data/forecast_latest.json');
+    setLoadingState(true, '正在拉取经营数据 / 财务数据 / 预测数据');
     try{
       const results = await Promise.allSettled([
         fetch(getDataUrl(), { cache:'no-store' }),
@@ -4305,9 +4265,9 @@
       const financeResp = results[1].status === 'fulfilled' ? results[1].value : null;
       const forecastResp = results[2].status === 'fulfilled' ? results[2].value : null;
 
-      if(!dataResp || !dataResp.ok) throw new Error('销售数据文件加载失败: HTTP ' + (dataResp ? dataResp.status : '加载失败'));
-      if(!financeResp || !financeResp.ok) throw new Error('财务数据文件加载失败: HTTP ' + (financeResp ? financeResp.status : '加载失败'));
-      if(!forecastResp || !forecastResp.ok) throw new Error('预测数据文件加载失败: HTTP ' + (forecastResp ? forecastResp.status : '加载失败'));
+      if(!dataResp || !dataResp.ok) throw new Error('销售数据文件加载失败：状态码 ' + (dataResp ? dataResp.status : '加载失败'));
+      if(!financeResp || !financeResp.ok) throw new Error('财务数据文件加载失败：状态码 ' + (financeResp ? financeResp.status : '加载失败'));
+      if(!forecastResp || !forecastResp.ok) throw new Error('预测数据文件加载失败：状态码 ' + (forecastResp ? forecastResp.status : '加载失败'));
 
       const dataText = await dataResp.text();
       const financeText = await financeResp.text();

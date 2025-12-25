@@ -270,7 +270,7 @@ async function bootstrap(){
   setReloadButtonDisabled(true);
   try{
     setErrorState(false, '');
-    setLoadingState(true, '正在拉取 ./data/latest.json 与 ./data/finance_latest.json 与 ./data/forecast_latest.json');
+    setLoadingState(true, '正在拉取经营数据 / 财务数据 / 预测数据');
     showDataStatus(true, '数据加载中…');
     const results = await Promise.allSettled([loadData(), loadFinanceData(), loadForecastData()]);
     if(results[0].status === 'rejected'){
@@ -459,7 +459,7 @@ function makeSegHTML(segKey){
       <button class="tabbtn" data-seg="${segKey}" data-tab="lifecycle" onclick="showTab('${segKey}','lifecycle')">新增/流失客户</button>
       <button class="tabbtn" data-seg="${segKey}" data-tab="abnormal" onclick="showTab('${segKey}','abnormal')">异常订单</button>
       <button class="tabbtn" data-seg="${segKey}" data-tab="finance" onclick="showTab('${segKey}','finance')">财务</button>
-      <button class="tabbtn" data-seg="${segKey}" data-tab="forecast" onclick="showTab('${segKey}','forecast')">Forecast</button>
+      <button class="tabbtn" data-seg="${segKey}" data-tab="forecast" onclick="showTab('${segKey}','forecast')">预测</button>
     </div>
 
     <div class="section active" id="${segKey}_overview">
@@ -527,7 +527,7 @@ function makeSegHTML(segKey){
             <span class="table-hint">仅作用本表，不影响图表/指标</span>
             <button class="btn" onclick="resetCatTonTable('${segKey}')">重置</button>
             <button class="btn" onclick="clearHeaderFilters('${segKey}','catton')">清空表头筛选</button>
-            <button class="btn" onclick="exportCatTonCSV('${segKey}')">导出CSV(当前过滤)</button>
+            <button class="btn" onclick="exportCatTonCSV('${segKey}')">导出表格（当前过滤）</button>
             <span class="count">显示：<b id="${segKey}_catton_count">0</b></span>
           </div>
           <div class="table-scroll" style="max-height:360px;">
@@ -535,9 +535,9 @@ function makeSegHTML(segKey){
               <thead><tr>
                 <th onclick="sortCatTon('${segKey}',0)">周期</th>
                 <th onclick="sortCatTon('${segKey}',1)">品类</th>
-                <th onclick="sortCatTon('${segKey}',2)">销量(吨)</th>
-                <th onclick="sortCatTon('${segKey}',3)">毛利_扣销售费(元)</th>
-                <th onclick="sortCatTon('${segKey}',4)">每吨利润(元/吨)</th>
+                <th onclick="sortCatTon('${segKey}',2)">销量（吨）</th>
+                <th onclick="sortCatTon('${segKey}',3)">毛利_扣销售费（元）</th>
+                <th onclick="sortCatTon('${segKey}',4)">每吨利润（元/吨）</th>
                 <th onclick="sortCatTon('${segKey}',5)">订单数</th>
               </tr></thead>
               <tbody></tbody>
@@ -627,7 +627,7 @@ function makeSegHTML(segKey){
           <div class="card">
             <div class="finance-block-hd">
               <div>
-                <div class="finance-title">开票 vs 回款</div>
+                <div class="finance-title">开票对比回款</div>
                 <div class="finance-meta">应收</div>
               </div>
             </div>
@@ -636,7 +636,7 @@ function makeSegHTML(segKey){
           <div class="card">
             <div class="finance-block-hd">
               <div>
-                <div class="finance-title">采购发票 vs 现金付款</div>
+                <div class="finance-title">采购发票对比现金付款</div>
                 <div class="finance-meta">应付</div>
               </div>
             </div>
@@ -781,7 +781,7 @@ function makeSegHTML(segKey){
                     <th>摘要</th>
                     <th>对账状态</th>
                     <th>异常标签</th>
-                    <th>Txn ID</th>
+                    <th>流水号</th>
                   </tr></thead>
                   <tbody></tbody>
                 </table>
@@ -883,15 +883,15 @@ function makeSegHTML(segKey){
       <div class="finance-block card">
         <div class="finance-block-hd">
           <div>
-            <div class="finance-title">Rolling 30D Forecast</div>
-            <div class="finance-meta">Base / S1 / S2 / S3 情景缺口与可释放现金</div>
+            <div class="finance-title">滚动30天预测</div>
+            <div class="finance-meta">基准 / 情景1 / 情景2 / 情景3 缺口与可释放现金</div>
           </div>
           <div class="controls finance-controls">
             <label class="ctl">视图：
               <select id="${segKey}_forecast_view" onchange="setForecastView('${segKey}', this.value)">
-                <option value="forecast_ar">AR催收</option>
-                <option value="forecast_ap">AP延付</option>
-                <option value="forecast_po">PO减采</option>
+                <option value="forecast_ar">应收催收</option>
+                <option value="forecast_ap">应付延付</option>
+                <option value="forecast_po">采购减采</option>
               </select>
             </label>
           </div>
@@ -932,7 +932,7 @@ function makeSegHTML(segKey){
       <div class="finance-block card forecast-view" data-view="forecast_ar" id="${segKey}_forecast_ar_section">
         <div class="finance-block-hd">
           <div>
-            <div class="finance-title">AR 催收计划</div>
+            <div class="finance-title">应收催收计划</div>
             <div class="finance-meta">客户 / 账龄 / 计划回款日期</div>
           </div>
           <div class="controls finance-controls">
@@ -952,7 +952,7 @@ function makeSegHTML(segKey){
                 <th>未收金额</th>
                 <th>计划回款日</th>
                 <th>置信度</th>
-                <th>来源ID</th>
+                <th>来源编号</th>
               </tr></thead>
               <tbody></tbody>
             </table>
@@ -963,7 +963,7 @@ function makeSegHTML(segKey){
       <div class="finance-block card forecast-view" data-view="forecast_ap" id="${segKey}_forecast_ap_section">
         <div class="finance-block-hd">
           <div>
-            <div class="finance-title">AP 延付计划</div>
+            <div class="finance-title">应付延付计划</div>
             <div class="finance-meta">供应商 / 到期 / 计划付款</div>
           </div>
           <div class="controls finance-controls">
@@ -983,7 +983,7 @@ function makeSegHTML(segKey){
                 <th>计划付款日</th>
                 <th>金额</th>
                 <th>置信度</th>
-                <th>来源ID</th>
+                <th>来源编号</th>
               </tr></thead>
               <tbody></tbody>
             </table>
@@ -994,8 +994,8 @@ function makeSegHTML(segKey){
       <div class="finance-block card forecast-view" data-view="forecast_po" id="${segKey}_forecast_po_section">
         <div class="finance-block-hd">
           <div>
-            <div class="finance-title">PO 减采/暂停计划</div>
-            <div class="finance-meta">供应商 / ETA / 计划付款</div>
+            <div class="finance-title">采购减采/暂停计划</div>
+            <div class="finance-meta">供应商 / 预计到货 / 计划付款</div>
           </div>
           <div class="controls finance-controls">
             <input class="search" id="${segKey}_forecast_po_search" placeholder="筛选供应商/品类..." oninput="renderForecast('${segKey}')"/>
@@ -1011,11 +1011,11 @@ function makeSegHTML(segKey){
               <thead><tr>
                 <th>供应商</th>
                 <th>品类/货号</th>
-                <th>未到货PO</th>
-                <th>ETA</th>
+                <th>未到货采购单</th>
+                <th>预计到货日</th>
                 <th>计划付款日</th>
                 <th>置信度</th>
-                <th>来源ID</th>
+                <th>来源编号</th>
               </tr></thead>
               <tbody></tbody>
             </table>
@@ -1037,7 +1037,7 @@ function makeTableShell(segKey,type){
         <span class="table-hint">仅作用本表，不影响图表/指标</span>
         <button class="btn" onclick="resetTable('${segKey}','category')">重置</button>
         <button class="btn" onclick="clearHeaderFilters('${segKey}','category')">清空表头筛选</button>
-        <button class="btn" onclick="exportTableCSV('${segKey}','category')">导出CSV(当前过滤)</button>
+        <button class="btn" onclick="exportTableCSV('${segKey}','category')">导出表格（当前过滤）</button>
         <span class="count">显示：<b id="${segKey}_category_count">0</b></span>
       </div>
       <div class="table-scroll" style="max-height:360px;">
@@ -1073,7 +1073,7 @@ function makeTableShell(segKey,type){
         <span class="table-hint">仅作用本表，不影响图表/指标</span>
         <button class="btn" onclick="resetTable('${segKey}','product')">重置</button>
         <button class="btn" onclick="clearHeaderFilters('${segKey}','product')">清空表头筛选</button>
-        <button class="btn" onclick="exportTableCSV('${segKey}','product')">导出CSV(当前过滤)</button>
+        <button class="btn" onclick="exportTableCSV('${segKey}','product')">导出表格（当前过滤）</button>
         <span class="count">显示：<b id="${segKey}_product_count">0</b></span>
       </div>
       <div class="table-scroll">
@@ -1112,7 +1112,7 @@ function makeTableShell(segKey,type){
         <span class="table-hint">仅作用本表，不影响图表/指标</span>
         <button class="btn" onclick="resetTable('${segKey}','customer')">重置</button>
         <button class="btn" onclick="clearHeaderFilters('${segKey}','customer')">清空表头筛选</button>
-        <button class="btn" onclick="exportTableCSV('${segKey}','customer')">导出CSV(当前过滤)</button>
+        <button class="btn" onclick="exportTableCSV('${segKey}','customer')">导出表格（当前过滤）</button>
         <span class="count">显示：<b id="${segKey}_customer_count">0</b></span>
       </div>
       <div class="table-scroll">
@@ -1148,7 +1148,7 @@ function makeTableShell(segKey,type){
         <span class="table-hint">仅作用本表，不影响图表/指标</span>
         <button class="btn" onclick="resetTable('${segKey}','${type}')">重置</button>
         <button class="btn" onclick="clearHeaderFilters('${segKey}','${type}')">清空表头筛选</button>
-        <button class="btn" onclick="exportTableCSV('${segKey}','${type}')">导出CSV(当前过滤)</button>
+        <button class="btn" onclick="exportTableCSV('${segKey}','${type}')">导出表格（当前过滤）</button>
         <span class="count">显示：<b id="${segKey}_${type}_count">0</b></span>
       </div>
       <div class="table-scroll" style="max-height:420px;">
@@ -1182,7 +1182,7 @@ function makeTableShell(segKey,type){
         <span class="table-hint">仅作用本表，不影响图表/指标</span>
         <button class="btn" onclick="resetTable('${segKey}','abnormal')">重置</button>
         <button class="btn" onclick="clearHeaderFilters('${segKey}','abnormal')">清空表头筛选</button>
-        <button class="btn" onclick="exportTableCSV('${segKey}','abnormal')">导出CSV(当前过滤)</button>
+        <button class="btn" onclick="exportTableCSV('${segKey}','abnormal')">导出表格（当前过滤）</button>
         <span class="count">显示：<b id="${segKey}_abnormal_count">0</b></span>
       </div>
       <div class="table-scroll">
@@ -1323,8 +1323,8 @@ function renderForecast(segKey){
   const coverConfirmed = summary.cover_ratio_confirmed;
   const coverEstimated = summary.cover_ratio_estimated;
   const kpis = [
-    { label:'Base缺口', value: fmtWan(summary.base_gap_amount) },
-    { label:'Base最低余额', value: fmtWan(summary.base_min_balance) },
+    { label:'基准缺口', value: fmtWan(summary.base_gap_amount) },
+    { label:'基准最低余额', value: fmtWan(summary.base_min_balance) },
     { label:'确认覆盖率', value: fmtPct(coverConfirmed === null || coverConfirmed === undefined ? null : coverConfirmed * 100) },
     { label:'含估算覆盖率', value: fmtPct(coverEstimated === null || coverEstimated === undefined ? null : coverEstimated * 100) }
   ];
@@ -1335,10 +1335,10 @@ function renderForecast(segKey){
   kpiEl.replaceChildren(frag);
 
   const scenarioRows = [
-    { name:'Base', data: scenarios.base || {} },
-    { name:'S1 回款延迟', data: scenarios.s1 || {} },
-    { name:'S2 需求下滑', data: scenarios.s2 || {} },
-    { name:'S3 库存积压', data: scenarios.s3 || {} }
+    { name:'基准', data: scenarios.base || {} },
+    { name:'情景1 回款延迟', data: scenarios.s1 || {} },
+    { name:'情景2 需求下滑', data: scenarios.s2 || {} },
+    { name:'情景3 库存积压', data: scenarios.s3 || {} }
   ];
   renderForecastTable(segKey + '_forecast_scenario_table', scenarioRows, [
     { key:'name' },
@@ -1353,9 +1353,9 @@ function renderForecast(segKey){
   ]);
 
   const componentRows = [
-    { metric:'AR可催收(14天)', value: summary.ar_collectable_14d },
-    { metric:'AP可延付(14天)', value: summary.ap_deferrable_14d },
-    { metric:'PO可减采(30天)', value: summary.po_reducible_30d }
+    { metric:'应收可催收（14天）', value: summary.ar_collectable_14d },
+    { metric:'应付可延付（14天）', value: summary.ap_deferrable_14d },
+    { metric:'采购可减采（30天）', value: summary.po_reducible_30d }
   ];
   renderForecastTable(segKey + '_forecast_component_table', componentRows, [
     { key:'metric' },
@@ -2355,7 +2355,7 @@ function renderCatTon(segKey){
   const tableRange=getTableRange(segKey,'catton');
   const noteEl=document.getElementById(segKey+'_catton_note');
   if(noteEl){
-    noteEl.innerText = `口径：数量按规格折吨（油按 ${CAT_TON_META.oil_density}kg/L；袋装无规格默认${CAT_TON_META.fallback_bag_kg}kg；仍有 ${CAT_TON_META.missing_weight_lines} 行无法解析未计入吨数）`;
+    noteEl.innerText = `口径：数量按规格折吨（油按 ${CAT_TON_META.oil_density}千克/升；袋装无规格默认${CAT_TON_META.fallback_bag_kg}千克；仍有 ${CAT_TON_META.missing_weight_lines} 行无法解析未计入吨数）`;
   }
 
   const cats=['大米','食用油','面粉','杂粮'];
@@ -2544,7 +2544,8 @@ function exportCatTonCSV(segKey){
   const csv=rows.map(tr=>[...tr.children].map(td=>'"'+td.innerText.replace(/"/g,'""')+'"').join(',')).join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download=segKey+'_catton_export.csv';
+  const segLabel = segKey==='total' ? '全部' : (segKey==='store' ? '门店' : '非门店');
+  const a=document.createElement('a'); a.href=url; a.download=segLabel+'_品类吨数与利润.csv';
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
@@ -3178,7 +3179,17 @@ function exportTableCSV(segKey,type){
   const csv=rows.map(tr=>[...tr.children].map(td=>'"'+td.innerText.replace(/"/g,'""')+'"').join(',')).join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download=segKey+'_'+type+'_export.csv';
+  const segLabel = segKey==='total' ? '全部' : (segKey==='store' ? '门店' : '非门店');
+  const typeLabelMap = {
+    category:'品类',
+    product:'产品',
+    customer:'客户',
+    new:'新增客户',
+    lost:'流失客户',
+    abnormal:'异常订单'
+  };
+  const typeLabel = typeLabelMap[type] || type;
+  const a=document.createElement('a'); a.href=url; a.download=segLabel + '_' + typeLabel + '_导出.csv';
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 

@@ -1630,138 +1630,6 @@
         }
       ],
       "anomalies": []
-    },
-    "board_memo": {
-      "memo_items": [
-        {
-          "title": "期间净现金流",
-          "conclusion": "期间净现金流 -5151583.09 元，需关注结构贡献。",
-          "evidence_metric": "period_net_cash",
-          "evidence_value": -5151583.09,
-          "evidence_state_link": {
-            "tab": "finance",
-            "subtab": "bank",
-            "filters": {
-              "metric": "net_cash"
-            }
-          },
-          "action": "复核现金流结构并确认主要驱动。",
-          "ddl_days": 7,
-          "owner": "资金负责人"
-        },
-        {
-          "title": "现金流结构",
-          "conclusion": "未提供明细分类，暂无法拆解经营/投资/筹资结构。",
-          "evidence_metric": "cf_structure",
-          "evidence_value": "N/A",
-          "evidence_state_link": {
-            "tab": "finance",
-            "subtab": "bank",
-            "filters": {
-              "cf_class": "unknown"
-            }
-          },
-          "action": "补齐银行明细现金流分类字段。",
-          "ddl_days": 7,
-          "owner": "财务BP"
-        },
-        {
-          "title": "周转驱动",
-          "conclusion": "DSO 186.8 天，DPO 346.0 天，DIO 6.29 天。",
-          "evidence_metric": "wc_days",
-          "evidence_value": "DSO 186.8 / DPO 346.0 / DIO 6.29",
-          "evidence_state_link": {
-            "tab": "finance",
-            "subtab": "bank",
-            "filters": {
-              "metric": "wc_days"
-            }
-          },
-          "action": "锁定周转驱动的变化来源并制定改善计划。",
-          "ddl_days": 14,
-          "owner": "营运负责人"
-        },
-        {
-          "title": "Unknown Tracker",
-          "conclusion": "未知项明细缺失或为0，需确认分类逻辑。",
-          "evidence_metric": "unknown_top3",
-          "evidence_value": "N/A",
-          "evidence_state_link": {
-            "tab": "finance",
-            "subtab": "bank",
-            "filters": {
-              "cf_class": "unknown"
-            }
-          },
-          "action": "补齐未知项明细或确认分类归属。",
-          "ddl_days": 14,
-          "owner": "资金负责人"
-        },
-        {
-          "title": "内部往来闭环",
-          "conclusion": "内部往来净额缺少明细，需确认是否闭环。",
-          "evidence_metric": "internal_net",
-          "evidence_value": "N/A",
-          "evidence_state_link": {
-            "tab": "finance",
-            "subtab": "bank",
-            "filters": {
-              "cf_class": "internal"
-            }
-          },
-          "action": "核对内部往来并确保账务闭环。",
-          "ddl_days": 14,
-          "owner": "财务负责人"
-        },
-        {
-          "title": "对账差异",
-          "conclusion": "收款差异 -1698161.53，付款差异 -2074708.42。",
-          "evidence_metric": "recon_diff",
-          "evidence_value": "-1698161.53 / -2074708.42",
-          "evidence_state_link": {
-            "tab": "finance",
-            "subtab": "bank",
-            "filters": {
-              "match_status": "差异"
-            }
-          },
-          "action": "对账差异需拆分至单笔并闭环。",
-          "ddl_days": 7,
-          "owner": "出纳"
-        },
-        {
-          "title": "集中度风险",
-          "conclusion": "单一对手方流出占比待明细补齐。",
-          "evidence_metric": "top1_outflow_ratio",
-          "evidence_value": "N/A",
-          "evidence_state_link": {
-            "tab": "finance",
-            "subtab": "bank",
-            "filters": {
-              "direction": "out"
-            }
-          },
-          "action": "设定Top1/Top5控制线并建立备份供应商。",
-          "ddl_days": 30,
-          "owner": "采购负责人"
-        },
-        {
-          "title": "异常检测",
-          "conclusion": "异常清单 0 条（缺少银行明细）。",
-          "evidence_metric": "anomaly_count",
-          "evidence_value": 0,
-          "evidence_state_link": {
-            "tab": "finance",
-            "subtab": "bank",
-            "filters": {
-              "anomaly_type": ""
-            }
-          },
-          "action": "补齐明细后重新运行异常检测。",
-          "ddl_days": 7,
-          "owner": "风控PM"
-        }
-      ]
     }
   },
   "wc": {
@@ -1778,16 +1646,16 @@
   },
   "insights": [
     "银行口径 2025-08~12 累计净现金流 -5151583 元（约 -515.2 万），现金缺口主要集中在 8-9 月。",
-    "应收周转天数（DSO，按销售应收余额/销售开票估算）约 186.8 天，其中门店 60.5 天、非门店 341.9 天；应收集中度 Top1 37.8% / Top10 73.9%。",
-    "库存日均余额约 260.6 万，DIO 约 6.29 天；期末库存 297.1 万。",
-    "采购应付周转（DPO，按采购应付余额/采购开票估算）约 346.0 天，供应商余额集中度 Top1 82.4%（需优先核实“其他应付”性质）。",
-    "估算 CCC（DIO+DSO-DPO）约 -152.9 天（负值来自较长 DPO）；如“其他应付”含非贸易往来，CCC/DPO 需重算。"
+    "应收周转天数（按销售应收余额/销售开票估算）约 186.8 天，其中门店 60.5 天、非门店 341.9 天；应收集中度 第一名 37.8% / 前十名 73.9%。",
+    "库存日均余额约 260.6 万，存货周转天数约 6.29 天；期末库存 297.1 万。",
+    "采购应付周转（按采购应付余额/采购开票估算）约 346.0 天，供应商余额集中度 第一名 82.4%（需优先核实“其他应付”性质）。",
+    "估算现金转换周期（存货周转天数+应收周转天数-应付周转天数）约 -152.9 天（负值来自较长应付周转）；如“其他应付”含非贸易往来，现金转换周期/应付周转天数需重算。"
   ],
   "bp": {
     "latest_path": "reports/bp_latest.html",
-    "title": "财务BP报告（截至 2025-12-24）",
+    "title": "财务预算报告（截至 2025-12-24）",
     "highlights": [
-      "非门店应收周转显著偏长，建议以Top客户专项清收+信用政策重构为主线。",
+      "非门店应收周转显著偏长，建议以头部客户专项清收+信用政策重构为主线。",
       "现金流以银行口径为准，8-9月缺口明显，建议建立13周滚动资金预测与付款优先级。",
       "供应商余额极度集中且“其他应付”占比高，需先完成重分类与对账闭环。"
     ]
