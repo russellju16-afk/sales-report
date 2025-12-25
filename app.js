@@ -624,6 +624,44 @@ function makeSegHTML(segKey){
               </table>
             </div>
           </div>
+
+          <div class="table-wrap finance-table">
+            <div class="controls finance-controls">
+              <div class="finance-table-title">Top 其他应收</div>
+              <button class="btn btn-sm" data-finance-action="clear-filters" data-table="${segKey}_finance_ar_other_table">清空筛选</button>
+              <input type="hidden" id="${segKey}_finance_ar_other_sort" value=""/>
+              <span class="count">显示：<b id="${segKey}_finance_ar_other_count">0</b></span>
+            </div>
+            <div class="table-scroll" style="max-height:320px;">
+              <table id="${segKey}_finance_ar_other_table" data-finance-table="ar_other">
+                <thead><tr>
+                  <th>客户</th>
+                  <th>其他应收余额</th>
+                  <th>期末应收净额</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="table-wrap finance-table">
+            <div class="controls finance-controls">
+              <div class="finance-table-title">Top 其他应付</div>
+              <button class="btn btn-sm" data-finance-action="clear-filters" data-table="${segKey}_finance_ap_other_table">清空筛选</button>
+              <input type="hidden" id="${segKey}_finance_ap_other_sort" value=""/>
+              <span class="count">显示：<b id="${segKey}_finance_ap_other_count">0</b></span>
+            </div>
+            <div class="table-scroll" style="max-height:320px;">
+              <table id="${segKey}_finance_ap_other_table" data-finance-table="ap_other">
+                <thead><tr>
+                  <th>供应商</th>
+                  <th>其他应付余额</th>
+                  <th>期末应付净额</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
         <div class="finance-block card">

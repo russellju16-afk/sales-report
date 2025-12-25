@@ -102,6 +102,12 @@
     return segments[segKey] || segments.total || {};
   }
 
+  function getSegAp(finance, segKey){
+    const ap = finance && finance.ap ? finance.ap : {};
+    const segments = ap.segments || {};
+    return segments[segKey] || segments.total || ap;
+  }
+
   function getAp(finance){
     return finance && finance.ap ? finance.ap : {};
   }
@@ -372,7 +378,14 @@
 
   function renderTopCustomers(segKey, arSeg){
     const rows = Array.isArray(arSeg && arSeg.top_customers) ? arSeg.top_customers : [];
-    renderTable(segKey + '_finance_ar_table', rows, [
+    const mapped = rows.map(row=>({
+      customer: row && row.customer ? row.customer : '',
+      ending_balance: row && row.ending_balance !== undefined ? row.ending_balance : (row && row.ending_net_ar !== undefined ? row.ending_net_ar : row && row.ending_sales_ar),
+      change: row && row.change !== undefined ? row.change : null,
+      last_receipt: row && row.last_receipt !== undefined ? row.last_receipt : null,
+      days_since_last_receipt: row && row.days_since_last_receipt !== undefined ? row.days_since_last_receipt : null
+    }));
+    renderTable(segKey + '_finance_ar_table', mapped, [
       { key:'customer' },
       { key:'ending_balance' },
       { key:'change' },
@@ -389,7 +402,15 @@
 
   function renderTopSuppliers(segKey, ap){
     const rows = Array.isArray(ap && ap.top_suppliers) ? ap.top_suppliers : [];
-    renderTable(segKey + '_finance_ap_table', rows, [
+    const mapped = rows.map(row=>({
+      supplier: row && row.supplier ? row.supplier : '',
+      purchase_ap_balance: row && row.purchase_ap_balance !== undefined ? row.purchase_ap_balance : row && row.ending_purchase_ap,
+      other_ap_balance: row && row.other_ap_balance !== undefined ? row.other_ap_balance : row && row.ending_other_ap,
+      prepay_balance: row && row.prepay_balance !== undefined ? row.prepay_balance : row && row.ending_prepay,
+      ending_balance: row && row.ending_balance !== undefined ? row.ending_balance : row && row.ending_net_ap,
+      last_payment: row && row.last_payment !== undefined ? row.last_payment : null
+    }));
+    renderTable(segKey + '_finance_ap_table', mapped, [
       { key:'supplier' },
       { key:'purchase_ap_balance' },
       { key:'other_ap_balance' },
@@ -403,6 +424,32 @@
       (v)=>fmtWanSafe(v),
       (v)=>fmtWanSafe(v),
       (v)=>fmtDate(v)
+    ]);
+  }
+
+  function renderTopOtherAr(segKey, arSeg){
+    const rows = Array.isArray(arSeg && arSeg.top_other_ar_customers) ? arSeg.top_other_ar_customers : [];
+    renderTable(segKey + '_finance_ar_other_table', rows, [
+      { key:'customer' },
+      { key:'ending_other_ar' },
+      { key:'ending_net_ar' }
+    ], [
+      (v)=>fmtText(v),
+      (v)=>fmtWanSafe(v),
+      (v)=>fmtWanSafe(v)
+    ]);
+  }
+
+  function renderTopOtherAp(segKey, ap){
+    const rows = Array.isArray(ap && ap.top_other_ap_suppliers) ? ap.top_other_ap_suppliers : [];
+    renderTable(segKey + '_finance_ap_other_table', rows, [
+      { key:'supplier' },
+      { key:'ending_other_ap' },
+      { key:'ending_net_ap' }
+    ], [
+      (v)=>fmtText(v),
+      (v)=>fmtWanSafe(v),
+      (v)=>fmtWanSafe(v)
     ]);
   }
 
@@ -767,6 +814,7 @@
 
     const arSeg = getSegAr(finance, segKey);
     const ap = getAp(finance);
+    const apSeg = getSegAp(finance, segKey);
     const po = getPo(finance);
     const inventory = getInventory(finance);
     const bank = getBank(finance);
@@ -802,7 +850,9 @@
     ], currency ? `金额（${currency}）` : '金额（元）');
 
     renderTopCustomers(segKey, arSeg);
-    renderTopSuppliers(segKey, ap);
+    renderTopOtherAr(segKey, arSeg);
+    renderTopSuppliers(segKey, apSeg);
+    renderTopOtherAp(segKey, apSeg);
 
     renderKpiCards(segKey + '_finance_bank_kpis', [
       { label:'期间现金流入', value: fmtWanSafe(bankKpi.period_cash_in) },
