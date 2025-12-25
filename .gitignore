@@ -1,0 +1,16 @@
+# Publish packages / local artifacts
+PUBLISH_PACKAGE*.json
+*_package*.json
+tools/_packages/
+
+# Local data exports
+*.xlsx
+*.xls
+*.csv
+
+# OS / tooling
+.DS_Store
+Thumbs.db
+node_modules/
+*.log
+*.tmp
