@@ -58,8 +58,1308 @@
             "ending_other_ar": NaN,
             "ending_pre_receipt": 226527.18,
             "period_sales_invoiced": 0.0
+          },
+          {
+            "customer_code": "119.03",
+            "customer": "兴盛优选（豪发）",
+            "ending_net_ar": 7900685.0,
+            "ending_sales_ar": 7901994.0,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": 1309.0,
+            "period_sales_invoiced": 0.0
+          },
+          {
+            "customer_code": "001.04",
+            "customer": "三环新桥出货市场",
+            "ending_net_ar": 4778804.09,
+            "ending_sales_ar": 4749492.59,
+            "ending_other_ar": 29311.5,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 0.0
+          },
+          {
+            "customer_code": "001.02",
+            "customer": "西安金富邦粮油有限公司",
+            "ending_net_ar": 4448974.15,
+            "ending_sales_ar": 4448974.15,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 12729173.28
+          },
+          {
+            "customer_code": "001.01",
+            "customer": "西安市长安区豪发粮油批发部",
+            "ending_net_ar": 3238869.79,
+            "ending_sales_ar": 3896929.96,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": 658060.17,
+            "period_sales_invoiced": 10931331.56
+          },
+          {
+            "customer_code": "107.01",
+            "customer": "军粮",
+            "ending_net_ar": 2233477.6,
+            "ending_sales_ar": 2422788.5,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": 189310.9,
+            "period_sales_invoiced": 1327414.0
+          },
+          {
+            "customer_code": "055.03",
+            "customer": "政法1楼-西安众邦餐饮有限公司第一分公司",
+            "ending_net_ar": 1539861.5,
+            "ending_sales_ar": 1364208.5,
+            "ending_other_ar": 513683.0,
+            "ending_pre_receipt": 338030.0,
+            "period_sales_invoiced": 421391.0
+          },
+          {
+            "customer_code": "055.01",
+            "customer": "众邦",
+            "ending_net_ar": 1511808.0,
+            "ending_sales_ar": 1721792.0,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": 209984.0,
+            "period_sales_invoiced": 767720.0
+          },
+          {
+            "customer_code": "013.01",
+            "customer": "陕西科技卫生学校1餐厅",
+            "ending_net_ar": 1108350.5,
+            "ending_sales_ar": 1108350.5,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 0.0
+          },
+          {
+            "customer_code": "012.01",
+            "customer": "欧亚学院（西安欧亚餐饮管理有限公司）",
+            "ending_net_ar": 863137.02,
+            "ending_sales_ar": 856694.0,
+            "ending_other_ar": 6443.02,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 893748.38
+          },
+          {
+            "customer_code": "005.02",
+            "customer": "科大北院(香积餐厅)-圣麦",
+            "ending_net_ar": 843438.2,
+            "ending_sales_ar": 841980.2,
+            "ending_other_ar": 1458.0,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 6085.82
+          },
+          {
+            "customer_code": "107.02",
+            "customer": "陕西军粮供应管理有限公司",
+            "ending_net_ar": 772818.0,
+            "ending_sales_ar": 380947.0,
+            "ending_other_ar": 391871.0,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 242061.0
+          },
+          {
+            "customer_code": "049.01",
+            "customer": "博迪学校-西安东顺吉安商务服务有限责任公司",
+            "ending_net_ar": 721113.1,
+            "ending_sales_ar": 721113.1,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 277342.0
+          },
+          {
+            "customer_code": "008.60",
+            "customer": "师苑-西安师苑后勤服务有限责任公司",
+            "ending_net_ar": 686433.0,
+            "ending_sales_ar": 735535.5,
+            "ending_other_ar": 152460.25,
+            "ending_pre_receipt": 201562.75,
+            "period_sales_invoiced": 0.0
+          },
+          {
+            "customer_code": "032.19",
+            "customer": "李懂礼-陕西顺发粮油食品有限公司",
+            "ending_net_ar": 678462.5,
+            "ending_sales_ar": -28606.0,
+            "ending_other_ar": 707068.5,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 0.0
+          },
+          {
+            "customer_code": "005.03",
+            "customer": "科大南院（国际楼餐厅）-终南",
+            "ending_net_ar": 578945.28,
+            "ending_sales_ar": 578945.28,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 1922.7
+          },
+          {
+            "customer_code": "021.03",
+            "customer": "邮电美食城",
+            "ending_net_ar": 576100.4,
+            "ending_sales_ar": 440030.4,
+            "ending_other_ar": 136070.0,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 335450.58
+          },
+          {
+            "customer_code": "093.01",
+            "customer": "西瑞集团-陕西西瑞粮油工业有限公司",
+            "ending_net_ar": 574663.82,
+            "ending_sales_ar": 662084.0,
+            "ending_other_ar": 224667.82,
+            "ending_pre_receipt": 312088.0,
+            "period_sales_invoiced": 463147.0
+          },
+          {
+            "customer_code": "008.59",
+            "customer": "师苑-陕西嘉禾垣农业科技有限责任公司",
+            "ending_net_ar": 511068.0,
+            "ending_sales_ar": 648981.5,
+            "ending_other_ar": 145820.5,
+            "ending_pre_receipt": 283734.0,
+            "period_sales_invoiced": 365.0
+          },
+          {
+            "customer_code": "017.00",
+            "customer": "西安帅帅粮油贸易有限公司25",
+            "ending_net_ar": 500838.0,
+            "ending_sales_ar": 505980.0,
+            "ending_other_ar": 1773.0,
+            "ending_pre_receipt": 6915.0,
+            "period_sales_invoiced": 785596.0
+          }
+        ]
+      },
+      "store": {
+        "kpi": {
+          "ending_net_ar": 11863659.93,
+          "ending_sales_ar": 14604217.6,
+          "ending_other_ar": 30581.5,
+          "ending_pre_receipt": 2771139.17,
+          "period_sales_invoiced": 35217781.48,
+          "period_cash_receipts": 34796105.45,
+          "dso_days_est": 60.5,
+          "top1_ratio": 0.4028,
+          "top10_ratio": 1.0,
+          "no_sales_invoice_balance": 4790186.09
+        },
+        "trend": {
+          "months": [
+            "2025-08",
+            "2025-09",
+            "2025-10",
+            "2025-11",
+            "2025-12"
+          ],
+          "sales_invoiced": [
+            7373763.08,
+            8113432.18,
+            6967680.74,
+            7532710.6,
+            5230194.88
+          ],
+          "cash_receipts": [
+            7127114.5,
+            7151005.7,
+            8071779.6,
+            6566434.65,
+            5879771.0
+          ]
+        },
+        "top_customers": [
+          {
+            "customer_code": "001.04",
+            "customer": "三环新桥出货市场",
+            "ending_net_ar": 4778804.09,
+            "ending_sales_ar": 4749492.59,
+            "ending_other_ar": 29311.5,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 0.0
+          },
+          {
+            "customer_code": "001.02",
+            "customer": "西安金富邦粮油有限公司",
+            "ending_net_ar": 4448974.15,
+            "ending_sales_ar": 4448974.15,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 12729173.28
+          },
+          {
+            "customer_code": "001.01",
+            "customer": "西安市长安区豪发粮油批发部",
+            "ending_net_ar": 3238869.79,
+            "ending_sales_ar": 3896929.96,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": 658060.17,
+            "period_sales_invoiced": 10931331.56
+          },
+          {
+            "customer_code": "001.05",
+            "customer": "瑞邦粮油销售店-红太阳",
+            "ending_net_ar": 61893.33,
+            "ending_sales_ar": 1035873.33,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": 973980.0,
+            "period_sales_invoiced": 5035240.0
+          },
+          {
+            "customer_code": "023.14",
+            "customer": "中快武警新楼",
+            "ending_net_ar": 10112.0,
+            "ending_sales_ar": 10112.0,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 0.0
+          },
+          {
+            "customer_code": "023.13",
+            "customer": "中快交大",
+            "ending_net_ar": 1270.0,
+            "ending_sales_ar": NaN,
+            "ending_other_ar": 1270.0,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 0.0
+          },
+          {
+            "customer_code": "023.01",
+            "customer": "中快  现代学院",
+            "ending_net_ar": -1680.0,
+            "ending_sales_ar": -1680.0,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 0.0
+          },
+          {
+            "customer_code": "001.03",
+            "customer": "老三粮油店",
+            "ending_net_ar": -674583.43,
+            "ending_sales_ar": 464515.57,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": 1139099.0,
+            "period_sales_invoiced": 6522036.64
+          },
+          {
+            "customer_code": "023.06",
+            "customer": "咸阳职业工业技术学院",
+            "ending_net_ar": NaN,
+            "ending_sales_ar": NaN,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 0.0
+          }
+        ]
+      },
+      "nonstore": {
+        "kpi": {
+          "ending_net_ar": 63782439.83,
+          "ending_sales_ar": 67781983.42,
+          "ending_other_ar": 6629152.66,
+          "ending_pre_receipt": 10628696.25,
+          "period_sales_invoiced": 28946972.7,
+          "period_cash_receipts": 21259951.53,
+          "dso_days_est": 341.9,
+          "top1_ratio": 0.4525,
+          "top10_ratio": 0.7268,
+          "no_sales_invoice_balance": 43640819.84
+        },
+        "trend": {
+          "months": [
+            "2025-08",
+            "2025-09",
+            "2025-10",
+            "2025-11",
+            "2025-12"
+          ],
+          "sales_invoiced": [
+            4733506.76,
+            7352172.44,
+            6089675.78,
+            5986873.74,
+            4784743.98
+          ],
+          "cash_receipts": [
+            1323038.0,
+            3483751.96,
+            4907915.04,
+            6401799.64,
+            5143446.89
+          ]
+        },
+        "top_customers": [
+          {
+            "customer_code": "119.01",
+            "customer": "兴盛优选",
+            "ending_net_ar": 28863954.72,
+            "ending_sales_ar": 29090481.9,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": 226527.18,
+            "period_sales_invoiced": 0.0
+          },
+          {
+            "customer_code": "119.03",
+            "customer": "兴盛优选（豪发）",
+            "ending_net_ar": 7900685.0,
+            "ending_sales_ar": 7901994.0,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": 1309.0,
+            "period_sales_invoiced": 0.0
+          },
+          {
+            "customer_code": "107.01",
+            "customer": "军粮",
+            "ending_net_ar": 2233477.6,
+            "ending_sales_ar": 2422788.5,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": 189310.9,
+            "period_sales_invoiced": 1327414.0
+          },
+          {
+            "customer_code": "055.03",
+            "customer": "政法1楼-西安众邦餐饮有限公司第一分公司",
+            "ending_net_ar": 1539861.5,
+            "ending_sales_ar": 1364208.5,
+            "ending_other_ar": 513683.0,
+            "ending_pre_receipt": 338030.0,
+            "period_sales_invoiced": 421391.0
+          },
+          {
+            "customer_code": "055.01",
+            "customer": "众邦",
+            "ending_net_ar": 1511808.0,
+            "ending_sales_ar": 1721792.0,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": 209984.0,
+            "period_sales_invoiced": 767720.0
+          },
+          {
+            "customer_code": "013.01",
+            "customer": "陕西科技卫生学校1餐厅",
+            "ending_net_ar": 1108350.5,
+            "ending_sales_ar": 1108350.5,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 0.0
+          },
+          {
+            "customer_code": "012.01",
+            "customer": "欧亚学院（西安欧亚餐饮管理有限公司）",
+            "ending_net_ar": 863137.02,
+            "ending_sales_ar": 856694.0,
+            "ending_other_ar": 6443.02,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 893748.38
+          },
+          {
+            "customer_code": "005.02",
+            "customer": "科大北院(香积餐厅)-圣麦",
+            "ending_net_ar": 843438.2,
+            "ending_sales_ar": 841980.2,
+            "ending_other_ar": 1458.0,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 6085.82
+          },
+          {
+            "customer_code": "107.02",
+            "customer": "陕西军粮供应管理有限公司",
+            "ending_net_ar": 772818.0,
+            "ending_sales_ar": 380947.0,
+            "ending_other_ar": 391871.0,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 242061.0
+          },
+          {
+            "customer_code": "049.01",
+            "customer": "博迪学校-西安东顺吉安商务服务有限责任公司",
+            "ending_net_ar": 721113.1,
+            "ending_sales_ar": 721113.1,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 277342.0
+          },
+          {
+            "customer_code": "008.60",
+            "customer": "师苑-西安师苑后勤服务有限责任公司",
+            "ending_net_ar": 686433.0,
+            "ending_sales_ar": 735535.5,
+            "ending_other_ar": 152460.25,
+            "ending_pre_receipt": 201562.75,
+            "period_sales_invoiced": 0.0
+          },
+          {
+            "customer_code": "032.19",
+            "customer": "李懂礼-陕西顺发粮油食品有限公司",
+            "ending_net_ar": 678462.5,
+            "ending_sales_ar": -28606.0,
+            "ending_other_ar": 707068.5,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 0.0
+          },
+          {
+            "customer_code": "005.03",
+            "customer": "科大南院（国际楼餐厅）-终南",
+            "ending_net_ar": 578945.28,
+            "ending_sales_ar": 578945.28,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 1922.7
+          },
+          {
+            "customer_code": "021.03",
+            "customer": "邮电美食城",
+            "ending_net_ar": 576100.4,
+            "ending_sales_ar": 440030.4,
+            "ending_other_ar": 136070.0,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 335450.58
+          },
+          {
+            "customer_code": "093.01",
+            "customer": "西瑞集团-陕西西瑞粮油工业有限公司",
+            "ending_net_ar": 574663.82,
+            "ending_sales_ar": 662084.0,
+            "ending_other_ar": 224667.82,
+            "ending_pre_receipt": 312088.0,
+            "period_sales_invoiced": 463147.0
+          },
+          {
+            "customer_code": "008.59",
+            "customer": "师苑-陕西嘉禾垣农业科技有限责任公司",
+            "ending_net_ar": 511068.0,
+            "ending_sales_ar": 648981.5,
+            "ending_other_ar": 145820.5,
+            "ending_pre_receipt": 283734.0,
+            "period_sales_invoiced": 365.0
+          },
+          {
+            "customer_code": "017.00",
+            "customer": "西安帅帅粮油贸易有限公司25",
+            "ending_net_ar": 500838.0,
+            "ending_sales_ar": 505980.0,
+            "ending_other_ar": 1773.0,
+            "ending_pre_receipt": 6915.0,
+            "period_sales_invoiced": 785596.0
+          },
+          {
+            "customer_code": "005.01",
+            "customer": "科大高新学院",
+            "ending_net_ar": 497310.34,
+            "ending_sales_ar": 504303.34,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": 6993.0,
+            "period_sales_invoiced": 1045161.0
+          },
+          {
+            "customer_code": "KH00122",
+            "customer": "周至富海肉业有限责任公司(西安百悦优选超市）",
+            "ending_net_ar": 432677.0,
+            "ending_sales_ar": 582677.0,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": 150000.0,
+            "period_sales_invoiced": 549327.0
+          },
+          {
+            "customer_code": "021.04",
+            "customer": "邮电东区",
+            "ending_net_ar": 401044.2,
+            "ending_sales_ar": 401044.2,
+            "ending_other_ar": NaN,
+            "ending_pre_receipt": NaN,
+            "period_sales_invoiced": 335537.2
           }
         ]
       }
     }
+  },
+  "ap": {
+    "kpi": {
+      "ending_net_ap": 511537760.1,
+      "ending_purchase_ap": 147938102.32,
+      "ending_other_ap": 379219260.91,
+      "ending_prepay": 15619603.13,
+      "period_purchases_invoiced": 62419927.31,
+      "period_cash_payments": 63121429.94,
+      "dpo_days_est": 346.0,
+      "top1_ratio": 0.8244,
+      "top10_ratio": 0.9874
+    },
+    "trend": {
+      "months": [
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11",
+        "2025-12"
+      ],
+      "purchases_invoiced": [
+        12202856.56,
+        14881182.64,
+        11991484.26,
+        14312764.5,
+        9031639.35
+      ],
+      "cash_payments": [
+        12276672.0,
+        14302225.06,
+        13000445.0,
+        14985952.8,
+        8556135.08
+      ]
+    },
+    "top_suppliers": [
+      {
+        "supplier": "陕西杨凌来富油脂有限公司（西瑞户）",
+        "ending_net_ap": 421698765.24,
+        "ending_purchase_ap": 48161520.63,
+        "ending_other_ap": 374139824.61,
+        "ending_prepay": 602580.0
+      },
+      {
+        "supplier": "豪发粮油（郭杜市场）",
+        "ending_net_ap": 24885602.96,
+        "ending_purchase_ap": 25006614.41,
+        "ending_other_ap": 102863.55,
+        "ending_prepay": 223875.0
+      },
+      {
+        "supplier": "渭南长安花粮油有限公司（邦淇中包）",
+        "ending_net_ap": 13931860.58,
+        "ending_purchase_ap": 22085869.58,
+        "ending_other_ap": 0.0,
+        "ending_prepay": 8154009.0
+      },
+      {
+        "supplier": "陕西杨凌来富油脂有限公司（盛农瑞家户）",
+        "ending_net_ap": 12472038.44,
+        "ending_purchase_ap": 13402006.27,
+        "ending_other_ap": 0.0,
+        "ending_prepay": 929967.83
+      },
+      {
+        "supplier": "盛农瑞家邦淇",
+        "ending_net_ap": 9581248.28,
+        "ending_purchase_ap": 6893775.0,
+        "ending_other_ap": 2687473.28,
+        "ending_prepay": 0.0
+      },
+      {
+        "supplier": "桦川县鑫华米业有限公司（冰宝）",
+        "ending_net_ap": 8977709.0,
+        "ending_purchase_ap": 9938633.0,
+        "ending_other_ap": 39076.0,
+        "ending_prepay": 1000000.0
+      },
+      {
+        "supplier": "陕西杨凌来富油脂有限公司（水鸭户）",
+        "ending_net_ap": 5479537.75,
+        "ending_purchase_ap": 8132939.96,
+        "ending_other_ap": 322326.09,
+        "ending_prepay": 2975728.3
+      },
+      {
+        "supplier": "渭南长安花粮油有限公司（邦淇小包）",
+        "ending_net_ap": 5065762.9,
+        "ending_purchase_ap": 4323034.63,
+        "ending_other_ap": 742728.27,
+        "ending_prepay": 0.0
+      },
+      {
+        "supplier": "粮农来富（米禾）",
+        "ending_net_ap": 1884635.3,
+        "ending_purchase_ap": 1226813.6,
+        "ending_other_ap": 740541.7,
+        "ending_prepay": 82720.0
+      },
+      {
+        "supplier": "王东（京贡）",
+        "ending_net_ap": 1120722.7,
+        "ending_purchase_ap": 1120722.7,
+        "ending_other_ap": 0.0,
+        "ending_prepay": 0.0
+      },
+      {
+        "supplier": "金源米业-胡云朋",
+        "ending_net_ap": 778095.0,
+        "ending_purchase_ap": 778095.0,
+        "ending_other_ap": 0.0,
+        "ending_prepay": 0.0
+      },
+      {
+        "supplier": "王奎杰",
+        "ending_net_ap": 687190.0,
+        "ending_purchase_ap": 503990.0,
+        "ending_other_ap": 183200.0,
+        "ending_prepay": 0.0
+      },
+      {
+        "supplier": "吉光爱（德龙米业）",
+        "ending_net_ap": 572345.0,
+        "ending_purchase_ap": 572345.0,
+        "ending_other_ap": 0.0,
+        "ending_prepay": 0.0
+      },
+      {
+        "supplier": "张斌",
+        "ending_net_ap": 531780.0,
+        "ending_purchase_ap": 531780.0,
+        "ending_other_ap": 0.0,
+        "ending_prepay": 0.0
+      },
+      {
+        "supplier": "陕西乔府大院贸易有限公司-张剑",
+        "ending_net_ap": 445880.0,
+        "ending_purchase_ap": 445880.0,
+        "ending_other_ap": 0.0,
+        "ending_prepay": 0.0
+      },
+      {
+        "supplier": "渭南长安花粮油有限公司（盛农邦淇小包）",
+        "ending_net_ap": 377301.18,
+        "ending_purchase_ap": 1286667.77,
+        "ending_other_ap": 93753.41,
+        "ending_prepay": 1003120.0
+      },
+      {
+        "supplier": "粮农集团",
+        "ending_net_ap": 322840.0,
+        "ending_purchase_ap": 322840.0,
+        "ending_other_ap": 0.0,
+        "ending_prepay": 0.0
+      },
+      {
+        "supplier": "中益汇海",
+        "ending_net_ap": 312800.0,
+        "ending_purchase_ap": 312800.0,
+        "ending_other_ap": 0.0,
+        "ending_prepay": 0.0
+      },
+      {
+        "supplier": "稻米香厂",
+        "ending_net_ap": 292955.0,
+        "ending_purchase_ap": 292955.0,
+        "ending_other_ap": 0.0,
+        "ending_prepay": 0.0
+      },
+      {
+        "supplier": "张昭友",
+        "ending_net_ap": 280424.0,
+        "ending_purchase_ap": 280424.0,
+        "ending_other_ap": 0.0,
+        "ending_prepay": 0.0
+      }
+    ]
+  },
+  "po": {
+    "kpi": {
+      "period_inbound_amount": 54103211.76,
+      "top1_supplier_ratio": 0.5032,
+      "top2_supplier_ratio": 0.7425
+    },
+    "trend": {
+      "months": [
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11"
+      ],
+      "inbound_amount": [
+        12336236.56,
+        15106522.64,
+        12103057.06,
+        14557395.5
+      ]
+    },
+    "top_suppliers": [
+      {
+        "supplier": "渭南长安花粮油有限公司（邦淇中包）",
+        "amount": 27225301.23999999
+      },
+      {
+        "supplier": "陕西杨凌来富油脂有限公司（西瑞户）",
+        "amount": 12943670.6
+      },
+      {
+        "supplier": "桦川县鑫华米业有限公司（冰宝）",
+        "amount": 6977049.800000269
+      },
+      {
+        "supplier": "渭南长安花粮油有限公司（盛农邦淇小包）",
+        "amount": 1915600.0000007707
+      },
+      {
+        "supplier": "陕西杨凌来富油脂有限公司（水鸭户）",
+        "amount": 1382148.8
+      },
+      {
+        "supplier": "金源米业-胡云朋",
+        "amount": 708439.9999999332
+      },
+      {
+        "supplier": "豪发粮油（郭杜市场）",
+        "amount": 601375.5
+      },
+      {
+        "supplier": "白城市名香米业有限公司-陈世铭",
+        "amount": 592495.800000041
+      },
+      {
+        "supplier": "陕西西瑞粮油工业有限公司-陕西西瑞米业有限责任公司",
+        "amount": 577720.0
+      },
+      {
+        "supplier": "五得利",
+        "amount": 322791.5
+      },
+      {
+        "supplier": "陕西乔府大院贸易有限公司-张剑",
+        "amount": 229408.0
+      },
+      {
+        "supplier": "张昭友",
+        "amount": 179984.0
+      },
+      {
+        "supplier": "裕华米业",
+        "amount": 144300.0
+      },
+      {
+        "supplier": "陕西杨凌来富油脂有限公司（盛农瑞家户）",
+        "amount": 79491.0
+      },
+      {
+        "supplier": "王奎杰",
+        "amount": 68000.0
+      },
+      {
+        "supplier": "渭南长安花粮油有限公司（邦淇小包）",
+        "amount": 62465.52
+      },
+      {
+        "supplier": "盛禾粮行（陈世铭）",
+        "amount": 40540.0
+      },
+      {
+        "supplier": "张海龙（似玉）",
+        "amount": 27930.0
+      },
+      {
+        "supplier": "西安景顺商贸有限公司",
+        "amount": 23400.0
+      },
+      {
+        "supplier": "欧亚金桥",
+        "amount": 1100.0
+      }
+    ],
+    "price_trends": [
+      {
+        "sku": "A01.01.005",
+        "product": "16.4L邦淇大豆油（非转基因一级）",
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          152.3456,
+          153.9099,
+          153.9717,
+          153.4646
+        ],
+        "amount": 10302102.079999968
+      },
+      {
+        "sku": "A01.01.003",
+        "product": "20L邦淇大豆油（一级）",
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          163.2431,
+          167.3517,
+          168.196,
+          168.4039
+        ],
+        "amount": 3270872.669999996
+      },
+      {
+        "sku": "A03.106",
+        "product": "25kg冰宝一级珍珠米",
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          103.0,
+          103.0762,
+          101.4549,
+          101.26
+        ],
+        "amount": 3099665.410000157
+      },
+      {
+        "sku": "A01.01.006",
+        "product": "16.4L邦淇纯正菜籽油",
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          162.5137,
+          167.5781,
+          168.5293,
+          166.5991
+        ],
+        "amount": 3018884.76
+      },
+      {
+        "sku": "A03.049",
+        "product": "25kg冰宝优选珍珠米(红袋)",
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          102.9485,
+          103.0776,
+          101.3543,
+          100.0645
+        ],
+        "amount": 2545065.3200000357
+      },
+      {
+        "sku": "A01.11.022",
+        "product": "16.4L西瑞一级大豆油非转基因",
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          151.9699,
+          152.7,
+          152.7254,
+          146.1922
+        ],
+        "amount": 2251045.9
+      },
+      {
+        "sku": "A01.03.006",
+        "product": "10L*2西瑞一级大豆油非转基因",
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          191.2,
+          191.2,
+          191.2,
+          190.44
+        ],
+        "amount": 2106392.8
+      },
+      {
+        "sku": "A01.01.004",
+        "product": "20L邦淇大豆油（非转基因一级）",
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          185.0,
+          187.7143,
+          187.0765,
+          187.0
+        ],
+        "amount": 1853410.0
+      },
+      {
+        "sku": "A01.01.002",
+        "product": "15L邦淇大豆油（一级）",
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          124.7188,
+          127.9952,
+          128.0466,
+          128.3765
+        ],
+        "amount": 1667430.68
+      },
+      {
+        "sku": "A01.01.008",
+        "product": "15L邦淇纯正菜籽油",
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          149.0,
+          148.7477,
+          154.2256,
+          153.74
+        ],
+        "amount": 1253516.43
+      },
+      {
+        "sku": "A01.03.009",
+        "product": "20L西瑞一级大豆油",
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          159.5556,
+          159.2717,
+          162.5473,
+          157.9409
+        ],
+        "amount": 1239490.9
+      },
+      {
+        "sku": "A01.01.028",
+        "product": "16.4L邦淇压榨一级菜籽油",
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          170.4505,
+          166.8457,
+          169.8797,
+          169.1663
+        ],
+        "amount": 1148456.130000012
+      },
+      {
+        "sku": "A01.11.026",
+        "product": "20L西瑞一级大豆油非转基因",
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          185.0,
+          185.5202,
+          185.7,
+          185.7
+        ],
+        "amount": 1039219.3
+      },
+      {
+        "sku": "A01.01.001",
+        "product": "16.4L邦淇大豆油（一级）",
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          134.4255,
+          135.0196,
+          138.587,
+          139.3182
+        ],
+        "amount": 940838.0
+      },
+      {
+        "sku": "A01.03.005",
+        "product": "15L西瑞一级菜籽油",
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          152.4846,
+          152.4,
+          152.4,
+          152.3061
+        ],
+        "amount": 915156.0
+      },
+      {
+        "sku": "A01.03.010",
+        "product": "20L西瑞纯正菜籽油",
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          188.1,
+          194.8294,
+          196.5,
+          196.5
+        ],
+        "amount": 884608.5
+      },
+      {
+        "sku": "01.01.005",
+        "product": "16.4L邦淇一级大豆油（非转）",
+        "months": [
+          "2025-08"
+        ],
+        "avg_unit_cost": [
+          151.3298
+        ],
+        "amount": 862580.0
+      },
+      {
+        "sku": "A01.03.017",
+        "product": "16.4L西瑞精炼高级餐饮食用植物调和油",
+        "months": [
+          "2025-08",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          139.2161,
+          139.4,
+          139.6411
+        ],
+        "amount": 816199.8
+      },
+      {
+        "sku": "A01.03.008",
+        "product": "10L*2西瑞一级菜籽油",
+        "months": [
+          "2025-08",
+          "2025-09",
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          206.9872,
+          207.3952,
+          207.2,
+          207.2
+        ],
+        "amount": 729268.9
+      },
+      {
+        "sku": "A03.011",
+        "product": "25kg陈世名香长粒香米",
+        "months": [
+          "2025-10",
+          "2025-11"
+        ],
+        "avg_unit_cost": [
+          113.7599,
+          113.9425
+        ],
+        "amount": 630105.800000041
+      }
+    ]
+  },
+  "inventory": {
+    "kpi": {
+      "inventory_start": 2722833.64,
+      "inventory_end": 2971306.82,
+      "inventory_avg": 2605814.85,
+      "dio_days_est": 6.29,
+      "period_cogs": 60484512.5,
+      "period_purchases_in": 63450809.11
+    },
+    "trend": {
+      "months": [
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11",
+        "2025-12"
+      ],
+      "purchases_in": [
+        12336236.56,
+        15106522.64,
+        12103057.06,
+        14551207.5,
+        9353785.35
+      ],
+      "cogs": [
+        11954049.7,
+        15174521.53,
+        12977478.01,
+        13578080.71,
+        6800382.55
+      ],
+      "ending_inventory": [
+        2770210.86,
+        3266844.41,
+        2230965.68,
+        2649748.35,
+        2971306.82
+      ],
+      "inventory_change": [
+        47377.22,
+        496633.55,
+        -1035878.73,
+        418782.67,
+        321558.47
+      ]
+    }
+  },
+  "bank": {
+    "kpi": {
+      "period_cash_in": 60044555.27,
+      "period_cash_out": 65196138.36,
+      "period_net_cash": -5151583.09,
+      "period_cum_net_cash_end": -5151583.09
+    },
+    "trend": {
+      "months": [
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11",
+        "2025-12"
+      ],
+      "cash_in": [
+        9267187.79,
+        11463358.61,
+        13967086.39,
+        14495321.2,
+        10851601.28
+      ],
+      "cash_out": [
+        12942509.0,
+        14853672.06,
+        13108071.42,
+        15673140.3,
+        8618745.58
+      ],
+      "net_cash": [
+        -3675321.21,
+        -3390313.45,
+        859014.97,
+        -1177819.1,
+        2232855.7
+      ],
+      "cum_net_cash": [
+        -3675321.21,
+        -7065634.66,
+        -6206619.69,
+        -7384438.79,
+        -5151583.09
+      ]
+    },
+    "by_type": [
+      {
+        "type": "付款单",
+        "cash_in": 0.0,
+        "cash_out": 53446408.14,
+        "count": 373
+      },
+      {
+        "type": "预付款单",
+        "cash_in": 0.0,
+        "cash_out": 9805041.3,
+        "count": 31
+      },
+      {
+        "type": "预收退款单",
+        "cash_in": 0.0,
+        "cash_out": 1845704.92,
+        "count": 29
+      },
+      {
+        "type": "其他支出单",
+        "cash_in": 0.0,
+        "cash_out": 83710.0,
+        "count": 7
+      },
+      {
+        "type": "收款退款单",
+        "cash_in": 0.0,
+        "cash_out": 15274.0,
+        "count": 2
+      },
+      {
+        "type": "收款单",
+        "cash_in": 53565930.33,
+        "cash_out": 0.0,
+        "count": 1012
+      },
+      {
+        "type": "预付退款单",
+        "cash_in": 276200.0,
+        "cash_out": 0.0,
+        "count": 2
+      },
+      {
+        "type": "预收款单",
+        "cash_in": 6202424.94,
+        "cash_out": 0.0,
+        "count": 130
+      }
+    ],
+    "recon": {
+      "ar_ledger_cash_receipts": 58346393.74,
+      "ap_ledger_cash_payments": 63121429.94,
+      "bank_cash_in": 60044555.27,
+      "bank_cash_out": 65196138.36,
+      "diff_receipts": -1698161.53,
+      "diff_payments": -2074708.42
+    }
+  },
+  "wc": {
+    "kpi": {
+      "dso_days_est": 186.8,
+      "dpo_days_est": 346.0,
+      "dio_days_est": 6.29,
+      "ccc_days_est": -152.9,
+      "trade_working_capital": -59403908.64,
+      "sales_ar_end": 85562886.86,
+      "trade_ap_end": 147938102.32,
+      "inventory_end": 2971306.82
+    }
+  },
+  "insights": [
+    "银行口径 2025-08~12 累计净现金流 -5151583 元（约 -515.2 万），现金缺口主要集中在 8-9 月。",
+    "应收周转天数（DSO，按销售应收余额/销售开票估算）约 186.8 天，其中门店 60.5 天、非门店 341.9 天；应收集中度 Top1 37.8% / Top10 73.9%。",
+    "库存日均余额约 260.6 万，DIO 约 6.29 天；期末库存 297.1 万。",
+    "采购应付周转（DPO，按采购应付余额/采购开票估算）约 346.0 天，供应商余额集中度 Top1 82.4%（需优先核实“其他应付”性质）。",
+    "估算 CCC（DIO+DSO-DPO）约 -152.9 天（负值来自较长 DPO）；如“其他应付”含非贸易往来，CCC/DPO 需重算。"
+  ],
+  "bp": {
+    "latest_path": "reports/bp_latest.html",
+    "title": "财务BP报告（截至 2025-12-24）",
+    "highlights": [
+      "非门店应收周转显著偏长，建议以Top客户专项清收+信用政策重构为主线。",
+      "现金流以银行口径为准，8-9月缺口明显，建议建立13周滚动资金预测与付款优先级。",
+      "供应商余额极度集中且“其他应付”占比高，需先完成重分类与对账闭环。"
+    ]
   }
+}
