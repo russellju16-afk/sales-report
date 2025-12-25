@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>财务BP报告（截至 2025-12-24）</title>
+<style>
+body{font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",Arial,sans-serif;margin:0;background:#faf7f2;color:#1f2a37;}
+.header{padding:24px 24px 10px;background:linear-gradient(180deg,#fff, #faf7f2);border-bottom:1px solid #eee;}
+h1{margin:0;font-size:22px;}
+.sub{color:#6b7280;margin-top:6px;font-size:13px;line-height:1.5;}
+.container{max-width:1100px;margin:0 auto;padding:18px 24px 48px;}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.card{background:#fff;border:1px solid #eee;border-radius:14px;padding:12px 12px;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+.card .k{color:#6b7280;font-size:12px;}
+.card .v{font-weight:700;font-size:18px;margin-top:4px;}
+.section{margin-top:18px;background:#fff;border:1px solid #eee;border-radius:14px;padding:14px;}
+.section h2{margin:0 0 10px;font-size:16px;}
+ul{margin:8px 0 0 18px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th,td{border-bottom:1px solid #f0f0f0;padding:8px 6px;text-align:left;vertical-align:top;}
+th{position:sticky;top:0;background:#fff;z-index:1;}
+.small{color:#6b7280;font-size:12px;}
+.flex{display:flex;gap:12px;flex-wrap:wrap;}
+.chart{height:320px;width:100%;}
+@media(max-width:960px){.grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:520px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>财务BP报告（截至 2025-12-24）</h1>
+  <div class="sub">期间：2025-08-01 ~ 2025-12-24（146天）。现金以银行收支明细为准；库存以商品收发明细的日末库存成本汇总。</div>
+</div>
+
+<div class="container">
+
+<div class="grid">
+  <div class="card"><div class="k">期末应收净额</div><div class="v">0.76 亿</div><div class="small">DSO≈186.8天（门店 60.5 / 非门店 341.9）</div></div>
+  <div class="card"><div class="k">期末应付净额</div><div class="v">5.12 亿</div><div class="small">采购应付 1.48 亿；Top1占比 82.4%</div></div>
+  <div class="card"><div class="k">期末库存（成本）</div><div class="v">297.13 万</div><div class="small">日均 260.58 万；DIO≈6.29天*</div></div>
+  <div class="card"><div class="k">银行累计净现金流</div><div class="v">-515.16 万</div><div class="small">8-9月缺口显著；12月回正</div></div>
+</div>
+
+<div class="section">
+  <h2>管理层要点（CFO视角）</h2>
+  <ul>
+    <li><b>非门店回款效率显著偏弱：</b>非门店 DSO≈341.9天，明显拖累整体。建议以 Top 客户专项清收 + 信用限额/账期重设为主线。</li>
+    <li><b>供应商余额极度集中：</b>应付 Top1 占比 82.4%，且“其他应付”占比高。建议先完成往来重分类与对账闭环，再做付款计划与 DPO/CCC 决策。</li>
+    <li><b>现金以银行为准：</b>期间累计净现金流 -515.16 万。建议建立 13 周滚动资金预测（收款计划×付款优先级）。</li>
+    <li><b>库存占用不高：</b>DIO≈6.29天（基于本次库存明细口径），库存不是现金的主要占用项；重点仍在应收与往来结构。</li>
+  </ul>
+  <div class="small">*DIO为估算指标：若库存明细未覆盖全部业务（在途/寄售/外仓等），需补齐后再校准。</div>
+</div>
+
+<div class="section">
+  <h2>银行现金流（月度）</h2>
+  <div id="chart_cash" class="chart"></div>
+  <div class="small">对账提示：应收台账现金回款 5,834.64 万 vs 银行现金流入 6,004.46 万（差额 -169.82 万）；应付台账付款 6,312.14 万 vs 银行现金流出 6,519.61 万（差额 -207.47 万）。</div>
+  <div style="margin-top:10px">
+    <table>
+      <thead><tr><th>月份</th><th>现金流入</th><th>现金流出</th><th>净现金流</th><th>累计净现金流</th></tr></thead>
+      <tbody>
+      <tr><td>2025-08</td><td>926.72 万</td><td>1,294.25 万</td><td>-367.53 万</td><td>-367.53 万</td></tr><tr><td>2025-09</td><td>1,146.34 万</td><td>1,485.37 万</td><td>-339.03 万</td><td>-706.56 万</td></tr><tr><td>2025-10</td><td>1,396.71 万</td><td>1,310.81 万</td><td>85.90 万</td><td>-620.66 万</td></tr><tr><td>2025-11</td><td>1,449.53 万</td><td>1,567.31 万</td><td>-117.78 万</td><td>-738.44 万</td></tr><tr><td>2025-12</td><td>1,085.16 万</td><td>861.87 万</td><td>223.29 万</td><td>-515.16 万</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="section">
+  <h2>库存与周转</h2>
+  <div id="chart_inv" class="chart"></div>
+  <table>
+    <thead><tr><th>月份</th><th>采购入库成本</th><th>销售出库成本（COGS）</th><th>月末库存</th><th>库存变化</th></tr></thead>
+    <tbody>
+    <tr><td>2025-08</td><td>1,233.62 万</td><td>1,195.40 万</td><td>277.02 万</td><td>4.74 万</td></tr><tr><td>2025-09</td><td>1,510.65 万</td><td>1,517.45 万</td><td>326.68 万</td><td>49.66 万</td></tr><tr><td>2025-10</td><td>1,210.31 万</td><td>1,297.75 万</td><td>223.10 万</td><td>-103.59 万</td></tr><tr><td>2025-11</td><td>1,455.12 万</td><td>1,357.81 万</td><td>264.97 万</td><td>41.88 万</td></tr><tr><td>2025-12</td><td>935.38 万</td><td>680.04 万</td><td>297.13 万</td><td>32.16 万</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>营运资本与 CCC（估算）</h2>
+  <div class="small">
+    DSO≈186.8天；DPO≈346.0天；DIO≈6.29天；CCC≈-152.9天。<br/>
+    贸易营运资本（销售应收 + 库存 - 采购应付）≈-0.59 亿。
+  </div>
+</div>
+
+<div class="section">
+  <h2>Top 应收客户（期末余额）</h2>
+  <table>
+    <thead><tr><th>客户编码</th><th>客户</th><th>维度</th><th>期末应收净额</th><th>期末销售应收</th><th>本期销售开票</th></tr></thead>
+    <tbody>
+    <tr><td>119.01</td><td>兴盛优选</td><td>nonstore</td><td>2,886.40 万</td><td>2,909.05 万</td><td>0.00 万</td></tr><tr><td>119.03</td><td>兴盛优选（豪发）</td><td>nonstore</td><td>790.07 万</td><td>790.20 万</td><td>0.00 万</td></tr><tr><td>001.04</td><td>三环新桥出货市场</td><td>store</td><td>477.88 万</td><td>474.95 万</td><td>0.00 万</td></tr><tr><td>001.02</td><td>西安金富邦粮油有限公司</td><td>store</td><td>444.90 万</td><td>444.90 万</td><td>1,272.92 万</td></tr><tr><td>001.01</td><td>西安市长安区豪发粮油批发部</td><td>store</td><td>323.89 万</td><td>389.69 万</td><td>1,093.13 万</td></tr><tr><td>107.01</td><td>军粮</td><td>nonstore</td><td>223.35 万</td><td>242.28 万</td><td>132.74 万</td></tr><tr><td>055.03</td><td>政法1楼-西安众邦餐饮有限公司第一分公司</td><td>nonstore</td><td>153.99 万</td><td>136.42 万</td><td>42.14 万</td></tr><tr><td>055.01</td><td>众邦</td><td>nonstore</td><td>151.18 万</td><td>172.18 万</td><td>76.77 万</td></tr><tr><td>013.01</td><td>陕西科技卫生学校1餐厅</td><td>nonstore</td><td>110.84 万</td><td>110.84 万</td><td>0.00 万</td></tr><tr><td>012.01</td><td>欧亚学院（西安欧亚餐饮管理有限公司）</td><td>nonstore</td><td>86.31 万</td><td>85.67 万</td><td>89.37 万</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Top 应付供应商（期末余额）</h2>
+  <table>
+    <thead><tr><th>供应商</th><th>期末应付净额</th><th>采购应付余额</th><th>其他应付余额</th><th>预付余额</th></tr></thead>
+    <tbody>
+    <tr><td>陕西杨凌来富油脂有限公司（西瑞户）</td><td>4.22 亿</td><td>4,816.15 万</td><td>3.74 亿</td><td>60.26 万</td></tr><tr><td>豪发粮油（郭杜市场）</td><td>0.25 亿</td><td>2,500.66 万</td><td>0.00 亿</td><td>22.39 万</td></tr><tr><td>渭南长安花粮油有限公司（邦淇中包）</td><td>0.14 亿</td><td>2,208.59 万</td><td>0.00 亿</td><td>815.40 万</td></tr><tr><td>陕西杨凌来富油脂有限公司（盛农瑞家户）</td><td>0.12 亿</td><td>1,340.20 万</td><td>0.00 亿</td><td>93.00 万</td></tr><tr><td>盛农瑞家邦淇</td><td>0.10 亿</td><td>689.38 万</td><td>0.03 亿</td><td>0.00 万</td></tr><tr><td>桦川县鑫华米业有限公司（冰宝）</td><td>0.09 亿</td><td>993.86 万</td><td>0.00 亿</td><td>100.00 万</td></tr><tr><td>陕西杨凌来富油脂有限公司（水鸭户）</td><td>0.05 亿</td><td>813.29 万</td><td>0.00 亿</td><td>297.57 万</td></tr><tr><td>渭南长安花粮油有限公司（邦淇小包）</td><td>0.05 亿</td><td>432.30 万</td><td>0.01 亿</td><td>0.00 万</td></tr><tr><td>粮农来富（米禾）</td><td>0.02 亿</td><td>122.68 万</td><td>0.01 亿</td><td>8.27 万</td></tr><tr><td>王东（京贡）</td><td>0.01 亿</td><td>112.07 万</td><td>0.00 亿</td><td>0.00 万</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>建议动作（2026Q1）</h2>
+  <ul>
+    <li><b>非门店 Top 客户专项清收</b>：按周滚动回款计划；未达成即触发停发/限额/改现结/担保。</li>
+    <li><b>“其他应付”重分类与对账</b>（2周完成）：拆出借款/保证金/代收代付/内部往来，避免 DPO/CCC 失真。</li>
+    <li><b>建立 13 周现金预测</b>：银行口径日度滚动；付款按“保供/保税/保信”优先级。</li>
+    <li><b>采购成本联动</b>：对油品等敏感 SKU 建立周度成本指数与售价复核机制。</li>
+  </ul>
+</div>
+
+</div>
+
+<script>
+window.__DATA__ = {"cash": {"months": ["2025-08", "2025-09", "2025-10", "2025-11", "2025-12"], "cash_in": [9267187.79, 11463358.61, 13967086.39, 14495321.2, 10851601.28], "cash_out": [12942509.0, 14853672.06, 13108071.42, 15673140.3, 8618745.58], "net_cash": [-3675321.21, -3390313.45, 859014.97, -1177819.1, 2232855.7], "cum_net_cash": [-3675321.21, -7065634.66, -6206619.69, -7384438.79, -5151583.09]}, "inv": {"months": ["2025-08", "2025-09", "2025-10", "2025-11", "2025-12"], "purchases_in": [12336236.56, 15106522.64, 12103057.06, 14551207.5, 9353785.35], "cogs": [11954049.7, 15174521.53, 12977478.01, 13578080.71, 6800382.55], "ending_inventory": [2770210.86, 3266844.41, 2230965.68, 2649748.35, 2971306.82], "inventory_change": [47377.22, 496633.55, -1035878.73, 418782.67, 321558.47]}};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<script>
+(function(){
+  if(!window.echarts) return;
+  const d = window.__DATA__ || {};
+  // Cash chart
+  const c = echarts.init(document.getElementById('chart_cash'));
+  const m = d.cash.months;
+  c.setOption({
+    tooltip: {trigger:'axis'},
+    legend: {},
+    xAxis: {type:'category', data:m},
+    yAxis: {type:'value'},
+    series: [
+      {name:'现金流入', type:'bar', data:d.cash.cash_in},
+      {name:'现金流出', type:'bar', data:d.cash.cash_out},
+      {name:'净现金流', type:'line', data:d.cash.net_cash},
+      {name:'累计净现金流', type:'line', data:d.cash.cum_net_cash}
+    ]
+  });
+  // Inventory chart
+  const i = echarts.init(document.getElementById('chart_inv'));
+  const mi = d.inv.months;
+  i.setOption({
+    tooltip: {trigger:'axis'},
+    legend: {},
+    xAxis: {type:'category', data:mi},
+    yAxis: {type:'value'},
+    series: [
+      {name:'采购入库成本', type:'bar', data:d.inv.purchases_in},
+      {name:'COGS', type:'bar', data:d.inv.cogs},
+      {name:'月末库存', type:'line', data:d.inv.ending_inventory}
+    ]
+  });
+  window.addEventListener('resize', function(){ c.resize(); i.resize(); });
+})();
+</script>
+</body>
+</html>
