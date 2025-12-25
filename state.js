@@ -83,7 +83,7 @@
       if(!el.id) return;
       if(el.closest('#order_modal')) return;
       if(el.type === 'checkbox'){
-        if(el.checked) out[el.id] = true;
+        out[el.id] = !!el.checked;
         return;
       }
       if(el.type === 'date'){
