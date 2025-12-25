@@ -137,6 +137,49 @@ function setErrorState(show, msg){
   if(msgEl) msgEl.textContent = msg || '请检查网络或数据文件路径。';
 }
 
+function populateSelect(el, options, placeholder){
+  if(!el) return;
+  const prev = el.value || '';
+  const values = (options || []).map(val=>String(val));
+  const frag = document.createDocumentFragment();
+  const baseOpt = document.createElement('option');
+  baseOpt.value = '';
+  baseOpt.textContent = placeholder || '全部';
+  frag.appendChild(baseOpt);
+  values.forEach((val)=>{
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.textContent = val;
+    frag.appendChild(opt);
+  });
+  el.replaceChildren(frag);
+  if(prev && values.includes(prev)) el.value = prev;
+}
+
+function buildKpiCard(label, valueParts){
+  const card = document.createElement('div');
+  card.className = 'card';
+  const name = document.createElement('div');
+  name.className = 'kpi-name';
+  name.textContent = label;
+  const value = document.createElement('div');
+  value.className = 'kpi-val';
+  if(Array.isArray(valueParts)){
+    valueParts.forEach((part)=>{
+      if(part instanceof Node){
+        value.appendChild(part);
+      }else{
+        value.appendChild(document.createTextNode(String(part)));
+      }
+    });
+  }else{
+    value.textContent = String(valueParts);
+  }
+  card.appendChild(name);
+  card.appendChild(value);
+  return card;
+}
+
 function setReloadButtonDisabled(disabled){
   const btn = document.getElementById('reload_btn');
   if(!btn) return;
@@ -1171,14 +1214,18 @@ function renderKPIs(segKey){
   }
   const gm=sales? gp/sales*100 : NaN;
   const gmAdj=sales? gpAdj/sales*100 : NaN;
-  document.getElementById(segKey+'_kpis').innerHTML = `
-    <div class="kpis">
-      <div class="card"><div class="kpi-name">销售额（含税）</div><div class="kpi-val">${fmtWan(sales)} <span class="kpi-sub">(${fmtYi(sales)})</span></div></div>
-      <div class="card"><div class="kpi-name">毛利</div><div class="kpi-val">${fmtWan(gp)}</div></div>
-      <div class="card"><div class="kpi-name">综合毛利率</div><div class="kpi-val">${fmtPct(gm)}</div></div>
-      <div class="card"><div class="kpi-name">销售费用（表内关联）</div><div class="kpi-val">${fmtWan(fee)}</div></div>
-      <div class="card"><div class="kpi-name">毛利-销售费</div><div class="kpi-val">${fmtWan(gpAdj)}（${fmtPct(gmAdj)}）</div></div>
-    </div>`;
+  const kpiWrap = document.createElement('div');
+  kpiWrap.className = 'kpis';
+  const salesSub = document.createElement('span');
+  salesSub.className = 'kpi-sub';
+  salesSub.textContent = `(${fmtYi(sales)})`;
+  kpiWrap.appendChild(buildKpiCard('销售额（含税）', [fmtWan(sales), ' ', salesSub]));
+  kpiWrap.appendChild(buildKpiCard('毛利', fmtWan(gp)));
+  kpiWrap.appendChild(buildKpiCard('综合毛利率', fmtPct(gm)));
+  kpiWrap.appendChild(buildKpiCard('销售费用（表内关联）', fmtWan(fee)));
+  kpiWrap.appendChild(buildKpiCard('毛利-销售费', `${fmtWan(gpAdj)}（${fmtPct(gmAdj)}）`));
+  const kpiEl = document.getElementById(segKey+'_kpis');
+  if(kpiEl) kpiEl.replaceChildren(kpiWrap);
 }
 
 function renderOverview(segKey){
@@ -1294,8 +1341,10 @@ function renderOverview(segKey){
     ]
   });
 
-  document.getElementById(segKey+'_insights').innerHTML = computeGrowthInsights(segKey,startDate,endDate);
-  document.getElementById(segKey+'_structure').innerHTML = computeStructureHints(segKey,startDate,endDate);
+  const insightsEl = document.getElementById(segKey+'_insights');
+  if(insightsEl) insightsEl.replaceChildren(computeGrowthInsights(segKey,startDate,endDate));
+  const structureEl = document.getElementById(segKey+'_structure');
+  if(structureEl) structureEl.replaceChildren(computeStructureHints(segKey,startDate,endDate));
 }
 
 function computeGrowthInsights(segKey,startDate,endDate){
@@ -1350,12 +1399,26 @@ function computeGrowthInsights(segKey,startDate,endDate){
   const a=topDelta(catMap,3).map(x=>`${x.k}（+${fmtWan(x.d)}）`).join('；') || '—';
   const b=topDelta(prodMap,3).map(x=>`${x.k}（+${fmtWan(x.d)}）`).join('；') || '—';
   const c=topDelta(custMap,3).map(x=>`${x.k}（+${fmtWan(x.d)}）`).join('；') || '—';
-  return `
-    <div>1) <b>品类毛利增量Top</b>（${first}→${last}）：${a}</div>
-    <div>2) <b>产品毛利增量Top</b>（${first}→${last}）：${b}</div>
-    <div>3) <b>客户毛利增量Top</b>（${first}→${last}）：${c}</div>
-    <div class="hint">提示：增量用于定位“可能的抓手”，再去对应页面下钻看是否可复制/可提价/可扩量。</div>
-  `;
+  const frag = document.createDocumentFragment();
+  const lines = [
+    {index:1, title:'品类毛利增量Top', text:a},
+    {index:2, title:'产品毛利增量Top', text:b},
+    {index:3, title:'客户毛利增量Top', text:c}
+  ];
+  lines.forEach(line=>{
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(line.index + ') '));
+    const strong = document.createElement('b');
+    strong.textContent = line.title;
+    div.appendChild(strong);
+    div.appendChild(document.createTextNode(`（${first}→${last}）：${line.text}`));
+    frag.appendChild(div);
+  });
+  const hint = document.createElement('div');
+  hint.className = 'hint';
+  hint.textContent = '提示：增量用于定位“可能的抓手”，再去对应页面下钻看是否可复制/可提价/可扩量。';
+  frag.appendChild(hint);
+  return frag;
 }
 
 function computeStructureHints(segKey,startDate,endDate){
@@ -1385,11 +1448,34 @@ function computeStructureHints(segKey,startDate,endDate){
   }
   const arr=[...map.entries()].map(([k,v])=>({k,sales:v.sales,gpAdj:v.gpAdj,gm:v.sales? v.gpAdj/v.sales*100:null}));
   arr.sort((a,b)=>b.gpAdj-a.gpAdj);
-  const top=arr.slice(0,3).map(x=>`${x.k}：毛利_扣费${fmtWan(x.gpAdj)}（毛利率${fmtPct(x.gm)}）`).join('<br/>') || '—';
+  const top=arr.slice(0,3).map(x=>`${x.k}：毛利_扣费${fmtWan(x.gpAdj)}（毛利率${fmtPct(x.gm)}）`);
   const totalSales=arr.reduce((a,x)=>a+x.sales,0);
   const cand=arr.filter(x=>x.sales>totalSales*0.05).sort((a,b)=>(a.gm||0)-(b.gm||0))[0];
-  const low = cand? `高销售低毛利关注：<b>${cand.k}</b>（销售${fmtYi(cand.sales)}，毛利率${fmtPct(cand.gm)}）`:'';
-  return `<div><b>毛利贡献Top品类</b><br/>${top}</div><div style="margin-top:8px;">${low}</div>`;
+  const frag = document.createDocumentFragment();
+  const header = document.createElement('div');
+  const headerStrong = document.createElement('b');
+  headerStrong.textContent = '毛利贡献Top品类';
+  header.appendChild(headerStrong);
+  frag.appendChild(header);
+  const listWrap = document.createElement('div');
+  const lines = top.length ? top : ['—'];
+  lines.forEach(line=>{
+    const lineEl = document.createElement('div');
+    lineEl.textContent = line;
+    listWrap.appendChild(lineEl);
+  });
+  frag.appendChild(listWrap);
+  if(cand){
+    const lowDiv = document.createElement('div');
+    lowDiv.style.marginTop = '8px';
+    lowDiv.appendChild(document.createTextNode('高销售低毛利关注：'));
+    const bold = document.createElement('b');
+    bold.textContent = cand.k;
+    lowDiv.appendChild(bold);
+    lowDiv.appendChild(document.createTextNode(`（销售${fmtYi(cand.sales)}，毛利率${fmtPct(cand.gm)}）`));
+    frag.appendChild(lowDiv);
+  }
+  return frag;
 }
 
 function renderCategory(segKey){
@@ -1971,10 +2057,8 @@ function renderProducts(segKey){
 
   const catSel=document.getElementById(segKey+'_product_cat');
   if(catSel){
-    const prev=catSel.value||'';
     const cats=[...new Set(tableRows.map(o=>o.cat))].sort();
-    catSel.innerHTML='<option value="">全部</option>'+cats.map(c=>`<option value="${c}">${c}</option>`).join('');
-    if(prev && cats.includes(prev)) catSel.value=prev;
+    populateSelect(catSel, cats, '全部');
   }
 
   const tbody=document.querySelector('#'+segKey+'_product_table tbody');
@@ -2016,10 +2100,8 @@ function renderCustomers(segKey){
 
   const clsSel=document.getElementById(segKey+'_customer_class');
   if(clsSel){
-    const prev=clsSel.value||'';
     const cls=[...new Set(tableRows.map(o=>o.cls).filter(v=>v))].sort();
-    clsSel.innerHTML='<option value="">全部</option>'+cls.map(c=>`<option value="${c}">${c}</option>`).join('');
-    if(prev && cls.includes(prev)) clsSel.value=prev;
+    populateSelect(clsSel, cls, '全部');
   }
 
   const tbody=document.querySelector('#'+segKey+'_customer_table tbody');
@@ -2177,9 +2259,7 @@ function fillLifecycleTables(segKey,newData,lostData){
 
   function fillSel(id, arr){
     const el=document.getElementById(id); if(!el) return;
-    const prev=el.value||'';
-    el.innerHTML='<option value="">全部</option>'+arr.map(v=>`<option value="${v}">${v}</option>`).join('');
-    if(prev && arr.includes(prev)) el.value=prev;
+    populateSelect(el, arr, '全部');
   }
   fillSel(segKey+'_new_month', newData.months);
   fillSel(segKey+'_lost_month', lostData.months);
@@ -2227,17 +2307,13 @@ function renderAbnormal(segKey){
   });
   const clsSel=document.getElementById(segKey+'_abnormal_class');
   if(clsSel){
-    const prev=clsSel.value||'';
     const cls=[...new Set(arr.map(r=>r[3]).filter(v=>v))].sort();
-    clsSel.innerHTML='<option value="">全部</option>'+cls.map(c=>`<option value="${c}">${c}</option>`).join('');
-    if(prev && cls.includes(prev)) clsSel.value=prev;
+    populateSelect(clsSel, cls, '全部');
   }
   const reasonSel=document.getElementById(segKey+'_abnormal_reason_sel');
   if(reasonSel){
-    const prev=reasonSel.value||'';
     const reasons=[...new Set(arr.flatMap(r=>String(r[8]||'').split('｜').map(x=>x.trim()).filter(Boolean)))].sort();
-    reasonSel.innerHTML='<option value="">全部</option>'+reasons.map(x=>`<option value="${x}">${x}</option>`).join('');
-    if(prev && reasons.includes(prev)) reasonSel.value=prev;
+    populateSelect(reasonSel, reasons, '全部');
   }
   const tbody=document.querySelector('#'+segKey+'_abnormal_table tbody');
   tbody.innerHTML='';

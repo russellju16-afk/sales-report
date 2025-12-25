@@ -65,9 +65,23 @@
     if(el) el.textContent = text;
   }
 
-  function setHtml(id, html){
+  function renderMiniCard(id, title, card){
     const el = document.getElementById(id);
-    if(el) el.innerHTML = html;
+    if(!el) return;
+    const frag = document.createDocumentFragment();
+    const titleEl = document.createElement('div');
+    titleEl.className = 'finance-mini-title';
+    titleEl.textContent = title;
+    const valueEl = document.createElement('div');
+    valueEl.className = 'finance-mini-val ' + (card && card.level ? card.level : '');
+    valueEl.textContent = card && card.value ? card.value : '—';
+    const noteEl = document.createElement('div');
+    noteEl.className = 'finance-mini-note';
+    noteEl.textContent = card && card.note ? card.note : '';
+    frag.appendChild(titleEl);
+    frag.appendChild(valueEl);
+    frag.appendChild(noteEl);
+    el.replaceChildren(frag);
   }
 
   function formatPeriod(meta){
@@ -115,9 +129,21 @@
   function renderKpiCards(containerId, items){
     const el = document.getElementById(containerId);
     if(!el) return;
-    el.innerHTML = items.map(item=>
-      `<div class="card finance-kpi"><div class="kpi-name">${item.label}</div><div class="kpi-val">${item.value}</div></div>`
-    ).join('');
+    const frag = document.createDocumentFragment();
+    (items || []).forEach(item=>{
+      const card = document.createElement('div');
+      card.className = 'card finance-kpi';
+      const name = document.createElement('div');
+      name.className = 'kpi-name';
+      name.textContent = item.label;
+      const value = document.createElement('div');
+      value.className = 'kpi-val';
+      value.textContent = item.value;
+      card.appendChild(name);
+      card.appendChild(value);
+      frag.appendChild(card);
+    });
+    el.replaceChildren(frag);
   }
 
   function alignSeries(months, arr){
@@ -517,12 +543,17 @@
     const extra = curVal && !idxSet.has(curVal) ? sortedList.find(x=>String(x.idx) === curVal) : null;
     const finalList = extra ? [extra].concat(topList) : topList;
 
-    select.innerHTML = finalList.map(x=>{
+    const frag = document.createDocumentFragment();
+    finalList.forEach(x=>{
       const sku = x.item && x.item.sku ? String(x.item.sku) : '';
       const name = x.item && x.item.product ? String(x.item.product) : '';
       const label = sku && name ? `${sku}｜${name}` : (sku || name || `SKU ${x.idx + 1}`);
-      return `<option value="${x.idx}">${label}</option>`;
-    }).join('');
+      const opt = document.createElement('option');
+      opt.value = String(x.idx);
+      opt.textContent = label;
+      frag.appendChild(opt);
+    });
+    select.replaceChildren(frag);
 
     if(select.options.length === 0){
       const opt = document.createElement('option');
@@ -784,8 +815,8 @@
     const recon = bank && bank.recon ? bank.recon : {};
     const recReceipts = buildReconCard(recon.diff_receipts, '收款');
     const recPayments = buildReconCard(recon.diff_payments, '付款');
-    setHtml(segKey + '_finance_bank_recon_receipts', `<div class="finance-mini-title">收款对账差异</div><div class="finance-mini-val ${recReceipts.level}">${recReceipts.value}</div><div class="finance-mini-note">${recReceipts.note}</div>`);
-    setHtml(segKey + '_finance_bank_recon_payments', `<div class="finance-mini-title">付款对账差异</div><div class="finance-mini-val ${recPayments.level}">${recPayments.value}</div><div class="finance-mini-note">${recPayments.note}</div>`);
+    renderMiniCard(segKey + '_finance_bank_recon_receipts', '收款对账差异', recReceipts);
+    renderMiniCard(segKey + '_finance_bank_recon_payments', '付款对账差异', recPayments);
 
     const invKpi = inventory && inventory.kpi ? inventory.kpi : {};
     renderKpiCards(segKey + '_finance_inventory_kpis', [
