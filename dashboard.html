@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>经营分析看板（Dashboard）</title>
+<link rel="stylesheet" href="./styles.css"/>
+</head>
+<body>
+<div id="loading_state" class="state">
+  <div class="state-card">
+    <div class="state-spinner"></div>
+    <div class="state-title">数据加载中…</div>
+    <div class="state-msg">正在拉取 ./data/latest.json 与 ./data/finance_latest.json</div>
+  </div>
+</div>
+
+<div id="error_state" class="state hidden">
+  <div class="state-card">
+    <div class="state-title">数据加载失败</div>
+    <div id="error_message" class="state-msg"></div>
+    <button id="reload_btn" class="btn">重新加载</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="title">经营分析（毛利为主 + 销售费用 + 品类 + 新增/流失客户 + 异常订单）</div>
+  <div class="subtitle">
+    数据范围：<b id="data_range">—</b>。三维度：<b>全部</b> / <b>超群门店</b> / <b>非超群门店</b>。版本：<b id="page_version">—</b>。<br/>
+    ✅ <b>图表/指标联动全局时间筛选</b>（开始日/结束日），<b>列表请使用表内时间筛选</b>（仅影响表内数据）。<br/>
+    <span class="hint">本文件必须是“...品类_新增流失_图表联动_v2.html”，否则看不到“品类/新增流失”页签。</span>
+    <div class="bp-entry show">
+      <a class="bp-link" href="./index.html">← 返回 CFO 总报告首页（index.html）</a>
+      <span class="bp-highlights">经营分析&财务分析总报告（CFO版）</span>
+    </div>
+    <div class="bp-entry" id="bp_entry">
+      <a id="bp_link" class="bp-link" href="#" target="_blank" rel="noopener">财务BP报告</a>
+      <span id="bp_highlights" class="bp-highlights"></span>
+    </div>
+    <div class="bp-entry show">
+      <a class="bp-link" href="./index.html">管理层汇总</a>
+      <span class="bp-highlights">已迁移至 CFO 总报告首页</span>
+    </div>
+    <div id="data_status"></div>
+  </div>
+
+  <div class="seg-switch">
+    <button class="segbtn active" data-seg="total">全部</button>
+    <button class="segbtn" data-seg="store">超群门店</button>
+    <button class="segbtn" data-seg="nonstore">非超群门店</button>
+  </div>
+
+  <div class="seg active" id="seg_total"></div>
+  <div class="seg" id="seg_store"></div>
+  <div class="seg" id="seg_nonstore"></div>
+</div>
+
+<div id="order_modal" class="modal" aria-hidden="true" onclick="if(event.target===this) closeOrderModal()">
+  <div class="modal-wrap" role="dialog" aria-modal="true">
+    <div class="modal-hd">
+      <div class="modal-title">
+        <span id="order_modal_title_text">订单明细</span>
+        <span id="order_modal_meta" class="meta"></span>
+      </div>
+      <button class="modal-close" onclick="closeOrderModal()" aria-label="关闭">×</button>
+    </div>
+    <div class="modal-bd">
+      <div class="order-tools">
+        <div class="order-search">
+          <input id="order_modal_search" type="text" placeholder="搜索订单编号（支持模糊匹配）" />
+          <button class="btn btn-sm" onclick="clearOrderModalSearch()">清空</button>
+        </div>
+        <div class="order-btns">
+          <button class="btn" onclick="copyOrderModal()">复制（当前筛选）</button>
+          <button class="btn" onclick="copyOrderModal(true)">复制全部</button>
+          <button class="btn" onclick="closeOrderModal()">关闭</button>
+        </div>
+      </div>
+
+      <div id="order_modal_list" class="order-grid"></div>
+
+      <div class="order-foot">
+        <span>提示：点击单个订单编号可复制。</span>
+        <span id="order_modal_count"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js" defer></script>
+<script src="./charts.js" defer></script>
+<script src="./ui.js" defer></script>
+<script src="./state.js" defer></script>
+<script src="./finance.js" defer></script>
+<script src="./app.js" defer></script>
+</body>
+</html>

@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>经营分析（毛利为主｜品类+新增/流失+异常）v2025-12-22</title>
+<title>经营分析&财务分析总报告（CFO版）</title>
 <link rel="stylesheet" href="./styles.css"/>
 </head>
-<body>
+<body class="report-body">
 <div id="loading_state" class="state">
   <div class="state-card">
     <div class="state-spinner"></div>
@@ -23,73 +23,463 @@
   </div>
 </div>
 
-<div class="container">
-  <div class="title">经营分析（毛利为主 + 销售费用 + 品类 + 新增/流失客户 + 异常订单）</div>
-  <div class="subtitle">
-    数据范围：<b id="data_range">—</b>。三维度：<b>全部</b> / <b>超群门店</b> / <b>非超群门店</b>。版本：<b id="page_version">—</b>。<br/>
-    ✅ <b>图表/指标联动全局时间筛选</b>（开始日/结束日），<b>列表请使用表内时间筛选</b>（仅影响表内数据）。<br/>
-    <span class="hint">本文件必须是“...品类_新增流失_图表联动_v2.html”，否则看不到“品类/新增流失”页签。</span>
-    <div class="bp-entry" id="bp_entry">
-      <a id="bp_link" class="bp-link" href="#" target="_blank" rel="noopener">财务BP报告</a>
-      <span id="bp_highlights" class="bp-highlights"></span>
+<div class="report-toolbar" id="report_toolbar">
+  <div class="report-toolbar-main">
+    <div class="report-title">经营分析&财务分析总报告（CFO版）</div>
+    <div class="report-meta">
+      期间：<b id="meta_period">—</b>
+      <span class="report-sep">｜</span>
+      生成时间：<b id="meta_generated">—</b>
+      <span class="report-sep">｜</span>
+      币种：<b id="meta_currency">—</b>
     </div>
-    <div class="bp-entry show">
-      <a class="bp-link" href="./reports/summary_latest.html" target="_blank" rel="noopener">管理层汇总</a>
-      <span class="bp-highlights">销售 + 财务 + BP 汇总页</span>
-    </div>
-    <div id="data_status"></div>
   </div>
-
-  <div class="seg-switch">
-    <button class="segbtn active" data-seg="total">全部</button>
-    <button class="segbtn" data-seg="store">超群门店</button>
-    <button class="segbtn" data-seg="nonstore">非超群门店</button>
-  </div>
-
-  <div class="seg active" id="seg_total"></div>
-  <div class="seg" id="seg_store"></div>
-  <div class="seg" id="seg_nonstore"></div>
-</div>
-
-<div id="order_modal" class="modal" aria-hidden="true" onclick="if(event.target===this) closeOrderModal()">
-  <div class="modal-wrap" role="dialog" aria-modal="true">
-    <div class="modal-hd">
-      <div class="modal-title">
-        <span id="order_modal_title_text">订单明细</span>
-        <span id="order_modal_meta" class="meta"></span>
-      </div>
-      <button class="modal-close" onclick="closeOrderModal()" aria-label="关闭">×</button>
-    </div>
-    <div class="modal-bd">
-      <div class="order-tools">
-        <div class="order-search">
-          <input id="order_modal_search" type="text" placeholder="搜索订单编号（支持模糊匹配）" />
-          <button class="btn btn-sm" onclick="clearOrderModalSearch()">清空</button>
-        </div>
-        <div class="order-btns">
-          <button class="btn" onclick="copyOrderModal()">复制（当前筛选）</button>
-          <button class="btn" onclick="copyOrderModal(true)">复制全部</button>
-          <button class="btn" onclick="closeOrderModal()">关闭</button>
-        </div>
-      </div>
-
-      <div id="order_modal_list" class="order-grid"></div>
-
-      <div class="order-foot">
-        <span>提示：点击单个订单编号可复制。</span>
-        <span id="order_modal_count"></span>
-      </div>
-    </div>
+  <div class="report-toolbar-actions">
+    <a class="btn" href="./dashboard.html">打开看板</a>
+    <a class="btn" href="./reports/bp_latest.html" target="_blank" rel="noopener">打开BP</a>
+    <button class="btn" id="print_btn">打印</button>
+    <button class="btn" id="export_actions_btn">导出动作CSV</button>
+    <button class="btn" id="export_warnings_btn">导出预警CSV</button>
   </div>
 </div>
 
-<div id="toast" class="toast"></div>
+<div class="report-layout">
+  <aside class="report-toc" id="report_toc">
+    <div class="toc-title">目录</div>
+    <a href="#sec-0">0 口径&数据范围&对账声明</a>
+    <a href="#sec-1">1 Executive Summary</a>
+    <a href="#sec-2">2 收入与毛利</a>
+    <a href="#sec-3">3 现金流与收付匹配</a>
+    <a href="#sec-4">4 经营性应收 AR</a>
+    <a href="#sec-5">5 其他应收（专项清理）</a>
+    <a href="#sec-6">6 经营性应付 AP</a>
+    <a href="#sec-7">7 其他应付（专项清理）</a>
+    <a href="#sec-8">8 库存与周转</a>
+    <a href="#sec-9">9 采购与价格</a>
+    <a href="#sec-10">10 风险预警中心</a>
+    <a href="#sec-11">11 动作清单</a>
+  </aside>
+
+  <main class="report-main">
+    <section id="sec-0" class="report-section">
+      <div class="section-head">
+        <h2>0 口径&数据范围&对账声明</h2>
+        <div class="section-meta" id="sec0_meta"></div>
+      </div>
+
+      <div class="report-grid report-grid-3">
+        <div class="card report-card">
+          <div class="report-card-title">口径与数据范围</div>
+          <ul class="report-list">
+            <li>期间：<b id="meta_range">—</b></li>
+            <li>销售版本：<b id="meta_sales_version">—</b></li>
+            <li>财务版本：<b id="meta_finance_version">—</b></li>
+            <li>币种：<b id="meta_currency_2">—</b></li>
+          </ul>
+        </div>
+        <div class="card report-card">
+          <div class="report-card-title">指标体系</div>
+          <ul class="report-list">
+            <li>增长：销售额 / 毛利 / 毛利-销售费</li>
+            <li>效率：DSO / DPO / DIO / CCC</li>
+            <li>规模：应收 / 应付 / 库存余额</li>
+            <li>结构：客户 / 品类 / 产品贡献与集中度</li>
+            <li>现金：净现金流与收付匹配</li>
+          </ul>
+        </div>
+        <div class="card report-card">
+          <div class="report-card-title">分析链路</div>
+          <ol class="report-steps">
+            <li>确认口径 → 对齐期间与币种</li>
+            <li>收入与毛利 → 结构与异常拆解</li>
+            <li>现金流 → 收付匹配与对账差异</li>
+            <li>周转效率 → AR/AP/库存</li>
+            <li>风险预警 → 诊断 → 动作闭环</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="report-grid report-grid-2">
+        <div class="card report-card">
+          <div class="report-card-title">对账声明</div>
+          <ul class="report-list" id="meta_notes_list">
+            <li>加载中…</li>
+          </ul>
+        </div>
+        <div class="card report-card">
+          <div class="report-card-title">结论模板（强制）</div>
+          <div class="report-template">
+            <div>结论：一句话说明偏差/风险/机会。</div>
+            <div>证据：指标/数据点 + 对比/阈值。</div>
+            <div>动作：负责人 / 做什么 / DDL / 预期影响。</div>
+          </div>
+        </div>
+      </div>
+
+      <details class="report-detail" open>
+        <summary>诊断树（通用）</summary>
+        <div class="diag-tree">
+          <div>现金流异常 → 收入下降 / 回款延迟 / 付款集中</div>
+          <div>毛利下滑 → 价格下行 / 成本上升 / 费用抬升</div>
+          <div>周转变慢 → 应收集中 / 付款过慢 / 库存积压</div>
+          <div>集中度过高 → 客户/供应商备份不足</div>
+        </div>
+      </details>
+
+      <div class="report-conclusion-grid" id="sec0_conclusions"></div>
+    </section>
+
+    <section id="sec-1" class="report-section">
+      <div class="section-head">
+        <h2>1 Executive Summary</h2>
+        <div class="section-meta">12~16 KPI + 本期5条关键结论</div>
+      </div>
+      <div class="kpis report-kpis" id="exec_kpis"></div>
+      <div class="report-subhead">本期5条关键结论</div>
+      <div class="report-conclusion-grid" id="exec_conclusions"></div>
+    </section>
+
+    <section id="sec-2" class="report-section">
+      <div class="section-head">
+        <h2>2 收入与毛利</h2>
+        <div class="section-meta">趋势 / 结构 / 异常订单</div>
+      </div>
+      <div class="report-grid report-grid-2">
+        <div class="card report-card">
+          <div class="report-card-title">销售与毛利趋势</div>
+          <div id="sales_trend_chart" class="plot-sm report-plot"></div>
+        </div>
+        <div class="card report-card">
+          <div class="report-card-title">结构贡献 Top</div>
+          <div class="report-mini-tables">
+            <div class="table-wrap dense-table">
+              <div class="report-table-title">Top 品类</div>
+              <div class="table-scroll report-table-scroll">
+                <table id="sales_top_categories_table">
+                  <thead><tr>
+                    <th>品类</th>
+                    <th>销售额</th>
+                    <th>毛利-销售费</th>
+                    <th>扣费毛利率</th>
+                  </tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="table-wrap dense-table">
+              <div class="report-table-title">Top 客户</div>
+              <div class="table-scroll report-table-scroll">
+                <table id="sales_top_customers_table">
+                  <thead><tr>
+                    <th>客户</th>
+                    <th>销售额</th>
+                    <th>毛利-销售费</th>
+                    <th>占比</th>
+                  </tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="table-wrap dense-table">
+              <div class="report-table-title">Top 产品</div>
+              <div class="table-scroll report-table-scroll">
+                <table id="sales_top_products_table">
+                  <thead><tr>
+                    <th>产品</th>
+                    <th>销售额</th>
+                    <th>毛利-销售费</th>
+                    <th>占比</th>
+                  </tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="report-conclusion-grid" id="sec2_conclusions"></div>
+    </section>
+
+    <section id="sec-3" class="report-section">
+      <div class="section-head">
+        <h2>3 现金流与收付匹配</h2>
+        <div class="section-meta">银行维度 / 对账差异</div>
+      </div>
+      <div class="report-grid report-grid-2">
+        <div class="card report-card">
+          <div class="report-card-title">期间现金流概览</div>
+          <div class="report-kpi-row" id="cash_kpis"></div>
+          <div id="cash_trend_chart" class="plot-sm report-plot"></div>
+        </div>
+        <div class="card report-card">
+          <div class="report-card-title">银行维度汇总</div>
+          <div class="table-wrap dense-table">
+            <div class="table-scroll report-table-scroll">
+              <table id="bank_type_table">
+                <thead><tr>
+                  <th>类型</th>
+                  <th>流入</th>
+                  <th>流出</th>
+                  <th>笔数</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="report-recon">
+            <div class="report-mini-card" id="bank_recon_receipts"></div>
+            <div class="report-mini-card" id="bank_recon_payments"></div>
+          </div>
+        </div>
+      </div>
+      <div class="report-conclusion-grid" id="sec3_conclusions"></div>
+    </section>
+
+    <section id="sec-4" class="report-section">
+      <div class="section-head">
+        <h2>4 经营性应收 AR</h2>
+        <div class="section-meta">DSO / 集中度 / 停滞</div>
+      </div>
+      <div class="report-grid report-grid-2">
+        <div class="card report-card">
+          <div class="report-card-title">应收 KPI</div>
+          <div class="report-kpi-row" id="ar_kpis"></div>
+          <div id="ar_trend_chart" class="plot-sm report-plot"></div>
+        </div>
+        <div class="card report-card">
+          <div class="report-card-title">Top 客户（贸易应收）</div>
+          <div class="table-wrap dense-table">
+            <div class="table-scroll report-table-scroll">
+              <table id="ar_top_customers_table">
+                <thead><tr>
+                  <th>客户</th>
+                  <th>期末贸易应收</th>
+                  <th>期末净应收</th>
+                  <th>占比</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="report-conclusion-grid" id="sec4_conclusions"></div>
+    </section>
+
+    <section id="sec-5" class="report-section">
+      <div class="section-head">
+        <h2>5 其他应收（专项清理）</h2>
+        <div class="section-meta">单列专项，不参与 DSO</div>
+      </div>
+      <div class="card report-card">
+        <div class="report-card-title">Top 其他应收客户</div>
+        <div class="table-wrap dense-table">
+          <div class="table-scroll report-table-scroll">
+            <table id="other_ar_table">
+              <thead><tr>
+                <th>客户</th>
+                <th>其他应收余额</th>
+                <th>期末应收净额</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="report-conclusion-grid" id="sec5_conclusions"></div>
+    </section>
+
+    <section id="sec-6" class="report-section">
+      <div class="section-head">
+        <h2>6 经营性应付 AP</h2>
+        <div class="section-meta">DPO / 集中度 / 停滞</div>
+      </div>
+      <div class="report-grid report-grid-2">
+        <div class="card report-card">
+          <div class="report-card-title">应付 KPI</div>
+          <div class="report-kpi-row" id="ap_kpis"></div>
+          <div id="ap_trend_chart" class="plot-sm report-plot"></div>
+        </div>
+        <div class="card report-card">
+          <div class="report-card-title">Top 供应商（采购应付）</div>
+          <div class="table-wrap dense-table">
+            <div class="table-scroll report-table-scroll">
+              <table id="ap_top_suppliers_table">
+                <thead><tr>
+                  <th>供应商</th>
+                  <th>采购应付余额</th>
+                  <th>期末应付净额</th>
+                  <th>占比</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="report-conclusion-grid" id="sec6_conclusions"></div>
+    </section>
+
+    <section id="sec-7" class="report-section">
+      <div class="section-head">
+        <h2>7 其他应付（专项清理）</h2>
+        <div class="section-meta">单列专项，不参与 DPO</div>
+      </div>
+      <div class="card report-card">
+        <div class="report-card-title">Top 其他应付供应商</div>
+        <div class="table-wrap dense-table">
+          <div class="table-scroll report-table-scroll">
+            <table id="other_ap_table">
+              <thead><tr>
+                <th>供应商</th>
+                <th>其他应付余额</th>
+                <th>期末应付净额</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="report-conclusion-grid" id="sec7_conclusions"></div>
+    </section>
+
+    <section id="sec-8" class="report-section">
+      <div class="section-head">
+        <h2>8 库存与周转</h2>
+        <div class="section-meta">DIO / 结构 / 滞销</div>
+      </div>
+      <div class="report-grid report-grid-2">
+        <div class="card report-card">
+          <div class="report-card-title">库存 KPI</div>
+          <div class="report-kpi-row" id="inventory_kpis"></div>
+          <div id="inventory_trend_chart" class="plot-sm report-plot"></div>
+        </div>
+        <div class="card report-card">
+          <div class="report-card-title">库存诊断重点</div>
+          <div class="report-text" id="inventory_focus">加载中…</div>
+          <details class="report-detail" open>
+            <summary>诊断树</summary>
+            <div class="diag-tree">
+              <div>销量下降 → 需求滑落 / 价格偏离 / 客群变化</div>
+              <div>库存上升 → 采购节奏不匹配 / 滞销 SKU 未清理</div>
+              <div>周转变慢 → 资金占用加剧 / 现金流承压</div>
+            </div>
+          </details>
+        </div>
+      </div>
+      <div class="report-conclusion-grid" id="sec8_conclusions"></div>
+    </section>
+
+    <section id="sec-9" class="report-section">
+      <div class="section-head">
+        <h2>9 采购与价格</h2>
+        <div class="section-meta">PO / 成本趋势</div>
+      </div>
+      <div class="report-grid report-grid-2">
+        <div class="card report-card">
+          <div class="report-card-title">采购 KPI</div>
+          <div class="report-kpi-row" id="po_kpis"></div>
+          <div class="report-card-title" id="po_price_title">关键 SKU 价格走势</div>
+          <div id="po_price_chart" class="plot-sm report-plot"></div>
+        </div>
+        <div class="card report-card">
+          <div class="report-card-title">Top 供应商（采购额）</div>
+          <div class="table-wrap dense-table">
+            <div class="table-scroll report-table-scroll">
+              <table id="po_top_suppliers_table">
+                <thead><tr>
+                  <th>供应商</th>
+                  <th>采购金额</th>
+                  <th>占比</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="report-mini-note">价格趋势默认展示采购额最高的 SKU。</div>
+        </div>
+      </div>
+      <div class="report-conclusion-grid" id="sec9_conclusions"></div>
+    </section>
+
+    <section id="sec-10" class="report-section">
+      <div class="section-head">
+        <h2>10 风险预警中心</h2>
+        <div class="section-meta">规则引擎 + 诊断树</div>
+      </div>
+      <div class="report-grid report-grid-2">
+        <div class="card report-card">
+          <div class="report-card-title">规则引擎阈值</div>
+          <ul class="report-list" id="warning_rules">
+            <li>加载中…</li>
+          </ul>
+        </div>
+        <div class="card report-card">
+          <div class="report-card-title">预警统计</div>
+          <div class="report-text" id="warning_stats">加载中…</div>
+          <details class="report-detail" open>
+            <summary>诊断树（模板）</summary>
+            <div class="diag-tree">
+              <div>红色预警 → 现金/周转已冲击经营</div>
+              <div>黄色预警 → 指标偏离需重点跟踪</div>
+              <div>绿色预警 → 维持监控节奏</div>
+            </div>
+          </details>
+        </div>
+      </div>
+      <div class="table-wrap dense-table">
+        <div class="report-table-title">预警清单</div>
+        <div class="table-scroll report-table-scroll">
+          <table id="warning_table">
+            <thead><tr>
+              <th>等级</th>
+              <th>领域</th>
+              <th>信号</th>
+              <th>证据</th>
+              <th>动作</th>
+              <th>证据链接</th>
+              <th>诊断树</th>
+            </tr></thead>
+            <tbody id="warning_table_body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="report-conclusion-grid" id="sec10_conclusions"></div>
+    </section>
+
+    <section id="sec-11" class="report-section">
+      <div class="section-head">
+        <h2>11 动作清单</h2>
+        <div class="section-meta">Action Tracker（自动汇总）</div>
+      </div>
+      <div class="report-action-toolbar">
+        <button class="btn" id="copy_actions_btn">复制动作清单</button>
+        <button class="btn" id="copy_warnings_btn">复制预警清单</button>
+        <span class="report-mini-note" id="action_stats">加载中…</span>
+      </div>
+      <div class="table-wrap dense-table">
+        <div class="table-scroll report-table-scroll">
+          <table id="action_table">
+            <thead><tr>
+              <th>来源</th>
+              <th>领域</th>
+              <th>结论/信号</th>
+              <th>负责人</th>
+              <th>动作</th>
+              <th>DDL</th>
+              <th>预期影响</th>
+              <th>证据链接</th>
+            </tr></thead>
+            <tbody id="action_table_body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="report-conclusion-grid" id="sec11_conclusions"></div>
+    </section>
+  </main>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js" defer></script>
-<script src="./charts.js" defer></script>
-<script src="./ui.js" defer></script>
-<script src="./state.js" defer></script>
-<script src="./finance.js" defer></script>
-<script src="./app.js" defer></script>
+<script src="./js/report.js" defer></script>
 </body>
 </html>
