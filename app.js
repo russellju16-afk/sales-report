@@ -27,6 +27,39 @@ function getFinanceUrl(){
   return base + joiner + 'v=' + Date.now();
 }
 
+function parseJsonWithNaN(text){
+  if(text.indexOf('NaN') === -1) return JSON.parse(text);
+  let out = '';
+  let inStr = false;
+  let escape = false;
+  for(let i=0;i<text.length;i++){
+    const ch = text[i];
+    if(inStr){
+      out += ch;
+      if(escape){
+        escape = false;
+      }else if(ch === '\\'){
+        escape = true;
+      }else if(ch === '"'){
+        inStr = false;
+      }
+      continue;
+    }
+    if(ch === '"'){
+      inStr = true;
+      out += ch;
+      continue;
+    }
+    if(ch === 'N' && text.slice(i, i + 3) === 'NaN'){
+      out += 'null';
+      i += 2;
+      continue;
+    }
+    out += ch;
+  }
+  return JSON.parse(out);
+}
+
 async function loadData(){
   const url = getDataUrl();
   const resp = await fetch(url, { cache: 'no-store' });
@@ -38,7 +71,8 @@ async function loadFinanceData(){
   const url = getFinanceUrl();
   const resp = await fetch(url, { cache: 'no-store' });
   if(!resp.ok) throw new Error('财务数据文件加载失败: HTTP ' + resp.status);
-  return resp.json();
+  const text = await resp.text();
+  return parseJsonWithNaN(text);
 }
 
 function normalizeData(raw){
