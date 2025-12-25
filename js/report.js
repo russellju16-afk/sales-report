@@ -381,45 +381,172 @@
     return (months || []).map(m=> (map.get(m) ? map.get(m).size : 0));
   }
 
-  function buildKpiCard(label, value, sub, spark){
+  function buildKpiCard(item, onDetail){
     const card = document.createElement('div');
     card.className = 'card';
+    const clickable = !!(onDetail && item && item.detail);
+    if(clickable){
+      card.classList.add('kpi-card-clickable');
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('aria-label', `查看${item.label}详情`);
+      card.addEventListener('click', ()=>onDetail(item));
+      card.addEventListener('keydown', (event)=>{
+        if(event.key === 'Enter' || event.key === ' '){
+          event.preventDefault();
+          onDetail(item);
+        }
+      });
+    }
+    const head = document.createElement('div');
+    head.className = 'kpi-head';
     const name = document.createElement('div');
     name.className = 'kpi-name';
-    name.textContent = label;
+    name.textContent = item.label;
+    head.appendChild(name);
+    if(clickable){
+      const hint = document.createElement('span');
+      hint.className = 'kpi-detail-hint';
+      hint.textContent = '查看详情';
+      head.appendChild(hint);
+    }
     const val = document.createElement('div');
     val.className = 'kpi-val';
-    val.textContent = value;
-    if(sub){
+    val.textContent = item.value;
+    if(item.sub){
       const span = document.createElement('span');
       span.className = 'kpi-sub';
-      span.textContent = sub;
+      span.textContent = item.sub;
       val.appendChild(span);
     }
-    card.appendChild(name);
+    card.appendChild(head);
     card.appendChild(val);
-    if(spark){
+    if(item.spark){
       const sparkEl = document.createElement('div');
       sparkEl.className = 'kpi-spark';
-      sparkEl.id = spark.id;
+      sparkEl.id = item.spark.id;
       card.appendChild(sparkEl);
     }
     return card;
   }
 
-  function renderKpis(containerId, items){
+  function renderKpis(containerId, items, onDetail){
     const el = document.getElementById(containerId);
     if(!el) return;
     const frag = document.createDocumentFragment();
     const sparks = [];
     (items || []).forEach(item=>{
       if(item && item.spark) sparks.push(item.spark);
-      frag.appendChild(buildKpiCard(item.label, item.value, item.sub, item.spark));
+      frag.appendChild(buildKpiCard(item, onDetail));
     });
     el.replaceChildren(frag);
     sparks.forEach(cfg=>{
       renderSparkline(cfg.id, cfg.data || [], cfg.color, cfg.areaColor);
     });
+  }
+
+  let KPI_DETAIL_BOUND = false;
+  function bindKpiDetailModal(){
+    if(KPI_DETAIL_BOUND) return;
+    KPI_DETAIL_BOUND = true;
+    const modal = document.getElementById('kpi_detail_modal');
+    const closeBtn = document.getElementById('kpi_detail_close');
+    if(closeBtn){
+      closeBtn.addEventListener('click', closeKpiDetail);
+    }
+    if(modal){
+      modal.addEventListener('click', (event)=>{
+        if(event.target === modal) closeKpiDetail();
+      });
+    }
+    document.addEventListener('keydown', (event)=>{
+      if(event.key === 'Escape'){
+        const m = document.getElementById('kpi_detail_modal');
+        if(m && m.classList.contains('show')) closeKpiDetail();
+      }
+    });
+  }
+
+  function closeKpiDetail(){
+    const modal = document.getElementById('kpi_detail_modal');
+    if(modal){
+      modal.classList.remove('show');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  function openKpiDetail(item){
+    if(!item || !item.detail) return;
+    const modal = document.getElementById('kpi_detail_modal');
+    const titleEl = document.getElementById('kpi_detail_title');
+    const metaEl = document.getElementById('kpi_detail_meta');
+    const summaryEl = document.getElementById('kpi_detail_summary');
+    const tableEl = document.getElementById('kpi_detail_table');
+    const tableWrap = document.getElementById('kpi_detail_table_wrap');
+    const emptyEl = document.getElementById('kpi_detail_empty');
+    if(!modal || !titleEl || !summaryEl || !tableEl || !emptyEl || !tableWrap) return;
+
+    titleEl.textContent = item.label || '指标详情';
+    metaEl.textContent = item.value ? `当前值：${item.value}` : '';
+
+    const summaryRows = [
+      { label:'当前值', value:item.value || '—' }
+    ];
+    if(item.sub) summaryRows.push({ label:'辅助值', value:item.sub });
+    if(Array.isArray(item.detail.rows)){
+      item.detail.rows.forEach(row=>{
+        if(row && row.label){
+          summaryRows.push({ label: row.label, value: row.value || '—' });
+        }
+      });
+    }
+
+    summaryEl.innerHTML = '';
+    summaryRows.forEach(row=>{
+      const div = document.createElement('div');
+      div.className = 'kpi-detail-row';
+      const label = document.createElement('span');
+      label.className = 'label';
+      label.textContent = row.label;
+      const value = document.createElement('span');
+      value.className = 'value';
+      value.textContent = row.value;
+      div.appendChild(label);
+      div.appendChild(value);
+      summaryEl.appendChild(div);
+    });
+
+    const series = item.detail.series;
+    if(series && Array.isArray(series.months) && series.months.length){
+      const thead = tableEl.tHead ? tableEl.tHead.rows[0] : null;
+      if(thead && thead.cells.length > 1){
+        thead.cells[1].textContent = series.label || '数值';
+      }
+      const tbody = tableEl.tBodies[0];
+      tbody.innerHTML = '';
+      series.months.forEach((month, idx)=>{
+        const tr = document.createElement('tr');
+        const tdMonth = document.createElement('td');
+        tdMonth.textContent = month || '—';
+        const tdVal = document.createElement('td');
+        const raw = Array.isArray(series.values) ? series.values[idx] : null;
+        const fmt = typeof series.formatter === 'function' ? series.formatter : fmtText;
+        tdVal.textContent = fmt(raw);
+        tr.appendChild(tdMonth);
+        tr.appendChild(tdVal);
+        tbody.appendChild(tr);
+      });
+      tableWrap.classList.remove('hidden');
+      tableEl.classList.remove('hidden');
+      emptyEl.classList.add('hidden');
+    }else{
+      tableEl.classList.add('hidden');
+      tableWrap.classList.add('hidden');
+      emptyEl.classList.remove('hidden');
+    }
+
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
   }
 
   function renderMiniKpis(containerId, items){
@@ -1135,29 +1262,35 @@
     const gmSeries = monthly.sales.map((v,i)=> v ? monthly.gp[i] / v * 100 : null);
     const gmAdjSeries = monthly.sales.map((v,i)=> v ? monthly.gpAdj[i] / v * 100 : null);
 
+    const arMonths = (arSeg.trend && arSeg.trend.months) || [];
+    const apMonths = (finance.ap && finance.ap.trend && finance.ap.trend.months) || [];
+    const invMonths = invTrend.months || [];
+    const bankMonths = bankTrend.months || [];
+
     const execKpiItems = [
-      { label:'销售额（含税）', value: fmtWan(totalSales), sub: fmtYi(totalSales), spark:{ id:'kpi_spark_sales', data:monthly.sales, color:'#f05a3e' } },
-      { label:'毛利', value: fmtWan(totalGp), spark:{ id:'kpi_spark_gp', data:monthly.gp, color:'#148a78' } },
-      { label:'综合毛利率', value: fmtPct(gm), spark:{ id:'kpi_spark_gm', data:gmSeries, color:'#148a78' } },
-      { label:'毛利-销售费', value: fmtWan(totalGpAdj), spark:{ id:'kpi_spark_gpadj', data:monthly.gpAdj, color:'#f05a3e' } },
-      { label:'毛利率（扣费）', value: fmtPct(gmAdj), spark:{ id:'kpi_spark_gmadj', data:gmAdjSeries, color:'#f05a3e' } },
-      { label:'订单数', value: totalOrders.toLocaleString('en-US'), spark:{ id:'kpi_spark_orders', data:monthlyOrderCounts } },
-      { label:'客户数', value: totalCustomers.toLocaleString('en-US'), spark:{ id:'kpi_spark_customers', data:monthlyCustomerCounts } },
-      { label:'品类数', value: totalCategories.toLocaleString('en-US'), spark:{ id:'kpi_spark_cats', data:monthlyCategoryCounts } },
-      { label:'期间净现金流', value: fmtWan(bankKpi.period_net_cash), spark:{ id:'kpi_spark_netcash', data:bankTrend.net_cash || [] } },
-      { label:'期间流入', value: fmtWan(bankKpi.period_cash_in), spark:{ id:'kpi_spark_cashin', data:bankTrend.cash_in || [] } },
-      { label:'期间流出', value: fmtWan(bankKpi.period_cash_out), spark:{ id:'kpi_spark_cashout', data:bankTrend.cash_out || [] } },
-      { label:'应收周转天数(天)', value: fmtDays(wcKpi.dso_days_est || arKpi.dso_days_est), spark:{ id:'kpi_spark_dso', data:(arSeg.trend && arSeg.trend.cash_receipts) || [] } },
-      { label:'应付周转天数(天)', value: fmtDays(wcKpi.dpo_days_est || apKpi.dpo_days_est), spark:{ id:'kpi_spark_dpo', data:(finance.ap && finance.ap.trend && finance.ap.trend.cash_payments) || [] } },
-      { label:'存货周转天数(天)', value: fmtDays(wcKpi.dio_days_est || invKpi.dio_days_est), spark:{ id:'kpi_spark_dio', data:invTrend.ending_inventory || [] } },
-      { label:'现金转换周期(天)', value: fmtDays(wcKpi.ccc_days_est), spark:{ id:'kpi_spark_ccc', data:bankTrend.net_cash || [] } },
-      { label:'贸易应收余额', value: fmtWan(arKpi.ending_sales_ar), spark:{ id:'kpi_spark_ar', data:(arSeg.trend && arSeg.trend.sales_invoiced) || [] } },
-      { label:'期末净应收', value: fmtWan(arKpi.ending_net_ar), spark:{ id:'kpi_spark_netar', data:(arSeg.trend && arSeg.trend.sales_invoiced) || [] } },
-      { label:'贸易应付余额', value: fmtWan(apKpi.ending_purchase_ap), spark:{ id:'kpi_spark_ap', data:(finance.ap && finance.ap.trend && finance.ap.trend.purchases_invoiced) || [] } },
-      { label:'期末净应付', value: fmtWan(apKpi.ending_net_ap), spark:{ id:'kpi_spark_netap', data:(finance.ap && finance.ap.trend && finance.ap.trend.purchases_invoiced) || [] } },
-      { label:'期末库存', value: fmtWan(invKpi.inventory_end), spark:{ id:'kpi_spark_inv', data:invTrend.ending_inventory || [] } }
+      { label:'销售额（含税）', value: fmtWan(totalSales), sub: fmtYi(totalSales), spark:{ id:'kpi_spark_sales', data:monthly.sales, color:'#f05a3e' }, detail:{ series:{ label:'月度销售额', months: monthly.months, values: monthly.sales, formatter: fmtWan } } },
+      { label:'毛利', value: fmtWan(totalGp), spark:{ id:'kpi_spark_gp', data:monthly.gp, color:'#148a78' }, detail:{ series:{ label:'月度毛利', months: monthly.months, values: monthly.gp, formatter: fmtWan } } },
+      { label:'综合毛利率', value: fmtPct(gm), spark:{ id:'kpi_spark_gm', data:gmSeries, color:'#148a78' }, detail:{ series:{ label:'月度综合毛利率', months: monthly.months, values: gmSeries, formatter: fmtPct } } },
+      { label:'毛利-销售费', value: fmtWan(totalGpAdj), spark:{ id:'kpi_spark_gpadj', data:monthly.gpAdj, color:'#f05a3e' }, detail:{ series:{ label:'月度毛利-销售费', months: monthly.months, values: monthly.gpAdj, formatter: fmtWan } } },
+      { label:'毛利率（扣费）', value: fmtPct(gmAdj), spark:{ id:'kpi_spark_gmadj', data:gmAdjSeries, color:'#f05a3e' }, detail:{ series:{ label:'月度毛利率（扣费）', months: monthly.months, values: gmAdjSeries, formatter: fmtPct } } },
+      { label:'订单数', value: totalOrders.toLocaleString('en-US'), spark:{ id:'kpi_spark_orders', data:monthlyOrderCounts }, detail:{ series:{ label:'月度订单数', months: monthly.months, values: monthlyOrderCounts, formatter:(v)=>toNumber(v) === null ? '—' : Number(v).toLocaleString('en-US') } } },
+      { label:'客户数', value: totalCustomers.toLocaleString('en-US'), spark:{ id:'kpi_spark_customers', data:monthlyCustomerCounts }, detail:{ series:{ label:'月度客户数', months: monthly.months, values: monthlyCustomerCounts, formatter:(v)=>toNumber(v) === null ? '—' : Number(v).toLocaleString('en-US') } } },
+      { label:'品类数', value: totalCategories.toLocaleString('en-US'), spark:{ id:'kpi_spark_cats', data:monthlyCategoryCounts }, detail:{ series:{ label:'月度品类数', months: monthly.months, values: monthlyCategoryCounts, formatter:(v)=>toNumber(v) === null ? '—' : Number(v).toLocaleString('en-US') } } },
+      { label:'期间净现金流', value: fmtWan(bankKpi.period_net_cash), spark:{ id:'kpi_spark_netcash', data:bankTrend.net_cash || [] }, detail:{ series:{ label:'月度净现金流', months: bankMonths, values: bankTrend.net_cash || [], formatter: fmtWan } } },
+      { label:'期间流入', value: fmtWan(bankKpi.period_cash_in), spark:{ id:'kpi_spark_cashin', data:bankTrend.cash_in || [] }, detail:{ series:{ label:'月度现金流入', months: bankMonths, values: bankTrend.cash_in || [], formatter: fmtWan } } },
+      { label:'期间流出', value: fmtWan(bankKpi.period_cash_out), spark:{ id:'kpi_spark_cashout', data:bankTrend.cash_out || [] }, detail:{ series:{ label:'月度现金流出', months: bankMonths, values: bankTrend.cash_out || [], formatter: fmtWan } } },
+      { label:'应收周转天数(天)', value: fmtDays(wcKpi.dso_days_est || arKpi.dso_days_est), spark:{ id:'kpi_spark_dso', data:(arSeg.trend && arSeg.trend.cash_receipts) || [] }, detail:{ rows:[{ label:'贸易应收余额', value: fmtWan(arKpi.ending_sales_ar) }, { label:'期末净应收', value: fmtWan(arKpi.ending_net_ar) }, { label:'期间开票', value: fmtWan(arKpi.period_sales_invoiced) }, { label:'期间回款', value: fmtWan(arKpi.period_cash_receipts) }], series:{ label:'月度回款', months: arMonths, values:(arSeg.trend && arSeg.trend.cash_receipts) || [], formatter: fmtWan } } },
+      { label:'应付周转天数(天)', value: fmtDays(wcKpi.dpo_days_est || apKpi.dpo_days_est), spark:{ id:'kpi_spark_dpo', data:(finance.ap && finance.ap.trend && finance.ap.trend.cash_payments) || [] }, detail:{ rows:[{ label:'采购应付余额', value: fmtWan(apKpi.ending_purchase_ap) }, { label:'期末净应付', value: fmtWan(apKpi.ending_net_ap) }, { label:'期间采购发票', value: fmtWan(apKpi.period_purchases_invoiced) }, { label:'期间现金付款', value: fmtWan(apKpi.period_cash_payments) }], series:{ label:'月度付款', months: apMonths, values:(finance.ap && finance.ap.trend && finance.ap.trend.cash_payments) || [], formatter: fmtWan } } },
+      { label:'存货周转天数(天)', value: fmtDays(wcKpi.dio_days_est || invKpi.dio_days_est), spark:{ id:'kpi_spark_dio', data:invTrend.ending_inventory || [] }, detail:{ rows:[{ label:'期初库存', value: fmtWan(invKpi.inventory_start) }, { label:'期末库存', value: fmtWan(invKpi.inventory_end) }, { label:'日均库存', value: fmtWan(invKpi.inventory_avg) }, { label:'期间销售成本', value: fmtWan(invKpi.period_cogs) }], series:{ label:'月度期末库存', months: invMonths, values: invTrend.ending_inventory || [], formatter: fmtWan } } },
+      { label:'现金转换周期(天)', value: fmtDays(wcKpi.ccc_days_est), spark:{ id:'kpi_spark_ccc', data:bankTrend.net_cash || [] }, detail:{ rows:[{ label:'应收周转天数', value: fmtDays(wcKpi.dso_days_est || arKpi.dso_days_est) }, { label:'应付周转天数', value: fmtDays(wcKpi.dpo_days_est || apKpi.dpo_days_est) }, { label:'存货周转天数', value: fmtDays(wcKpi.dio_days_est || invKpi.dio_days_est) }], series:{ label:'月度净现金流', months: bankMonths, values: bankTrend.net_cash || [], formatter: fmtWan } } },
+      { label:'贸易应收余额', value: fmtWan(arKpi.ending_sales_ar), spark:{ id:'kpi_spark_ar', data:(arSeg.trend && arSeg.trend.sales_invoiced) || [] }, detail:{ rows:[{ label:'期末净应收', value: fmtWan(arKpi.ending_net_ar) }, { label:'其他应收余额', value: fmtWan(arKpi.ending_other_ar) }, { label:'预收余额', value: fmtWan(arKpi.ending_pre_receipt) }, { label:'无票挂账', value: fmtWan(arKpi.no_sales_invoice_balance) }], series:{ label:'月度开票', months: arMonths, values:(arSeg.trend && arSeg.trend.sales_invoiced) || [], formatter: fmtWan } } },
+      { label:'期末净应收', value: fmtWan(arKpi.ending_net_ar), spark:{ id:'kpi_spark_netar', data:(arSeg.trend && arSeg.trend.sales_invoiced) || [] }, detail:{ rows:[{ label:'贸易应收余额', value: fmtWan(arKpi.ending_sales_ar) }, { label:'其他应收余额', value: fmtWan(arKpi.ending_other_ar) }, { label:'预收余额', value: fmtWan(arKpi.ending_pre_receipt) }], series:{ label:'月度开票', months: arMonths, values:(arSeg.trend && arSeg.trend.sales_invoiced) || [], formatter: fmtWan } } },
+      { label:'贸易应付余额', value: fmtWan(apKpi.ending_purchase_ap), spark:{ id:'kpi_spark_ap', data:(finance.ap && finance.ap.trend && finance.ap.trend.purchases_invoiced) || [] }, detail:{ rows:[{ label:'期末净应付', value: fmtWan(apKpi.ending_net_ap) }, { label:'其他应付余额', value: fmtWan(apKpi.ending_other_ap) }, { label:'预付余额', value: fmtWan(apKpi.ending_prepay) }], series:{ label:'月度采购发票', months: apMonths, values:(finance.ap && finance.ap.trend && finance.ap.trend.purchases_invoiced) || [], formatter: fmtWan } } },
+      { label:'期末净应付', value: fmtWan(apKpi.ending_net_ap), spark:{ id:'kpi_spark_netap', data:(finance.ap && finance.ap.trend && finance.ap.trend.purchases_invoiced) || [] }, detail:{ rows:[{ label:'采购应付余额', value: fmtWan(apKpi.ending_purchase_ap) }, { label:'其他应付余额', value: fmtWan(apKpi.ending_other_ap) }, { label:'预付余额', value: fmtWan(apKpi.ending_prepay) }], series:{ label:'月度采购发票', months: apMonths, values:(finance.ap && finance.ap.trend && finance.ap.trend.purchases_invoiced) || [], formatter: fmtWan } } },
+      { label:'期末库存', value: fmtWan(invKpi.inventory_end), spark:{ id:'kpi_spark_inv', data:invTrend.ending_inventory || [] }, detail:{ rows:[{ label:'期初库存', value: fmtWan(invKpi.inventory_start) }, { label:'日均库存', value: fmtWan(invKpi.inventory_avg) }, { label:'期间入库', value: fmtWan(invKpi.period_purchases_in) }, { label:'期间销售成本', value: fmtWan(invKpi.period_cogs) }], series:{ label:'月度期末库存', months: invMonths, values: invTrend.ending_inventory || [], formatter: fmtWan } } }
     ];
-    renderKpis('exec_kpis', execKpiItems);
+    bindKpiDetailModal();
+    renderKpis('exec_kpis', execKpiItems, openKpiDetail);
 
     renderMiniKpis('cash_kpis', [
       { label:'期间流入', value: fmtWan(bankKpi.period_cash_in) },

@@ -590,6 +590,31 @@
 
 <div id="toast" class="toast"></div>
 
+<div id="kpi_detail_modal" class="modal" aria-hidden="true">
+  <div class="modal-wrap" role="dialog" aria-modal="true">
+    <div class="modal-hd">
+      <div class="modal-title">
+        <span id="kpi_detail_title">指标详情</span>
+        <span class="meta" id="kpi_detail_meta"></span>
+      </div>
+      <button class="modal-close" id="kpi_detail_close" aria-label="关闭">×</button>
+    </div>
+    <div class="modal-bd">
+      <div id="kpi_detail_summary" class="kpi-detail-summary"></div>
+      <div class="kpi-detail-table-wrap" id="kpi_detail_table_wrap">
+        <table class="kpi-detail-table" id="kpi_detail_table">
+          <thead><tr>
+            <th>月份</th>
+            <th>数值</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="kpi_detail_empty" class="report-empty hidden">暂无明细数据</div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js" defer></script>
 <script src="./js/report.js" defer></script>
 </body>
