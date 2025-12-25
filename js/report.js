@@ -48,6 +48,11 @@
     mid:14,
     long:30
   };
+  const SEG_LABELS = {
+    total:'全部',
+    store:'门店',
+    nonstore:'非门店'
+  };
 
   function toNumber(val){
     if(val === null || val === undefined || val === '') return null;
@@ -718,7 +723,7 @@
   }
 
   function safeDateLabel(val){
-    const m = String(val || '').match(/\\d{4}-\\d{2}-\\d{2}/);
+    const m = String(val || '').match(/\d{4}-\d{2}-\d{2}/);
     return m ? m[0] : '';
   }
 
@@ -918,7 +923,7 @@
       { key:'ccc' },
       { key:'top1' }
     ], [
-      (v)=>fmtText(v),
+      (v)=>SEG_LABELS[v] || fmtText(v),
       (v)=>fmtWan(v),
       (v)=>fmtWan(v),
       (v)=>fmtPct(v),
@@ -1142,10 +1147,10 @@
       { label:'期间净现金流', value: fmtWan(bankKpi.period_net_cash), spark:{ id:'kpi_spark_netcash', data:bankTrend.net_cash || [] } },
       { label:'期间流入', value: fmtWan(bankKpi.period_cash_in), spark:{ id:'kpi_spark_cashin', data:bankTrend.cash_in || [] } },
       { label:'期间流出', value: fmtWan(bankKpi.period_cash_out), spark:{ id:'kpi_spark_cashout', data:bankTrend.cash_out || [] } },
-      { label:'DSO(天)', value: fmtDays(wcKpi.dso_days_est || arKpi.dso_days_est), spark:{ id:'kpi_spark_dso', data:(arSeg.trend && arSeg.trend.cash_receipts) || [] } },
-      { label:'DPO(天)', value: fmtDays(wcKpi.dpo_days_est || apKpi.dpo_days_est), spark:{ id:'kpi_spark_dpo', data:(finance.ap && finance.ap.trend && finance.ap.trend.cash_payments) || [] } },
-      { label:'DIO(天)', value: fmtDays(wcKpi.dio_days_est || invKpi.dio_days_est), spark:{ id:'kpi_spark_dio', data:invTrend.ending_inventory || [] } },
-      { label:'CCC(天)', value: fmtDays(wcKpi.ccc_days_est), spark:{ id:'kpi_spark_ccc', data:bankTrend.net_cash || [] } },
+      { label:'应收周转天数(天)', value: fmtDays(wcKpi.dso_days_est || arKpi.dso_days_est), spark:{ id:'kpi_spark_dso', data:(arSeg.trend && arSeg.trend.cash_receipts) || [] } },
+      { label:'应付周转天数(天)', value: fmtDays(wcKpi.dpo_days_est || apKpi.dpo_days_est), spark:{ id:'kpi_spark_dpo', data:(finance.ap && finance.ap.trend && finance.ap.trend.cash_payments) || [] } },
+      { label:'存货周转天数(天)', value: fmtDays(wcKpi.dio_days_est || invKpi.dio_days_est), spark:{ id:'kpi_spark_dio', data:invTrend.ending_inventory || [] } },
+      { label:'现金转换周期(天)', value: fmtDays(wcKpi.ccc_days_est), spark:{ id:'kpi_spark_ccc', data:bankTrend.net_cash || [] } },
       { label:'贸易应收余额', value: fmtWan(arKpi.ending_sales_ar), spark:{ id:'kpi_spark_ar', data:(arSeg.trend && arSeg.trend.sales_invoiced) || [] } },
       { label:'期末净应收', value: fmtWan(arKpi.ending_net_ar), spark:{ id:'kpi_spark_netar', data:(arSeg.trend && arSeg.trend.sales_invoiced) || [] } },
       { label:'贸易应付余额', value: fmtWan(apKpi.ending_purchase_ap), spark:{ id:'kpi_spark_ap', data:(finance.ap && finance.ap.trend && finance.ap.trend.purchases_invoiced) || [] } },
@@ -1164,30 +1169,30 @@
     renderMiniKpis('ar_kpis', [
       { label:'贸易应收余额', value: fmtWan(arKpi.ending_sales_ar) },
       { label:'期末净应收', value: fmtWan(arKpi.ending_net_ar) },
-      { label:'DSO(天)', value: fmtDays(arKpi.dso_days_est) },
-      { label:'Top1占比', value: fmtRatio(arKpi.top1_ratio) },
-      { label:'Top10占比', value: fmtRatio(arKpi.top10_ratio) }
+      { label:'应收周转天数(天)', value: fmtDays(arKpi.dso_days_est) },
+      { label:'第一名占比', value: fmtRatio(arKpi.top1_ratio) },
+      { label:'前十名占比', value: fmtRatio(arKpi.top10_ratio) }
     ]);
 
     renderMiniKpis('ap_kpis', [
       { label:'采购应付余额', value: fmtWan(apKpi.ending_purchase_ap) },
       { label:'期末应付净额', value: fmtWan(apKpi.ending_net_ap) },
-      { label:'DPO(天)', value: fmtDays(apKpi.dpo_days_est || wcKpi.dpo_days_est) },
-      { label:'Top1占比', value: fmtRatio(apKpi.top1_ratio) },
-      { label:'Top10占比', value: fmtRatio(apKpi.top10_ratio) }
+      { label:'应付周转天数(天)', value: fmtDays(apKpi.dpo_days_est || wcKpi.dpo_days_est) },
+      { label:'第一名占比', value: fmtRatio(apKpi.top1_ratio) },
+      { label:'前十名占比', value: fmtRatio(apKpi.top10_ratio) }
     ]);
 
     renderMiniKpis('inventory_kpis', [
       { label:'期初库存', value: fmtWan(invKpi.inventory_start) },
       { label:'期末库存', value: fmtWan(invKpi.inventory_end) },
       { label:'库存均值', value: fmtWan(invKpi.inventory_avg) },
-      { label:'DIO(天)', value: fmtDays(invKpi.dio_days_est) }
+      { label:'存货周转天数(天)', value: fmtDays(invKpi.dio_days_est) }
     ]);
 
     renderMiniKpis('po_kpis', [
       { label:'期间入库金额', value: fmtWan(poKpi.period_inbound_amount) },
-      { label:'Top1供应商占比', value: fmtRatio(poKpi.top1_supplier_ratio) },
-      { label:'Top2供应商占比', value: fmtRatio(poKpi.top2_supplier_ratio) }
+      { label:'第一名供应商占比', value: fmtRatio(poKpi.top1_supplier_ratio) },
+      { label:'第二名供应商占比', value: fmtRatio(poKpi.top2_supplier_ratio) }
     ]);
 
     const segmentRows = ['total','store','nonstore'].map(segKey=>{
@@ -1400,7 +1405,7 @@
     const inventoryFocus = document.getElementById('inventory_focus');
     if(inventoryFocus){
       const invChange = (toNumber(invKpi.inventory_end) || 0) - (toNumber(invKpi.inventory_start) || 0);
-      const msg = `期末库存${fmtWan(invKpi.inventory_end)}，较期初${fmtSignedWan(invChange)}；DIO ${fmtDays(invKpi.dio_days_est)} 天。`;
+      const msg = `期末库存${fmtWan(invKpi.inventory_end)}，较期初${fmtSignedWan(invChange)}；存货周转天数 ${fmtDays(invKpi.dio_days_est)} 天。`;
       inventoryFocus.textContent = msg;
     }
 
@@ -1416,12 +1421,12 @@
     const reconReceipts = document.getElementById('bank_recon_receipts');
     if(reconReceipts){
       reconReceipts.innerHTML = '';
-      reconReceipts.appendChild(buildMiniCard('AR 回款 vs 银行流入差异', fmtWan(reconReceiptsDiff), '对比口径：ar.trend.cash_receipts vs bank.trend.cash_in'));
+      reconReceipts.appendChild(buildMiniCard('应收回款与银行流入差异', fmtWan(reconReceiptsDiff), '对比口径：应收回款(ar.trend.cash_receipts) vs 银行流入(bank.trend.cash_in)'));
     }
     const reconPayments = document.getElementById('bank_recon_payments');
     if(reconPayments){
       reconPayments.innerHTML = '';
-      reconPayments.appendChild(buildMiniCard('AP 付款 vs 银行流出差异', fmtWan(reconPaymentsDiff), '对比口径：ap.trend.cash_payments vs bank.trend.cash_out'));
+      reconPayments.appendChild(buildMiniCard('应付付款与银行流出差异', fmtWan(reconPaymentsDiff), '对比口径：应付付款(ap.trend.cash_payments) vs 银行流出(bank.trend.cash_out)'));
     }
 
     const reconExplain = document.getElementById('bank_recon_explain');
@@ -1508,7 +1513,7 @@
 
     renderLineChart('inventory_trend_chart', invTrend.months || [], [
       { name:'入库', type:'bar', data: invTrend.purchases_in || [], barMaxWidth:26 },
-      { name:'COGS', type:'bar', data: invTrend.cogs || [], barMaxWidth:26 },
+      { name:'销售成本', type:'bar', data: invTrend.cogs || [], barMaxWidth:26 },
       { name:'期末库存', type:'line', data: invTrend.ending_inventory || [], smooth:true }
     ]);
 
@@ -1518,8 +1523,8 @@
     }
     const priceTitle = document.getElementById('po_price_title');
     if(priceTitle){
-      const name = priceTarget ? (priceTarget.product || priceTarget.sku || 'SKU') : 'SKU';
-      priceTitle.textContent = '关键 SKU 价格走势：' + name;
+      const name = priceTarget ? (priceTarget.product || priceTarget.sku || '货号') : '货号';
+      priceTitle.textContent = '关键货号价格走势：' + name;
     }
     renderLineChart('po_price_chart', (priceTarget && priceTarget.months) || [], [
       { name:'均价', type:'line', data: (priceTarget && priceTarget.avg_unit_cost) || [], smooth:true }
@@ -1596,7 +1601,7 @@
     const gmAdjNote = gmAdj !== null && gmAdj < 8 ? '扣费毛利率偏低' : '扣费毛利率在可控区间';
 
     addConclusion(conclusions.exec, actions, {
-      source:'Executive Summary',
+      source:'经营摘要',
       domain:'收入与毛利',
       title:'盈利能力需盯紧“扣费毛利率”与销售费用结构。',
       evidence:`销售额${fmtWan(totalSales)}，毛利率${fmtPct(gm)}，扣费毛利率${fmtPct(gmAdj)}；${gmAdjNote}`,
@@ -1606,11 +1611,11 @@
 
     if(topCust){
       addConclusion(conclusions.exec, actions, {
-        source:'Executive Summary',
+        source:'经营摘要',
         domain:'客户结构',
         title:'客户集中度偏高需建立备份增长通道。',
-        evidence:`客户Top1 ${fmtText(topCust.key)} 销售额${fmtWan(topCust.sales)}（占比${fmtPct(totalSales ? topCust.sales/totalSales*100 : null)}）`,
-        action:{ owner:'大客户经理', task:'推进Top1客户回款与续约，同时拓展Top5外客户替代', ddl:addDays(baseDate, ACTION_DAYS.long), impact:'降低集中度风险、提升可持续增长' },
+        evidence:`客户第一名 ${fmtText(topCust.key)} 销售额${fmtWan(topCust.sales)}（占比${fmtPct(totalSales ? topCust.sales/totalSales*100 : null)}）`,
+        action:{ owner:'大客户经理', task:'推进第一名客户回款与续约，同时拓展前五名以外客户替代', ddl:addDays(baseDate, ACTION_DAYS.long), impact:'降低集中度风险、提升可持续增长' },
         link: buildEvidenceLink({
           seg:'total',
           tab:'customer',
@@ -1622,7 +1627,7 @@
     }
 
     addConclusion(conclusions.exec, actions, {
-      source:'Executive Summary',
+      source:'经营摘要',
       domain:'现金流',
       title: cashNegative ? '净现金流为负需优先修复收付节奏。' : '现金流总体可控但需持续监控收付节奏。',
       evidence:`期间净现金流${fmtWan(bankKpi.period_net_cash)}，流入${fmtWan(bankKpi.period_cash_in)} / 流出${fmtWan(bankKpi.period_cash_out)}`,
@@ -1631,19 +1636,19 @@
     });
 
     addConclusion(conclusions.exec, actions, {
-      source:'Executive Summary',
+      source:'经营摘要',
       domain:'周转',
-      title:'DSO/CCC 仍需关注回款与库存协同。',
-      evidence:`DSO ${fmtDays(wcKpi.dso_days_est)} 天，CCC ${fmtDays(wcKpi.ccc_days_est)} 天，库存${fmtWan(invKpi.inventory_end)}`,
-      action:{ owner:'财务BP', task:'制定回款与库存去化双周计划，跟踪关键客户/品类', ddl:addDays(baseDate, ACTION_DAYS.mid), impact:'压缩 CCC 5-10 天' },
+      title:'应收周转天数/现金转换周期仍需关注回款与库存协同。',
+      evidence:`应收周转天数 ${fmtDays(wcKpi.dso_days_est)} 天，现金转换周期 ${fmtDays(wcKpi.ccc_days_est)} 天，库存${fmtWan(invKpi.inventory_end)}`,
+      action:{ owner:'财务业务伙伴', task:'制定回款与库存去化双周计划，跟踪关键客户/品类', ddl:addDays(baseDate, ACTION_DAYS.mid), impact:'压缩现金转换周期 5-10 天' },
       link: buildEvidenceLink({ seg:'total', tab:'finance' }, '查看证据')
     });
 
     addConclusion(conclusions.exec, actions, {
-      source:'Executive Summary',
+      source:'经营摘要',
       domain:'收入结构',
       title:'结构贡献与异常订单需同步治理。',
-      evidence:`品类Top1 ${fmtText(topCat && topCat.key)} 毛利_扣费${fmtWan(topCat && topCat.gpAdj)}；异常订单行数${negativeLines}`,
+      evidence:`品类第一名 ${fmtText(topCat && topCat.key)} 毛利_扣费${fmtWan(topCat && topCat.gpAdj)}；异常订单行数${negativeLines}`,
       action:{ owner:'品类负责人', task:'对低毛利/负毛利订单做价格与费用复盘，必要时调整策略', ddl:addDays(baseDate, ACTION_DAYS.mid), impact:'减少异常订单，提升结构性毛利' },
       link: buildEvidenceLink({
         seg:'total',
@@ -1683,10 +1688,10 @@
     const sec4Conc = [];
     addConclusion(sec4Conc, actions, {
       source:'应收',
-      domain:'AR',
+      domain:'应收',
       title:'应收集中度偏高需加快回款与额度控制。',
-      evidence:`Top1占比${fmtRatio(arKpi.top1_ratio)}，Top10占比${fmtRatio(arKpi.top10_ratio)}；贸易应收${fmtWan(arKpi.ending_sales_ar)}`,
-      action:{ owner:'收款负责人', task:'锁定Top客户回款计划并设置额度上限', ddl:addDays(baseDate, ACTION_DAYS.mid), impact:'降低集中度与逾期风险' },
+      evidence:`第一名占比${fmtRatio(arKpi.top1_ratio)}，前十名占比${fmtRatio(arKpi.top10_ratio)}；贸易应收${fmtWan(arKpi.ending_sales_ar)}`,
+      action:{ owner:'收款负责人', task:'锁定头部客户回款计划并设置额度上限', ddl:addDays(baseDate, ACTION_DAYS.mid), impact:'降低集中度与逾期风险' },
       link: buildEvidenceLink({
         seg:'total',
         tab:'finance',
@@ -1717,9 +1722,9 @@
     const sec6Conc = [];
     addConclusion(sec6Conc, actions, {
       source:'应付',
-      domain:'AP',
-      title:'DPO偏高需关注供应商风险与谈判策略。',
-      evidence:`DPO ${fmtDays(apKpi.dpo_days_est || wcKpi.dpo_days_est)} 天，Top1占比${fmtRatio(apKpi.top1_ratio)}`,
+      domain:'应付',
+      title:'应付周转天数偏高需关注供应商风险与谈判策略。',
+      evidence:`应付周转天数 ${fmtDays(apKpi.dpo_days_est || wcKpi.dpo_days_est)} 天，第一名占比${fmtRatio(apKpi.top1_ratio)}`,
       action:{ owner:'采购负责人', task:'与核心供应商沟通付款节奏并建立备选供应', ddl:addDays(baseDate, ACTION_DAYS.mid), impact:'降低供应风险并优化现金压力' },
       link: buildEvidenceLink({
         seg:'total',
@@ -1753,8 +1758,8 @@
       source:'库存',
       domain:'周转',
       title:'库存与销量匹配度需优化，防止资金占用。',
-      evidence:`期末库存${fmtWan(invKpi.inventory_end)}，期初${fmtWan(invKpi.inventory_start)}，DIO ${fmtDays(invKpi.dio_days_est)} 天`,
-      action:{ owner:'供应链负责人', task:'制定滞销 SKU 去化计划并调整补货节奏', ddl:addDays(baseDate, ACTION_DAYS.mid), impact:'降低库存占用与过期损耗' },
+      evidence:`期末库存${fmtWan(invKpi.inventory_end)}，期初${fmtWan(invKpi.inventory_start)}，存货周转天数 ${fmtDays(invKpi.dio_days_est)} 天`,
+      action:{ owner:'供应链负责人', task:'制定滞销货号去化计划并调整补货节奏', ddl:addDays(baseDate, ACTION_DAYS.mid), impact:'降低库存占用与过期损耗' },
       link: buildEvidenceLink({ seg:'total', tab:'finance' }, '查看证据')
     });
     conclusions.sec8 = sec8Conc;
@@ -1764,8 +1769,8 @@
       source:'采购',
       domain:'成本',
       title:'采购集中度与价格波动需同步控制。',
-      evidence:`期间入库金额${fmtWan(poKpi.period_inbound_amount)}，Top1供应商占比${fmtRatio(poKpi.top1_supplier_ratio)}`,
-      action:{ owner:'采购负责人', task:'评估Top供应商价格与交付表现，推进框架协议与替代方案', ddl:addDays(baseDate, ACTION_DAYS.long), impact:'稳定成本与供应安全' },
+      evidence:`期间入库金额${fmtWan(poKpi.period_inbound_amount)}，第一名供应商占比${fmtRatio(poKpi.top1_supplier_ratio)}`,
+      action:{ owner:'采购负责人', task:'评估头部供应商价格与交付表现，推进框架协议与替代方案', ddl:addDays(baseDate, ACTION_DAYS.long), impact:'稳定成本与供应安全' },
       link: buildEvidenceLink({
         seg:'total',
         tab:'finance',
@@ -1824,7 +1829,7 @@
       evidence:`扣费毛利率${fmtPct(gmAdj)}（环比${gmAdjDelta === null ? '—' : (gmAdjDelta > 0 ? '+' : '') + gmAdjDelta.toFixed(2) + 'pct'}），毛利额环比${gpMomRatio === null ? '—' : (gpMomRatio * 100).toFixed(1) + '%'}`,
       action:{ owner:'销售负责人', task:'复盘低毛利客户/品类的价格与费用策略并调整', ddl:addDays(baseDate, ACTION_DAYS.mid), impact:'稳定毛利率' },
       link: buildEvidenceLink({ seg:'total', tab:'overview' }, '查看证据'),
-      diagnosis:['异常：毛利率下降','定位：低毛利客户/品类/SKU','归因：售价下滑/成本上升/扣费异常','动作：调整折扣与成本策略并跟踪改善']
+      diagnosis:['异常：毛利率下降','定位：低毛利客户/品类/货号','归因：售价下滑/成本上升/扣费异常','动作：调整折扣与成本策略并跟踪改善']
     }));
 
     const netCash = toNumber(bankKpi.period_net_cash);
@@ -1844,35 +1849,35 @@
       level: dsoVal !== null && dsoVal > THRESHOLDS.dso_red ? '红' : (dsoVal !== null && dsoVal > THRESHOLDS.dso_yellow ? '黄' : '绿'),
       levelClass: dsoVal !== null && dsoVal > THRESHOLDS.dso_red ? 'red' : (dsoVal !== null && dsoVal > THRESHOLDS.dso_yellow ? 'yellow' : 'green'),
       domain:'应收',
-      signal:`DSO 超阈值（${THRESHOLDS.dso_yellow}/${THRESHOLDS.dso_red}天）`,
-      evidence:`DSO ${fmtDays(dsoVal)} 天`,
+      signal:`应收周转天数超阈值（${THRESHOLDS.dso_yellow}/${THRESHOLDS.dso_red}天）`,
+      evidence:`应收周转天数 ${fmtDays(dsoVal)} 天`,
       action:{ owner:'收款负责人', task:'制定回款优先级与赊销控制策略', ddl:addDays(baseDate, ACTION_DAYS.mid), impact:'缩短回款周期' },
       link: buildEvidenceLink({ seg:'total', tab:'finance', tableId:'total_finance_ar_table', anchor:'total_finance_ar_table' }, '查看证据'),
-      diagnosis:['异常：DSO 超阈值','定位：Top客户账期与逾期账龄','归因：回款停滞/账期过长','动作：收款计划+授信调整并跟踪']
+      diagnosis:['异常：应收周转天数超阈值','定位：头部客户账期与逾期账龄','归因：回款停滞/账期过长','动作：收款计划+授信调整并跟踪']
     }));
 
     const dpoVal = toNumber(wcKpi.dpo_days_est || apKpi.dpo_days_est);
     let dpoLevel = '绿';
     let dpoClass = 'green';
-    let dpoSignal = 'DPO 正常';
+    let dpoSignal = '应付周转天数正常';
     if(dpoVal !== null && dpoVal < THRESHOLDS.dpo_low){
       dpoLevel = '黄';
       dpoClass = 'yellow';
-      dpoSignal = 'DPO 过低导致现金压力';
+      dpoSignal = '应付周转天数过低导致现金压力';
     }else if(dpoVal !== null && dpoVal > THRESHOLDS.dpo_high){
       dpoLevel = '红';
       dpoClass = 'red';
-      dpoSignal = 'DPO 过高导致供应风险';
+      dpoSignal = '应付周转天数过高导致供应风险';
     }
     warnings.push(buildWarning({
       level: dpoLevel,
       levelClass: dpoClass,
       domain:'应付',
       signal: dpoSignal,
-      evidence:`DPO ${fmtDays(dpoVal)} 天`,
+      evidence:`应付周转天数 ${fmtDays(dpoVal)} 天`,
       action:{ owner:'采购负责人', task:'调整付款节奏并维护关键供应商信任', ddl:addDays(baseDate, ACTION_DAYS.mid), impact:'平衡现金压力与供应稳定' },
       link: buildEvidenceLink({ seg:'total', tab:'finance', tableId:'total_finance_ap_table', anchor:'total_finance_ap_table' }, '查看证据'),
-      diagnosis:['异常：DPO 偏离阈值','定位：付款周期与供应商集中','归因：提前付款或供应风险','动作：分级付款策略并维护关键供应商']
+      diagnosis:['异常：应付周转天数偏离阈值','定位：付款周期与供应商集中','归因：提前付款或供应风险','动作：分级付款策略并维护关键供应商']
     }));
 
     const cccVal = toNumber(wcKpi.ccc_days_est);
@@ -1880,19 +1885,19 @@
       level: cccVal !== null && cccVal > THRESHOLDS.ccc_high ? '红' : (cccVal !== null && cccVal > THRESHOLDS.ccc_high * 0.7 ? '黄' : '绿'),
       levelClass: cccVal !== null && cccVal > THRESHOLDS.ccc_high ? 'red' : (cccVal !== null && cccVal > THRESHOLDS.ccc_high * 0.7 ? 'yellow' : 'green'),
       domain:'周转',
-      signal:'CCC 上行/超阈值',
-      evidence:`CCC ${fmtDays(cccVal)} 天`,
-      action:{ owner:'财务BP', task:'协同销售与供应链压缩 DSO/DIO', ddl:addDays(baseDate, ACTION_DAYS.mid), impact:'降低营运资金占用' },
+      signal:'现金转换周期上行/超阈值',
+      evidence:`现金转换周期 ${fmtDays(cccVal)} 天`,
+      action:{ owner:'财务业务伙伴', task:'协同销售与供应链压缩应收/存货周转天数', ddl:addDays(baseDate, ACTION_DAYS.mid), impact:'降低营运资金占用' },
       link: buildEvidenceLink({ seg:'total', tab:'finance' }, '查看证据'),
-      diagnosis:['异常：CCC 上升','定位：DSO/DIO/DPO 贡献','归因：回款慢/库存占用/付款节奏','动作：协同销售与供应链压缩周转']
+      diagnosis:['异常：现金转换周期上升','定位：应收/存货/应付周转贡献','归因：回款慢/库存占用/付款节奏','动作：协同销售与供应链压缩周转']
     }));
 
     warnings.push(buildWarning({
       level: arKpi.top1_ratio !== null && arKpi.top1_ratio > THRESHOLDS.ar_top1_red ? '红' : (arKpi.top10_ratio !== null && arKpi.top10_ratio > THRESHOLDS.ar_top10_yellow ? '黄' : '绿'),
       levelClass: arKpi.top1_ratio !== null && arKpi.top1_ratio > THRESHOLDS.ar_top1_red ? 'red' : (arKpi.top10_ratio !== null && arKpi.top10_ratio > THRESHOLDS.ar_top10_yellow ? 'yellow' : 'green'),
       domain:'应收',
-      signal:'AR 集中度过高',
-      evidence:`Top1 ${fmtRatio(arKpi.top1_ratio)} / Top10 ${fmtRatio(arKpi.top10_ratio)}`,
+      signal:'应收集中度过高',
+      evidence:`第一名 ${fmtRatio(arKpi.top1_ratio)} / 前十名 ${fmtRatio(arKpi.top10_ratio)}`,
       action:{ owner:'销售负责人', task:'分散客户结构并强化大客户回款条款', ddl:addDays(baseDate, ACTION_DAYS.long), impact:'降低集中度风险' },
       link: buildEvidenceLink({
         seg:'total',
@@ -1901,15 +1906,15 @@
         filterFirstColValue:(arSeg.top_customers && arSeg.top_customers[0] && arSeg.top_customers[0].customer) || '',
         anchor:'total_finance_ar_table'
       }, '查看证据'),
-      diagnosis:['异常：应收集中度过高','定位：Top1/Top10 客户贡献','归因：客户结构过度集中','动作：拓展新客户并优化大客户条款']
+      diagnosis:['异常：应收集中度过高','定位：第一名/前十名客户贡献','归因：客户结构过度集中','动作：拓展新客户并优化大客户条款']
     }));
 
     warnings.push(buildWarning({
       level: apKpi.top1_ratio !== null && apKpi.top1_ratio > THRESHOLDS.ap_top1_red ? '红' : '绿',
       levelClass: apKpi.top1_ratio !== null && apKpi.top1_ratio > THRESHOLDS.ap_top1_red ? 'red' : 'green',
       domain:'应付',
-      signal:'AP Top1 过高（供应风险）',
-      evidence:`Top1占比${fmtRatio(apKpi.top1_ratio)}`,
+      signal:'应付第一名过高（供应风险）',
+      evidence:`第一名占比${fmtRatio(apKpi.top1_ratio)}`,
       action:{ owner:'采购负责人', task:'推进供应商备份与分单策略', ddl:addDays(baseDate, ACTION_DAYS.long), impact:'降低单一供应商风险' },
       link: buildEvidenceLink({
         seg:'total',
@@ -1918,7 +1923,7 @@
         filterFirstColValue:(finance.ap && finance.ap.top_suppliers && finance.ap.top_suppliers[0] && finance.ap.top_suppliers[0].supplier) || '',
         anchor:'total_finance_ap_table'
       }, '查看证据'),
-      diagnosis:['异常：AP Top1 过高','定位：关键供应商依赖度','归因：供应商备份不足','动作：分单与引入替代供应商']
+      diagnosis:['异常：应付第一名过高','定位：关键供应商依赖度','归因：供应商备份不足','动作：分单与引入替代供应商']
     }));
 
     const noInvoice = toNumber(arKpi.no_sales_invoice_balance);
@@ -1976,10 +1981,10 @@
       levelClass: invWarn ? 'yellow' : 'green',
       domain:'库存',
       signal:'库存激增/去化变慢',
-      evidence:`期末库存${fmtWan(invKpi.inventory_end)}，DIO ${fmtDays(dioVal)} 天`,
-      action:{ owner:'供应链负责人', task:'限制补货并推进滞销SKU去化', ddl:addDays(baseDate, ACTION_DAYS.mid), impact:'降低库存占用' },
+      evidence:`期末库存${fmtWan(invKpi.inventory_end)}，存货周转天数 ${fmtDays(dioVal)} 天`,
+      action:{ owner:'供应链负责人', task:'限制补货并推进滞销货号去化', ddl:addDays(baseDate, ACTION_DAYS.mid), impact:'降低库存占用' },
       link: buildEvidenceLink({ seg:'total', tab:'finance' }, '查看证据'),
-      diagnosis:['异常：库存激增/去化变慢','定位：滞销SKU与库存结构','归因：销量下降/采购节奏失衡','动作：限采与促销去化计划']
+      diagnosis:['异常：库存激增/去化变慢','定位：滞销货号与库存结构','归因：销量下降/采购节奏失衡','动作：限采与促销去化计划']
     }));
 
     const receiptDays = toNumber(arKpi.days_since_last_receipt);
@@ -2016,14 +2021,14 @@
         `收入环比下滑 > ${THRESHOLDS.sales_mom_drop_yellow * 100}% 黄 / > ${THRESHOLDS.sales_mom_drop_red * 100}% 红`,
         `扣费毛利率环比下降 > ${THRESHOLDS.gm_drop_pct_yellow}pct 黄 / > ${THRESHOLDS.gm_drop_pct_red}pct 红`,
         `净现金流 < 0 触发红色预警`,
-        `DSO > ${THRESHOLDS.dso_yellow} 天黄 / > ${THRESHOLDS.dso_red} 天红`,
-        `DPO < ${THRESHOLDS.dpo_low} 天现金压力 / > ${THRESHOLDS.dpo_high} 天供应风险`,
-        `CCC > ${THRESHOLDS.ccc_high} 天进入红色预警`,
-        `AR Top1 > ${THRESHOLDS.ar_top1_red * 100}% 红 / Top10 > ${THRESHOLDS.ar_top10_yellow * 100}% 黄`,
-        `AP Top1 > ${THRESHOLDS.ap_top1_red * 100}% 红`,
+        `应收周转天数 > ${THRESHOLDS.dso_yellow} 天黄 / > ${THRESHOLDS.dso_red} 天红`,
+        `应付周转天数 < ${THRESHOLDS.dpo_low} 天现金压力 / > ${THRESHOLDS.dpo_high} 天供应风险`,
+        `现金转换周期 > ${THRESHOLDS.ccc_high} 天进入红色预警`,
+        `应收第一名 > ${THRESHOLDS.ar_top1_red * 100}% 红 / 前十名 > ${THRESHOLDS.ar_top10_yellow * 100}% 黄`,
+        `应付第一名 > ${THRESHOLDS.ap_top1_red * 100}% 红`,
         `无销售发票挂账 > ${THRESHOLDS.no_invoice_ratio_red * 100}% 红`,
         `其他应收/应付占比 > ${THRESHOLDS.other_ratio_yellow * 100}% 黄 / > ${THRESHOLDS.other_ratio_red * 100}% 红`,
-        `DIO > ${THRESHOLDS.dio_high} 天或库存激增且销量下降触发黄`
+        `存货周转天数 > ${THRESHOLDS.dio_high} 天或库存激增且销量下降触发黄`
       ];
       rules.forEach(rule=>{
         const li = document.createElement('li');
@@ -2038,15 +2043,15 @@
       const items = [
         `收入环比下滑阈值：黄 ${THRESHOLDS.sales_mom_drop_yellow * 100}% / 红 ${THRESHOLDS.sales_mom_drop_red * 100}%`,
         `扣费毛利率下滑阈值：黄 ${THRESHOLDS.gm_drop_pct_yellow}pct / 红 ${THRESHOLDS.gm_drop_pct_red}pct`,
-        `DSO 阈值：黄 ${THRESHOLDS.dso_yellow} 天 / 红 ${THRESHOLDS.dso_red} 天`,
-        `DPO 阈值：低 ${THRESHOLDS.dpo_low} 天 / 高 ${THRESHOLDS.dpo_high} 天`,
-        `CCC 阈值：${THRESHOLDS.ccc_high} 天`,
-        `AR Top1 阈值：${THRESHOLDS.ar_top1_red * 100}%`,
-        `AR Top10 阈值：${THRESHOLDS.ar_top10_yellow * 100}%`,
-        `AP Top1 阈值：${THRESHOLDS.ap_top1_red * 100}%`,
+        `应收周转天数阈值：黄 ${THRESHOLDS.dso_yellow} 天 / 红 ${THRESHOLDS.dso_red} 天`,
+        `应付周转天数阈值：低 ${THRESHOLDS.dpo_low} 天 / 高 ${THRESHOLDS.dpo_high} 天`,
+        `现金转换周期阈值：${THRESHOLDS.ccc_high} 天`,
+        `应收第一名阈值：${THRESHOLDS.ar_top1_red * 100}%`,
+        `应收前十名阈值：${THRESHOLDS.ar_top10_yellow * 100}%`,
+        `应付第一名阈值：${THRESHOLDS.ap_top1_red * 100}%`,
         `无票挂账阈值：${THRESHOLDS.no_invoice_ratio_red * 100}%`,
         `其他往来阈值：黄 ${THRESHOLDS.other_ratio_yellow * 100}% / 红 ${THRESHOLDS.other_ratio_red * 100}%`,
-        `库存阈值：DIO ${THRESHOLDS.dio_high} 天 / 库存激增 ${THRESHOLDS.inventory_jump_ratio * 100}%`
+        `库存阈值：存货周转天数 ${THRESHOLDS.dio_high} 天 / 库存激增 ${THRESHOLDS.inventory_jump_ratio * 100}%`
       ];
       items.forEach(text=>{
         const li = document.createElement('li');

@@ -955,5 +955,11 @@ tbody tr:hover{background:#fff1e8;}
   body::after{display:none;}
   .report-toolbar,.report-toc,.report-action-toolbar,.btn,.report-debug{display:none !important;}
   .report-layout{grid-template-columns:1fr;padding:0;}
-  .report-section{page-break-inside:avoid;box-shadow:none;border:1px solid #ddd;}
+  .report-grid-2,.report-grid-3{grid-template-columns:1fr;}
+  .report-section{page-break-inside:auto;break-inside:auto;box-shadow:none;border:1px solid #ddd;}
+  .table-scroll,.report-table-scroll{max-height:none;overflow:visible;border:none;}
+  .table-wrap{box-shadow:none;}
+  th{position:static;}
+  th,td{white-space:normal;word-break:break-word;}
+  .report-layout{max-width:none;margin:0;}
 }

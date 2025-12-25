@@ -565,7 +565,7 @@ function makeSegHTML(segKey){
             <div class="finance-block-hd">
               <div>
                 <div class="finance-title">开票 vs 回款</div>
-                <div class="finance-meta">AR</div>
+                <div class="finance-meta">应收</div>
               </div>
             </div>
             <div id="${segKey}_finance_ar_chart" class="plot-sm"></div>
@@ -574,7 +574,7 @@ function makeSegHTML(segKey){
             <div class="finance-block-hd">
               <div>
                 <div class="finance-title">采购发票 vs 现金付款</div>
-                <div class="finance-meta">AP</div>
+                <div class="finance-meta">应付</div>
               </div>
             </div>
             <div id="${segKey}_finance_ap_chart" class="plot-sm"></div>
@@ -584,7 +584,7 @@ function makeSegHTML(segKey){
         <div class="grid2 finance-tables">
           <div class="table-wrap finance-table">
             <div class="controls finance-controls">
-              <div class="finance-table-title">Top 客户</div>
+              <div class="finance-table-title">头部客户</div>
               <button class="btn btn-sm" data-finance-action="clear-filters" data-table="${segKey}_finance_ar_table">清空筛选</button>
               <input type="hidden" id="${segKey}_finance_ar_sort" value=""/>
               <span class="count">显示：<b id="${segKey}_finance_ar_count">0</b></span>
@@ -605,7 +605,7 @@ function makeSegHTML(segKey){
 
           <div class="table-wrap finance-table">
             <div class="controls finance-controls">
-              <div class="finance-table-title">Top 供应商</div>
+              <div class="finance-table-title">头部供应商</div>
               <button class="btn btn-sm" data-finance-action="clear-filters" data-table="${segKey}_finance_ap_table">清空筛选</button>
               <input type="hidden" id="${segKey}_finance_ap_sort" value=""/>
               <span class="count">显示：<b id="${segKey}_finance_ap_count">0</b></span>
@@ -627,7 +627,7 @@ function makeSegHTML(segKey){
 
           <div class="table-wrap finance-table">
             <div class="controls finance-controls">
-              <div class="finance-table-title">Top 其他应收</div>
+              <div class="finance-table-title">头部其他应收</div>
               <button class="btn btn-sm" data-finance-action="clear-filters" data-table="${segKey}_finance_ar_other_table">清空筛选</button>
               <input type="hidden" id="${segKey}_finance_ar_other_sort" value=""/>
               <span class="count">显示：<b id="${segKey}_finance_ar_other_count">0</b></span>
@@ -646,7 +646,7 @@ function makeSegHTML(segKey){
 
           <div class="table-wrap finance-table">
             <div class="controls finance-controls">
-              <div class="finance-table-title">Top 其他应付</div>
+              <div class="finance-table-title">头部其他应付</div>
               <button class="btn btn-sm" data-finance-action="clear-filters" data-table="${segKey}_finance_ap_other_table">清空筛选</button>
               <input type="hidden" id="${segKey}_finance_ap_other_sort" value=""/>
               <span class="count">显示：<b id="${segKey}_finance_ap_other_count">0</b></span>
@@ -717,8 +717,8 @@ function makeSegHTML(segKey){
         <div class="finance-block card finance-wc">
           <div class="finance-block-hd">
             <div>
-              <div class="finance-title">CCC / 贸易营运资本</div>
-              <div class="finance-meta">DSO / DPO / DIO / CCC</div>
+              <div class="finance-title">现金转换周期 / 贸易营运资本</div>
+              <div class="finance-meta">应收周转天数 / 应付周转天数 / 存货周转天数 / 现金转换周期</div>
             </div>
           </div>
           <div class="finance-kpis finance-kpis-compact" id="${segKey}_finance_wc_kpis"></div>
@@ -737,7 +737,7 @@ function makeSegHTML(segKey){
             <div class="card finance-subcard"><div id="${segKey}_finance_po_inbound_chart" class="plot-sm"></div></div>
             <div class="card finance-subcard">
               <div class="controls finance-controls">
-                <label class="ctl">SKU：
+                <label class="ctl">货号：
                   <select id="${segKey}_finance_po_price_sku" data-finance-action="po-price-sku" data-seg="${segKey}"></select>
                 </label>
               </div>
@@ -747,7 +747,7 @@ function makeSegHTML(segKey){
           <div class="grid2 finance-tables">
             <div class="table-wrap finance-table">
               <div class="controls finance-controls">
-                <div class="finance-table-title">Top 供应商</div>
+                <div class="finance-table-title">头部供应商</div>
                 <button class="btn btn-sm" data-finance-action="clear-filters" data-table="${segKey}_finance_po_sup_table">清空筛选</button>
                 <input type="hidden" id="${segKey}_finance_po_sup_sort" value=""/>
                 <span class="count">显示：<b id="${segKey}_finance_po_sup_count">0</b></span>
@@ -765,7 +765,7 @@ function makeSegHTML(segKey){
 
             <div class="table-wrap finance-table">
               <div class="controls finance-controls">
-                <div class="finance-table-title">SKU 价格趋势</div>
+                <div class="finance-table-title">货号价格趋势</div>
                 <button class="btn btn-sm" data-finance-action="clear-filters" data-table="${segKey}_finance_po_price_table">清空筛选</button>
                 <input type="hidden" id="${segKey}_finance_po_price_sort" value=""/>
                 <span class="count">显示：<b id="${segKey}_finance_po_price_count">0</b></span>
@@ -773,7 +773,7 @@ function makeSegHTML(segKey){
               <div class="table-scroll" style="max-height:320px;">
                 <table id="${segKey}_finance_po_price_table" data-finance-table="po_price">
                   <thead><tr>
-                    <th>SKU</th>
+                    <th>货号</th>
                     <th>产品</th>
                     <th>月份数</th>
                     <th>最新均价</th>
@@ -858,7 +858,7 @@ function makeTableShell(segKey,type){
           <tbody></tbody>
         </table>
       </div>
-      <div class="hint">Top榜默认按“毛利_扣销售费”排序。</div>
+      <div class="hint">排行默认按“毛利_扣销售费”排序。</div>
     </div>`;
   }
   if(type==='customer'){
@@ -1096,7 +1096,7 @@ function updateBpEntry(){
   entry.classList.add('show');
   if(link){
     link.href = path;
-    link.textContent = BP_META.title ? BP_META.title : '财务BP报告';
+    link.textContent = BP_META.title ? BP_META.title : '财务预算报告';
     if(BP_META.title) link.title = BP_META.title;
   }
   if(highlights){
@@ -1473,9 +1473,9 @@ function computeGrowthInsights(segKey,startDate,endDate){
   const c=topDelta(custMap,3).map(x=>`${x.k}（+${fmtWan(x.d)}）`).join('；') || '—';
   const frag = document.createDocumentFragment();
   const lines = [
-    {index:1, title:'品类毛利增量Top', text:a},
-    {index:2, title:'产品毛利增量Top', text:b},
-    {index:3, title:'客户毛利增量Top', text:c}
+    {index:1, title:'品类毛利增量前列', text:a},
+    {index:2, title:'产品毛利增量前列', text:b},
+    {index:3, title:'客户毛利增量前列', text:c}
   ];
   lines.forEach(line=>{
     const div = document.createElement('div');
@@ -1526,7 +1526,7 @@ function computeStructureHints(segKey,startDate,endDate){
   const frag = document.createDocumentFragment();
   const header = document.createElement('div');
   const headerStrong = document.createElement('b');
-  headerStrong.textContent = '毛利贡献Top品类';
+  headerStrong.textContent = '毛利贡献头部品类';
   header.appendChild(headerStrong);
   frag.appendChild(header);
   const listWrap = document.createElement('div');

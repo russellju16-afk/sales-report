@@ -248,7 +248,7 @@
 
     const series = [];
     if(hasSeriesData(purchases)) series.push({ name:'入库', type:'bar', data: purchases, barMaxWidth:36 });
-    if(hasSeriesData(cogs)) series.push({ name:'COGS', type:'bar', data: cogs, barMaxWidth:36 });
+    if(hasSeriesData(cogs)) series.push({ name:'销售成本', type:'bar', data: cogs, barMaxWidth:36 });
     if(hasSeriesData(ending)) series.push({ name:'期末库存', type:'line', data: ending, smooth:true });
 
     if(!months.length || series.length === 0){
@@ -594,7 +594,7 @@
     finalList.forEach(x=>{
       const sku = x.item && x.item.sku ? String(x.item.sku) : '';
       const name = x.item && x.item.product ? String(x.item.product) : '';
-      const label = sku && name ? `${sku}｜${name}` : (sku || name || `SKU ${x.idx + 1}`);
+      const label = sku && name ? `${sku}｜${name}` : (sku || name || `货号 ${x.idx + 1}`);
       const opt = document.createElement('option');
       opt.value = String(x.idx);
       opt.textContent = label;
@@ -605,7 +605,7 @@
     if(select.options.length === 0){
       const opt = document.createElement('option');
       opt.value = '';
-      opt.textContent = '暂无 SKU';
+      opt.textContent = '暂无货号';
       select.appendChild(opt);
       select.value = '';
       return { item: null };
@@ -667,7 +667,7 @@
     if(title) btn.title = title;
     if(url){
       btn.href = url;
-      btn.textContent = '打开 BP 报告';
+      btn.textContent = '打开预算报告';
       btn.classList.remove('disabled');
       btn.setAttribute('aria-disabled','false');
     }else{
@@ -872,17 +872,17 @@
     renderKpiCards(segKey + '_finance_inventory_kpis', [
       { label:'期末库存', value: fmtWanSafe(invKpi.inventory_end) },
       { label:'日均库存', value: fmtWanSafe(invKpi.inventory_avg) },
-      { label:'DIO(天)', value: fmtDays(invKpi.dio_days_est) },
-      { label:'期间 COGS', value: fmtWanSafe(invKpi.period_cogs) }
+      { label:'存货周转天数(天)', value: fmtDays(invKpi.dio_days_est) },
+      { label:'期间销售成本', value: fmtWanSafe(invKpi.period_cogs) }
     ]);
     renderInventoryChart(segKey, inventory, currency);
 
     const wcKpi = wc && wc.kpi ? wc.kpi : {};
     renderKpiCards(segKey + '_finance_wc_kpis', [
-      { label:'DSO(天)', value: fmtDays(wcKpi.dso_days_est) },
-      { label:'DPO(天)', value: fmtDays(wcKpi.dpo_days_est) },
-      { label:'DIO(天)', value: fmtDays(wcKpi.dio_days_est) },
-      { label:'CCC(天)', value: fmtDays(wcKpi.ccc_days_est) },
+      { label:'应收周转天数(天)', value: fmtDays(wcKpi.dso_days_est) },
+      { label:'应付周转天数(天)', value: fmtDays(wcKpi.dpo_days_est) },
+      { label:'存货周转天数(天)', value: fmtDays(wcKpi.dio_days_est) },
+      { label:'现金转换周期(天)', value: fmtDays(wcKpi.ccc_days_est) },
       { label:'贸易营运资本', value: fmtWanSafe(wcKpi.trade_working_capital) }
     ]);
 
@@ -903,8 +903,8 @@
     const poKpi = po && po.kpi ? po.kpi : {};
     renderKpiCards(segKey + '_finance_po_kpis', [
       { label:'期间入库金额', value: fmtWanSafe(poKpi.period_inbound_amount) },
-      { label:'Top1 供应商占比', value: fmtPctSafe(poKpi.top1_supplier_ratio) },
-      { label:'Top2 供应商占比', value: fmtPctSafe(poKpi.top2_supplier_ratio) }
+      { label:'第一名供应商占比', value: fmtPctSafe(poKpi.top1_supplier_ratio) },
+      { label:'第二名供应商占比', value: fmtPctSafe(poKpi.top2_supplier_ratio) }
     ]);
 
     renderPoInboundChart(segKey, po, currency);
