@@ -214,6 +214,7 @@ function _ensureOrderModalHandlers(){
 }
 
 function showOrderModal(title, orders){
+  if(openDetailPanel(title, orders)) return;
   const modal=document.getElementById('order_modal');
   if(!modal) return;
   _orderModalTitle = title || '订单明细';
@@ -226,6 +227,38 @@ function showOrderModal(title, orders){
   modal.setAttribute('aria-hidden','false');
   _ensureOrderModalHandlers();
   if(input) setTimeout(()=>{ try{input.focus();}catch(e){} }, 60);
+}
+
+function openDetailPanel(title, orders){
+  const panel = document.getElementById('explorer_detail_panel');
+  const body = document.getElementById('detail_body');
+  const titleEl = document.getElementById('detail_title');
+  if(!panel || !body) return false;
+  if(titleEl) titleEl.textContent = title || '明细详情';
+  body.innerHTML = '';
+  const list = document.createElement('div');
+  list.className = 'order-grid';
+  const data = (orders || []).slice();
+  if(!data.length){
+    body.textContent = '暂无明细';
+  }else{
+    data.slice(0, 200).forEach((o)=>{
+      const pill = document.createElement('button');
+      pill.type = 'button';
+      pill.className = 'order-pill';
+      pill.textContent = String(o);
+      pill.addEventListener('click', ()=>{
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(String(o)).then(()=>_flashToast('已复制：' + o)).catch(()=>{});
+        }
+      });
+      list.appendChild(pill);
+    });
+    body.appendChild(list);
+  }
+  panel.classList.remove('hidden');
+  panel.setAttribute('aria-hidden','false');
+  return true;
 }
 
 function closeOrderModal(){

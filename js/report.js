@@ -586,7 +586,31 @@
       sparkEl.id = item.spark.id;
       card.appendChild(sparkEl);
     }
+    if(item.evidenceLink){
+      const linkWrap = document.createElement('div');
+      linkWrap.className = 'conclusion-link';
+      linkWrap.appendChild(item.evidenceLink);
+      card.appendChild(linkWrap);
+    }
     return card;
+  }
+
+  function buildKpiEvidence(item, seg){
+    const label = item && item.label ? item.label : '';
+    const base = { seg: seg || 'total' };
+    if(label.indexOf('现金') !== -1 || label.indexOf('流入') !== -1 || label.indexOf('流出') !== -1){
+      return Object.assign({ tab:'finance', tableId: (seg || 'total') + '_finance_bank_txn_table' }, base);
+    }
+    if(label.indexOf('应收') !== -1){
+      return Object.assign({ tab:'finance', tableId: (seg || 'total') + '_finance_ar_table' }, base);
+    }
+    if(label.indexOf('应付') !== -1){
+      return Object.assign({ tab:'finance', tableId: (seg || 'total') + '_finance_ap_table' }, base);
+    }
+    if(label.indexOf('库存') !== -1){
+      return Object.assign({ tab:'finance', tableId: (seg || 'total') + '_finance_bank_type_table' }, base);
+    }
+    return Object.assign({ tab:'category', tableId: (seg || 'total') + '_category_table' }, base);
   }
 
   function renderKpis(containerId, items, onDetail){
@@ -776,35 +800,62 @@
   function buildDrilldownLink(opts){
     const seg = opts && opts.seg ? opts.seg : 'total';
     const tab = opts && opts.tab ? opts.tab : 'overview';
-    const state = { seg:seg, tabs:{} };
-    state.tabs[seg] = tab;
+    const state = {
+      v: 3,
+      route: 'explorer',
+      segment: seg,
+      date_range: { start: '', end: '' },
+      filters: opts && opts.filters ? Object.assign({}, opts.filters) : {},
+      ui: {
+        explorer_tabs: {},
+        explorer_subtabs: {},
+        explorer_header_filters: {},
+        explorer_anchor: opts && opts.anchor ? opts.anchor : ''
+      }
+    };
+    state.ui.explorer_tabs[seg] = tab;
     if(opts && opts.subtab){
-      state.subtabs = state.subtabs || {};
-      state.subtabs[seg] = opts.subtab;
+      state.ui.explorer_subtabs[seg] = opts.subtab;
     }
     if(opts && opts.tableId && opts.filterFirstColValue !== undefined && opts.filterFirstColValue !== null && String(opts.filterFirstColValue).trim() !== ''){
-      state.headerFilters = {};
-      state.headerFilters[opts.tableId] = padFilterValues([String(opts.filterFirstColValue)], 6);
+      state.ui.explorer_header_filters[opts.tableId] = padFilterValues([String(opts.filterFirstColValue)], 6);
     }
-    if(opts && opts.filters){
-      state.filters = opts.filters;
-    }
-    let url = './dashboard.html?state=' + encodeURIComponent(JSON.stringify(state));
-    if(opts && opts.anchor){
-      const anchor = String(opts.anchor).startsWith('#') ? String(opts.anchor) : ('#' + opts.anchor);
-      url += anchor;
-    }
+    const url = './index.html#/explorer?state=' + encodeURIComponent(JSON.stringify(state));
     return url;
   }
 
   function buildEvidenceLink(opts, label){
     const a = document.createElement('a');
+    const payload = Object.assign({}, opts || {});
+    payload.title = label || '查看证据';
     a.href = buildDrilldownLink(opts || {});
     a.textContent = label || '查看证据';
-    a.target = '_blank';
-    a.rel = 'noopener';
-    a.className = 'report-link';
+    a.className = 'report-link evidence-link';
+    a.dataset.evidence = JSON.stringify(payload);
     return a;
+  }
+
+  function guessBpAnchor(item){
+    const text = [
+      item && item.domain ? item.domain : '',
+      item && item.title ? item.title : '',
+      item && item.signal ? item.signal : '',
+      item && item.evidence ? item.evidence : ''
+    ].join(' ');
+    if(text.indexOf('现金') !== -1 || text.indexOf('银行') !== -1) return 'bp_cashflow';
+    if(text.indexOf('库存') !== -1) return 'bp_inventory';
+    if(text.indexOf('应收') !== -1) return 'bp_ar';
+    if(text.indexOf('应付') !== -1) return 'bp_ap';
+    return 'bp_overview';
+  }
+
+  function buildBpJump(anchor){
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-sm';
+    btn.textContent = '定位BP';
+    btn.dataset.bpTarget = anchor || 'bp_overview';
+    return btn;
   }
 
   function fmtScore(val){
@@ -1209,12 +1260,13 @@
       card.appendChild(title);
       card.appendChild(evidence);
       card.appendChild(action);
+      const linkWrap = document.createElement('div');
+      linkWrap.className = 'conclusion-link';
       if(item.link){
-        const linkWrap = document.createElement('div');
-        linkWrap.className = 'conclusion-link';
         linkWrap.appendChild(item.link);
-        card.appendChild(linkWrap);
       }
+      linkWrap.appendChild(buildBpJump(item.bp_anchor || guessBpAnchor(item)));
+      card.appendChild(linkWrap);
       frag.appendChild(card);
     });
     el.replaceChildren(frag);
@@ -1317,6 +1369,7 @@
       });
       const tdLink = document.createElement('td');
       if(a.link) tdLink.appendChild(a.link.cloneNode(true));
+      tdLink.appendChild(buildBpJump(guessBpAnchor(a)));
       tr.appendChild(tdLink);
       tbody.appendChild(tr);
     });
@@ -3049,6 +3102,9 @@
       { label:'期末净应付', value: fmtWan(apKpi.ending_net_ap), spark:{ id:'kpi_spark_netap', data:(finance.ap && finance.ap.trend && finance.ap.trend.purchases_invoiced) || [] }, detail:{ rows:[{ label:'采购应付余额', value: fmtWan(apKpi.ending_purchase_ap) }, { label:'其他应付余额', value: fmtWan(apKpi.ending_other_ap) }, { label:'预付余额', value: fmtWan(apKpi.ending_prepay) }], series:{ label:'月度采购发票', months: apMonths, values:(finance.ap && finance.ap.trend && finance.ap.trend.purchases_invoiced) || [], formatter: fmtWan } } },
       { label:'期末库存', value: fmtWan(invKpi.inventory_end), spark:{ id:'kpi_spark_inv', data:invTrend.ending_inventory || [] }, detail:{ rows:[{ label:'期初库存', value: fmtWan(invKpi.inventory_start) }, { label:'日均库存', value: fmtWan(invKpi.inventory_avg) }, { label:'期间入库', value: fmtWan(invKpi.period_purchases_in) }, { label:'期间销售成本', value: fmtWan(invKpi.period_cogs) }], series:{ label:'月度期末库存', months: invMonths, values: invTrend.ending_inventory || [], formatter: fmtWan } } }
     ];
+    execKpiItems.forEach(item=>{
+      item.evidenceLink = buildEvidenceLink(buildKpiEvidence(item, 'total'), '查看证据');
+    });
     bindKpiDetailModal();
     renderKpis('exec_kpis', execKpiItems, openKpiDetail);
 
@@ -4125,6 +4181,10 @@
       }))
     };
 
+    window.__REPORT_SNAPSHOT__ = snapshot;
+    window.__REPORT_ACTIONS__ = actions;
+    window.__REPORT_WARNINGS__ = warnings;
+
     bindExports(actions, warnings, periodEnd, snapshot);
   }
 
@@ -4255,26 +4315,24 @@
     setErrorState(false, '');
     setLoadingState(true, '正在拉取经营数据 / 财务数据 / 预测数据');
     try{
-      const results = await Promise.allSettled([
-        fetch(getDataUrl(), { cache:'no-store' }),
-        fetch(getFinanceUrl(), { cache:'no-store' }),
-        fetch(getForecastUrl(), { cache:'no-store' })
-      ]);
+      const loader = window.DataLoader;
+      const dataPromise = loader
+        ? loader.fetchJsonCached('sales', getDataUrl(), parseJsonWithNaN)
+        : fetch(getDataUrl(), { cache:'no-store' }).then(r=>r.text()).then(parseJsonWithNaN);
+      const financePromise = loader
+        ? loader.fetchJsonCached('finance', getFinanceUrl(), parseJsonWithNaN)
+        : fetch(getFinanceUrl(), { cache:'no-store' }).then(r=>r.text()).then(parseJsonWithNaN);
+      const forecastPromise = loader
+        ? loader.fetchJsonCached('forecast', getForecastUrl(), parseJsonWithNaN)
+        : fetch(getForecastUrl(), { cache:'no-store' }).then(r=>r.text()).then(parseJsonWithNaN);
 
-      const dataResp = results[0].status === 'fulfilled' ? results[0].value : null;
-      const financeResp = results[1].status === 'fulfilled' ? results[1].value : null;
-      const forecastResp = results[2].status === 'fulfilled' ? results[2].value : null;
+      const results = await Promise.allSettled([dataPromise, financePromise, forecastPromise]);
+      if(results[0].status !== 'fulfilled') throw new Error('销售数据文件加载失败');
+      if(results[1].status !== 'fulfilled') throw new Error('财务数据文件加载失败');
 
-      if(!dataResp || !dataResp.ok) throw new Error('销售数据文件加载失败：状态码 ' + (dataResp ? dataResp.status : '加载失败'));
-      if(!financeResp || !financeResp.ok) throw new Error('财务数据文件加载失败：状态码 ' + (financeResp ? financeResp.status : '加载失败'));
-      if(!forecastResp || !forecastResp.ok) throw new Error('预测数据文件加载失败：状态码 ' + (forecastResp ? forecastResp.status : '加载失败'));
-
-      const dataText = await dataResp.text();
-      const financeText = await financeResp.text();
-      const data = parseJsonWithNaN(dataText);
-      const finance = parseJsonWithNaN(financeText);
-      const forecastText = await forecastResp.text();
-      const forecast = parseJsonWithNaN(forecastText);
+      const data = results[0].value;
+      const finance = results[1].value;
+      const forecast = results[2].status === 'fulfilled' ? results[2].value : null;
 
       await waitForEcharts(1200);
       renderReport(data, finance, forecast);
@@ -4283,8 +4341,8 @@
         loadMs: ((window.performance && performance.now) ? performance.now() : Date.now()) - startAt,
         dataOk: true,
         financeOk: true,
-        forecastOk: true,
-        missingFields: collectMissingFields(data, finance, forecast)
+        forecastOk: !!forecast,
+        missingFields: collectMissingFields(data, finance, forecast || {})
       });
     }catch(err){
       setLoadingState(false, '');

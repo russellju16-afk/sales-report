@@ -18,7 +18,7 @@
   function setOption(id, option){
     const chart = getChart(id);
     if(!chart) return;
-    chart.setOption(option, true);
+    chart.setOption(option, { notMerge: true, lazyUpdate: true });
   }
 
   function setEmpty(id, message){

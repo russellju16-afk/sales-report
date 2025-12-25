@@ -728,10 +728,10 @@
 
   async function resolveBpLink(bp){
     const primary = bp && bp.latest_path ? String(bp.latest_path).trim() : '';
-    const fallback = './reports/bp_latest.html';
+    const fallback = './index.html#/bp';
     const candidates = [];
-    if(primary) candidates.push(primary);
     candidates.push(fallback);
+    if(primary) candidates.push(primary);
 
     for(const url of candidates){
       const ok = await canFetch(url);

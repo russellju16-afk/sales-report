@@ -73,6 +73,9 @@ function parseJsonWithNaN(text){
 
 async function loadData(){
   const url = getDataUrl();
+  if(window.DataLoader){
+    return DataLoader.fetchJsonCached('sales', url, JSON.parse);
+  }
   const resp = await fetch(url, { cache: 'no-store' });
   if(!resp.ok) throw new Error('销售数据文件加载失败: HTTP ' + resp.status);
   return resp.json();
@@ -80,6 +83,9 @@ async function loadData(){
 
 async function loadFinanceData(){
   const url = getFinanceUrl();
+  if(window.DataLoader){
+    return DataLoader.fetchJsonCached('finance', url, parseJsonWithNaN);
+  }
   const resp = await fetch(url, { cache: 'no-store' });
   if(!resp.ok) throw new Error('财务数据文件加载失败: HTTP ' + resp.status);
   const text = await resp.text();
@@ -88,6 +94,9 @@ async function loadFinanceData(){
 
 async function loadForecastData(){
   const url = getForecastUrl();
+  if(window.DataLoader){
+    return DataLoader.fetchJsonCached('forecast', url, parseJsonWithNaN);
+  }
   const resp = await fetch(url, { cache: 'no-store' });
   if(!resp.ok) throw new Error('预测数据文件加载失败: HTTP ' + resp.status);
   const text = await resp.text();
@@ -358,6 +367,7 @@ const tabState={};
 window.tabState = tabState;
 window.currentSeg = currentSeg;
 const sortState={};
+const TABLE_PAGE_STATE = {};
 const TABLE_RANGE={};
 const FORECAST_STATE = {
   view: 'forecast_ar',
@@ -3101,12 +3111,74 @@ function filterTable(segKey,type){
     if(table){
       syncBaseDisplay(table);
       applyHeaderFiltersForTable(table);
+      applyPagination(table, segKey, type);
     }
   }catch(e){}
 
   if(type==='abnormal'){
     return;
   }
+}
+
+function getTablePageSize(){
+  if(window.StateManager && StateManager.state && StateManager.state.ui && StateManager.state.ui.page_size){
+    const size = Number(StateManager.state.ui.page_size);
+    if(isFinite(size) && size > 0) return size;
+  }
+  return 80;
+}
+
+function applyPagination(table, segKey, type){
+  if(!table || !segKey || !type) return;
+  const key = segKey + '_' + type;
+  const pageSize = getTablePageSize();
+  const rows = Array.from(table.querySelectorAll('tbody tr')).filter((tr)=>tr.style.display !== 'none');
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const current = Math.min(TABLE_PAGE_STATE[key] || 1, totalPages);
+  TABLE_PAGE_STATE[key] = current;
+  const start = (current - 1) * pageSize;
+  const end = start + pageSize;
+  rows.forEach((row, idx)=>{
+    row.style.display = (idx >= start && idx < end) ? '' : 'none';
+  });
+
+  const wrap = table.closest('.table-wrap') || table.parentNode;
+  if(!wrap) return;
+  let pager = wrap.querySelector('.table-pagination[data-key=\"' + key + '\"]');
+  if(!pager){
+    pager = document.createElement('div');
+    pager.className = 'table-pagination';
+    pager.dataset.key = key;
+    wrap.appendChild(pager);
+  }
+  if(rows.length <= pageSize){
+    pager.style.display = 'none';
+    return;
+  }
+  pager.style.display = 'flex';
+  pager.innerHTML = '';
+  const prev = document.createElement('button');
+  prev.className = 'btn btn-sm';
+  prev.textContent = '上一页';
+  prev.disabled = current <= 1;
+  prev.addEventListener('click', ()=>{
+    TABLE_PAGE_STATE[key] = Math.max(1, current - 1);
+    filterTable(segKey, type);
+  });
+  const next = document.createElement('button');
+  next.className = 'btn btn-sm';
+  next.textContent = '下一页';
+  next.disabled = current >= totalPages;
+  next.addEventListener('click', ()=>{
+    TABLE_PAGE_STATE[key] = Math.min(totalPages, current + 1);
+    filterTable(segKey, type);
+  });
+  const label = document.createElement('span');
+  label.className = 'table-page-label';
+  label.textContent = '第 ' + current + '/' + totalPages + ' 页，共 ' + rows.length + ' 条';
+  pager.appendChild(prev);
+  pager.appendChild(next);
+  pager.appendChild(label);
 }
 
 function resetTable(segKey,type){

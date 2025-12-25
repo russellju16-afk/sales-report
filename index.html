@@ -6,7 +6,7 @@
 <title>经营分析&财务分析总报告</title>
 <link rel="stylesheet" href="./styles.css"/>
 </head>
-<body class="report-body">
+<body class="report-body" data-route="report">
 <div id="loading_state" class="state">
   <div class="state-card">
     <div class="state-spinner"></div>
@@ -35,10 +35,10 @@
   <ul class="report-debug-list" id="debug_missing_list"></ul>
 </div>
 
-<div class="report-toolbar" id="report_toolbar">
-  <div class="report-toolbar-main">
-    <div class="report-title">经营分析&财务分析总报告</div>
-    <div class="report-meta">
+<div class="command-bar" id="command_bar">
+  <div class="command-main">
+    <div class="command-title">CFO 经营分析系统</div>
+    <div class="command-meta">
       期间：<b id="meta_period">—</b>
       <span class="report-sep">｜</span>
       生成时间：<b id="meta_generated">—</b>
@@ -46,38 +46,70 @@
       币种：<b id="meta_currency">—</b>
     </div>
   </div>
-  <div class="report-toolbar-actions">
-    <a class="btn" href="./dashboard.html">打开看板</a>
-    <a class="btn" href="./reports/bp_latest.html" target="_blank" rel="noopener">打开预算报告</a>
-    <button class="btn" id="export_snapshot_btn">下载本期摘要数据</button>
-    <button class="btn" id="print_btn">打印</button>
-    <button class="btn" id="export_actions_btn">导出动作清单</button>
-    <button class="btn" id="export_warnings_btn">导出预警清单</button>
-    <a class="btn" href="https://github.com/russellju16-afk/sales-report" target="_blank" rel="noopener">打开仓库/反馈</a>
+  <div class="command-tools">
+    <div class="command-search">
+      <input id="global_search" type="search" placeholder="搜索结论 / 风险 / BP…" />
+      <button class="btn btn-sm" id="search_btn">搜索</button>
+    </div>
+    <div class="command-actions">
+      <div class="route-switch">
+        <button class="btn btn-sm route-btn" data-route="report">Report</button>
+        <button class="btn btn-sm route-btn" data-route="diagnose">Diagnose</button>
+        <button class="btn btn-sm route-btn" data-route="explorer">Explorer</button>
+        <button class="btn btn-sm route-btn" data-route="bp">BP</button>
+      </div>
+      <select id="quick_jump" class="btn btn-sm">
+        <option value="">快速跳转…</option>
+      </select>
+      <button class="btn" id="export_center_btn">导出中心</button>
+      <button class="btn" id="print_btn">打印摘要</button>
+      <button class="btn btn-ghost" id="print_bp_btn">打印 BP</button>
+      <button class="btn btn-ghost" id="drawer_toggle_btn">证据抽屉</button>
+    </div>
   </div>
 </div>
 
-<div class="report-layout">
-  <aside class="report-toc" id="report_toc">
+<div class="report-layout app-shell">
+  <aside class="report-toc app-toc" id="global_toc">
     <div class="toc-title">目录</div>
-    <a href="#sec-0">0 口径&数据范围&对账声明</a>
-    <a href="#sec-1">1 经营摘要</a>
-    <a href="#sec-2">2 收入与毛利</a>
-    <a href="#sec-3">3 现金流与收付匹配</a>
-    <a href="#sec-forecast">3A 预测与压力测试</a>
-    <a href="#sec-risk">3B 风险中枢</a>
-    <a href="#sec-4">4 经营性应收</a>
-    <a href="#sec-5">5 其他应收（专项清理）</a>
-    <a href="#sec-6">6 经营性应付</a>
-    <a href="#sec-7">7 其他应付（专项清理）</a>
-    <a href="#sec-8">8 库存与周转</a>
-    <a href="#sec-9">9 采购与价格</a>
-    <a href="#sec-10">10 风险预警中心</a>
-    <a href="#sec-11">11 动作清单</a>
+    <div class="toc-routes">
+      <button class="toc-route" data-route="report">经营会首页</button>
+      <button class="toc-route" data-route="diagnose">经营诊断</button>
+      <button class="toc-route" data-route="explorer">明细探索</button>
+      <button class="toc-route" data-route="bp">BP 报告</button>
+    </div>
+    <div class="toc-group" data-route="report">
+      <div class="toc-group-title">Report Home</div>
+      <a href="#sec-1" data-route="report" data-anchor="sec-1">Executive Summary</a>
+      <a href="#sec-risk" data-route="report" data-anchor="sec-risk">Risk Center</a>
+      <a href="#sec-10" data-route="report" data-anchor="sec-10">预警中心</a>
+      <a href="#sec-11" data-route="report" data-anchor="sec-11">Action Tracker</a>
+    </div>
+    <div class="toc-group" data-route="diagnose">
+      <div class="toc-group-title">Diagnose</div>
+      <a href="#sec-2" data-route="diagnose" data-anchor="sec-2">收入与毛利</a>
+      <a href="#sec-3" data-route="diagnose" data-anchor="sec-3">现金流与收付</a>
+      <a href="#sec-forecast" data-route="diagnose" data-anchor="sec-forecast">预测与压力</a>
+      <a href="#sec-4" data-route="diagnose" data-anchor="sec-4">经营性应收</a>
+      <a href="#sec-6" data-route="diagnose" data-anchor="sec-6">经营性应付</a>
+      <a href="#sec-8" data-route="diagnose" data-anchor="sec-8">库存与周转</a>
+      <a href="#sec-9" data-route="diagnose" data-anchor="sec-9">采购与价格</a>
+    </div>
+    <div class="toc-group" data-route="explorer">
+      <div class="toc-group-title">Explorer</div>
+      <a href="#explorer_root" data-route="explorer" data-anchor="explorer_root">总览</a>
+      <a href="#explorer_sales" data-route="explorer" data-anchor="explorer_sales">Sales Explorer</a>
+      <a href="#explorer_finance" data-route="explorer" data-anchor="explorer_finance">Finance Explorer</a>
+      <a href="#explorer_forecast" data-route="explorer" data-anchor="explorer_forecast">Forecast Explorer</a>
+    </div>
+    <div class="toc-group" data-route="bp">
+      <div class="toc-group-title">BP</div>
+      <div class="toc-sub" id="bp_toc_global">加载中…</div>
+    </div>
   </aside>
 
-  <main class="report-main">
-    <section id="sec-0" class="report-section">
+  <main class="report-main app-main" id="app_main">
+    <section id="sec-0" class="report-section" data-route="report">
       <div class="section-head">
         <h2>0 口径&数据范围&对账声明</h2>
         <div class="section-meta" id="sec0_meta"></div>
@@ -152,7 +184,7 @@
       <div class="report-conclusion-grid" id="sec0_conclusions"></div>
     </section>
 
-    <section id="sec-1" class="report-section">
+    <section id="sec-1" class="report-section" data-route="report">
       <div class="section-head">
         <h2>1 经营摘要</h2>
         <div class="section-meta">16~20 个关键指标 + 预警灯 + 本期5条关键结论</div>
@@ -207,7 +239,7 @@
       <div class="report-conclusion-grid" id="exec_conclusions"></div>
     </section>
 
-    <section id="sec-2" class="report-section">
+    <section id="sec-2" class="report-section" data-route="diagnose">
       <div class="section-head">
         <h2>2 收入与毛利</h2>
         <div class="section-meta">趋势 / 结构 / 异常订单</div>
@@ -273,7 +305,7 @@
       <div class="report-conclusion-grid" id="sec2_conclusions"></div>
     </section>
 
-    <section id="sec-3" class="report-section">
+    <section id="sec-3" class="report-section" data-route="diagnose">
       <div class="section-head">
         <h2>3 现金流与收付匹配</h2>
         <div class="section-meta">银行维度 / 对账差异</div>
@@ -309,7 +341,7 @@
       <div class="report-conclusion-grid" id="sec3_conclusions"></div>
     </section>
 
-    <section id="sec-forecast" class="report-section">
+    <section id="sec-forecast" class="report-section" data-route="diagnose">
       <div class="section-head">
         <h2>3A 预测与压力测试</h2>
         <div class="section-meta">未来30天现金流 / 策略可调参</div>
@@ -488,7 +520,7 @@
       </div>
     </section>
 
-    <section id="sec-risk" class="report-section">
+    <section id="sec-risk" class="report-section" data-route="report">
       <div class="section-head">
         <h2>3B 风险中枢</h2>
         <div class="section-meta">现金流风险评分 / 异常检测</div>
@@ -580,7 +612,7 @@
     </section>
 
 
-    <section id="sec-4" class="report-section">
+    <section id="sec-4" class="report-section" data-route="diagnose">
       <div class="section-head">
         <h2>4 经营性应收</h2>
         <div class="section-meta">应收周转天数 / 集中度 / 停滞</div>
@@ -611,7 +643,7 @@
       <div class="report-conclusion-grid" id="sec4_conclusions"></div>
     </section>
 
-    <section id="sec-5" class="report-section">
+    <section id="sec-5" class="report-section" data-route="diagnose">
       <div class="section-head">
         <h2>5 其他应收（专项清理）</h2>
         <div class="section-meta">单列专项，不参与应收周转天数</div>
@@ -645,7 +677,7 @@
       <div class="report-conclusion-grid" id="sec5_conclusions"></div>
     </section>
 
-    <section id="sec-6" class="report-section">
+    <section id="sec-6" class="report-section" data-route="diagnose">
       <div class="section-head">
         <h2>6 经营性应付</h2>
         <div class="section-meta">应付周转天数 / 集中度 / 停滞</div>
@@ -676,7 +708,7 @@
       <div class="report-conclusion-grid" id="sec6_conclusions"></div>
     </section>
 
-    <section id="sec-7" class="report-section">
+    <section id="sec-7" class="report-section" data-route="diagnose">
       <div class="section-head">
         <h2>7 其他应付（专项清理）</h2>
         <div class="section-meta">单列专项，不参与应付周转天数</div>
@@ -710,7 +742,7 @@
       <div class="report-conclusion-grid" id="sec7_conclusions"></div>
     </section>
 
-    <section id="sec-8" class="report-section">
+    <section id="sec-8" class="report-section" data-route="diagnose">
       <div class="section-head">
         <h2>8 库存与周转</h2>
         <div class="section-meta">存货周转天数 / 结构 / 滞销</div>
@@ -737,7 +769,7 @@
       <div class="report-conclusion-grid" id="sec8_conclusions"></div>
     </section>
 
-    <section id="sec-9" class="report-section">
+    <section id="sec-9" class="report-section" data-route="diagnose">
       <div class="section-head">
         <h2>9 采购与价格</h2>
         <div class="section-meta">采购单 / 成本趋势</div>
@@ -769,7 +801,7 @@
       <div class="report-conclusion-grid" id="sec9_conclusions"></div>
     </section>
 
-    <section id="sec-10" class="report-section">
+    <section id="sec-10" class="report-section" data-route="report">
       <div class="section-head">
         <h2>10 风险预警中心</h2>
         <div class="section-meta">规则引擎 + 诊断树</div>
@@ -830,7 +862,7 @@
       <div class="report-conclusion-grid" id="sec10_conclusions"></div>
     </section>
 
-    <section id="sec-11" class="report-section">
+    <section id="sec-11" class="report-section" data-route="report">
       <div class="section-head">
         <h2>11 动作清单</h2>
         <div class="section-meta">动作跟踪（自动汇总）</div>
@@ -871,10 +903,182 @@
       </div>
       <div class="report-conclusion-grid" id="sec11_conclusions"></div>
     </section>
+
+    <section id="route_explorer" class="report-section route-section" data-route="explorer">
+      <div class="section-head">
+        <h2>Dashboard Explorer</h2>
+        <div class="section-meta">Sales / Finance / Forecast 明细同页探索与证据联动</div>
+      </div>
+      <div id="explorer_root" class="explorer-shell">
+        <div class="explorer-bar">
+          <div>
+            <div class="title">经营分析 Explorer</div>
+            <div class="subtitle">
+              数据范围：<b id="data_range">—</b>。版本：<b id="page_version">—</b>。
+              <div class="explorer-note">提示：全局筛选影响图表与汇总；表内筛选仅影响当前表。</div>
+              <div id="data_status"></div>
+            </div>
+          </div>
+          <div class="explorer-actions">
+            <button class="btn btn-sm" id="explorer_reset_btn">重置筛选</button>
+            <button class="btn btn-sm" id="explorer_copy_link_btn">复制当前视图链接</button>
+          </div>
+        </div>
+        <div class="explorer-filters controls">
+          <label class="ctl">分部
+            <select id="explorer_segment">
+              <option value="total">全部</option>
+              <option value="store">门店</option>
+              <option value="nonstore">非门店</option>
+            </select>
+          </label>
+          <label class="ctl">开始日
+            <input id="explorer_date_start" type="date" />
+          </label>
+          <label class="ctl">结束日
+            <input id="explorer_date_end" type="date" />
+          </label>
+          <label class="ctl">客户
+            <input id="explorer_filter_customer" type="text" placeholder="客户名/编码" />
+          </label>
+          <label class="ctl">供应商
+            <input id="explorer_filter_vendor" type="text" placeholder="供应商" />
+          </label>
+          <label class="ctl">SKU
+            <input id="explorer_filter_sku" type="text" placeholder="SKU/货号" />
+          </label>
+          <label class="ctl">品类
+            <input id="explorer_filter_category" type="text" placeholder="品类" />
+          </label>
+          <label class="ctl">毛利口径
+            <select id="explorer_filter_margin">
+              <option value="WAC">WAC</option>
+              <option value="LPP_PERIOD_END">期末价</option>
+              <option value="LPP_ASOF_SALE">销售时点</option>
+            </select>
+          </label>
+          <label class="ctl">情景
+            <select id="explorer_filter_scenario">
+              <option value="BASE">BASE</option>
+              <option value="S1">S1</option>
+              <option value="S2">S2</option>
+              <option value="S3">S3</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="explorer-anchors">
+          <div id="explorer_sales"></div>
+          <div id="explorer_finance"></div>
+          <div id="explorer_forecast"></div>
+        </div>
+
+        <div class="seg-switch">
+          <button class="segbtn active" data-seg="total">全部</button>
+          <button class="segbtn" data-seg="store">超群门店</button>
+          <button class="segbtn" data-seg="nonstore">非超群门店</button>
+        </div>
+
+        <div class="seg active" id="seg_total"></div>
+        <div class="seg" id="seg_store"></div>
+        <div class="seg" id="seg_nonstore"></div>
+
+        <div id="explorer_detail_panel" class="detail-panel hidden" aria-hidden="true">
+          <div class="detail-head">
+            <div class="detail-title" id="detail_title">明细详情</div>
+            <button class="btn btn-sm" id="detail_close_btn">关闭</button>
+          </div>
+          <div class="detail-body" id="detail_body"></div>
+        </div>
+
+        <div id="order_modal" class="modal" aria-hidden="true" onclick="if(event.target===this) closeOrderModal()">
+          <div class="modal-wrap" role="dialog" aria-modal="true">
+            <div class="modal-hd">
+              <div class="modal-title">
+                <span id="order_modal_title_text">订单明细</span>
+                <span id="order_modal_meta" class="meta"></span>
+              </div>
+              <button class="modal-close" onclick="closeOrderModal()" aria-label="关闭">×</button>
+            </div>
+            <div class="modal-bd">
+              <div class="order-tools">
+                <div class="order-search">
+                  <input id="order_modal_search" type="text" placeholder="搜索订单编号（支持模糊匹配）" />
+                  <button class="btn btn-sm" onclick="clearOrderModalSearch()">清空</button>
+                </div>
+                <div class="order-btns">
+                  <button class="btn" onclick="copyOrderModal()">复制（当前筛选）</button>
+                  <button class="btn" onclick="copyOrderModal(true)">复制全部</button>
+                  <button class="btn" onclick="closeOrderModal()">关闭</button>
+                </div>
+              </div>
+              <div id="order_modal_list" class="order-grid"></div>
+              <div class="order-foot">
+                <span>提示：点击单个订单编号可复制。</span>
+                <span id="order_modal_count"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="route_bp" class="report-section route-section" data-route="bp">
+      <div class="section-head">
+        <h2>BP 报告</h2>
+        <div class="section-meta">预算正文视图 / 目录 / 搜索 / 打印</div>
+      </div>
+      <div class="bp-shell">
+        <div class="bp-toolbar">
+          <div class="bp-title" id="bp_title">财务预算报告</div>
+          <div class="bp-actions">
+            <input id="bp_search" type="search" placeholder="搜索 BP 正文…" />
+            <button class="btn btn-sm" id="bp_search_btn">搜索</button>
+            <button class="btn btn-sm" id="bp_clear_btn">清空</button>
+            <button class="btn" id="bp_print_btn">打印 BP</button>
+          </div>
+        </div>
+        <div class="bp-layout">
+          <aside class="bp-toc" id="bp_toc"></aside>
+          <div class="bp-content" id="bp_root">加载 BP 正文…</div>
+        </div>
+      </div>
+    </section>
   </main>
+  <aside class="evidence-drawer closed" id="evidence_drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <div>
+        <div class="drawer-title">Evidence Drawer</div>
+        <div class="drawer-subtitle" id="drawer_subtitle">选择结论/指标查看证据</div>
+      </div>
+      <div class="drawer-actions">
+        <button class="btn btn-sm" id="drawer_pin_btn">Pin</button>
+        <button class="btn btn-sm" id="drawer_close_btn">关闭</button>
+      </div>
+    </div>
+    <div class="drawer-tabs" id="drawer_tabs"></div>
+    <div class="drawer-body" id="drawer_body">
+      <div class="drawer-empty" id="drawer_empty">暂无证据。点击“查看证据”触发。</div>
+    </div>
+  </aside>
 </div>
 
 <div id="toast" class="toast"></div>
+
+<div id="export_center" class="export-center hidden" aria-hidden="true">
+  <div class="export-panel">
+    <div class="export-title">导出中心</div>
+    <div class="export-grid">
+      <button class="btn" data-export="summary_csv">导出汇总 CSV</button>
+      <button class="btn" data-export="detail_csv">导出明细 CSV</button>
+      <button class="btn" data-export="actions_csv">导出动作清单 CSV</button>
+      <button class="btn btn-ghost" data-export="snapshot_json">下载摘要 JSON</button>
+    </div>
+    <div class="export-foot">
+      <button class="btn btn-sm" id="export_close_btn">关闭</button>
+    </div>
+  </div>
+</div>
 
 <div id="anomaly_modal" class="modal" aria-hidden="true" onclick="if(event.target===this) closeAnomalyModal()">
   <div class="modal-wrap" role="dialog" aria-modal="true">
@@ -917,6 +1121,18 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js" defer></script>
+<script src="./charts.js" defer></script>
+<script src="./js/modules/data_loader.js" defer></script>
+<script src="./js/modules/state_manager.js" defer></script>
+<script src="./js/modules/router.js" defer></script>
+<script src="./js/modules/evidence_drawer.js" defer></script>
+<script src="./js/modules/explorer_sales.js" defer></script>
+<script src="./js/modules/explorer_finance.js" defer></script>
+<script src="./js/modules/bp_view.js" defer></script>
+<script src="./js/modules/export_center.js" defer></script>
+<script src="./ui.js" defer></script>
+<script src="./finance.js" defer></script>
+<script src="./app.js" defer></script>
 <script src="./js/report.js" defer></script>
 </body>
 </html>
