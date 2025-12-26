@@ -377,6 +377,62 @@ const FORECAST_STATE = {
   pendingAnchor: ''
 };
 
+function restoreTableUiState(initialState){
+  if(!initialState || !initialState.ui) return;
+  const tableSort = initialState.ui.table_sort;
+  if(tableSort && typeof tableSort === 'object'){
+    Object.keys(tableSort).forEach((key)=>{
+      const entry = tableSort[key];
+      if(!entry || typeof entry !== 'object') return;
+      const col = Number(entry.col);
+      if(!isFinite(col) || col < 0) return;
+      sortState[key] = { col: col, asc: !!entry.asc };
+    });
+  }
+  const tablePage = initialState.ui.table_page;
+  if(tablePage && typeof tablePage === 'object'){
+    Object.keys(tablePage).forEach((key)=>{
+      const page = Number(tablePage[key]);
+      if(isFinite(page) && page > 0) TABLE_PAGE_STATE[key] = page;
+    });
+  }
+}
+
+function persistTableSortState(){
+  if(!STATE_MANAGER) return;
+  StateManager.update({ ui: { table_sort: Object.assign({}, sortState) } });
+}
+
+function persistTablePageState(key, page){
+  if(!STATE_MANAGER) return;
+  const cur = (StateManager.state && StateManager.state.ui && StateManager.state.ui.table_page) ? StateManager.state.ui.table_page : {};
+  const next = Object.assign({}, cur);
+  if(key) next[key] = page;
+  StateManager.update({ ui: { table_page: next } });
+}
+
+function applySortStateForTable(table, segKey, type){
+  if(!table || !segKey || !type) return;
+  const key = segKey + '_' + type;
+  const state = sortState[key];
+  if(!state || state.col === undefined || state.col === null || state.col < 0) return;
+  const colIdx = Number(state.col);
+  if(!isFinite(colIdx) || colIdx < 0) return;
+  const asc = !!state.asc;
+  const tbody = table.querySelector('tbody');
+  if(!tbody) return;
+  const rows = [...tbody.querySelectorAll('tr')];
+  rows.sort((a,b)=>{
+    const av=a.children[colIdx]?.innerText||'';
+    const bv=b.children[colIdx]?.innerText||'';
+    const an=parseNumber(av), bn=parseNumber(bv);
+    if(!isNaN(an) && !isNaN(bn)) return asc? (an-bn):(bn-an);
+    return asc? av.localeCompare(bv): bv.localeCompare(av);
+  });
+  rows.forEach(r=>tbody.appendChild(r));
+  updateSortIndicator(table, colIdx, asc);
+}
+
 const ROW_IDX={
   date:0,
   order:1,
@@ -1508,6 +1564,7 @@ function init(initialState){
     initDateRange(segKey);
   });
   if(STATE_MANAGER) STATE_MANAGER.applyStateToUI(initialState, {phase:'pre'});
+  restoreTableUiState(initialState);
   if(initialState && initialState.filters && initialState.filters.view){
     const view = String(initialState.filters.view);
     if(view.indexOf('forecast_') === 0){
@@ -3109,6 +3166,7 @@ function filterTable(segKey,type){
       table = table || document.getElementById(tableId);
     }
     if(table){
+      applySortStateForTable(table, segKey, type);
       syncBaseDisplay(table);
       applyHeaderFiltersForTable(table);
       applyPagination(table, segKey, type);
@@ -3163,6 +3221,7 @@ function applyPagination(table, segKey, type){
   prev.disabled = current <= 1;
   prev.addEventListener('click', ()=>{
     TABLE_PAGE_STATE[key] = Math.max(1, current - 1);
+    persistTablePageState(key, TABLE_PAGE_STATE[key]);
     filterTable(segKey, type);
   });
   const next = document.createElement('button');
@@ -3171,6 +3230,7 @@ function applyPagination(table, segKey, type){
   next.disabled = current >= totalPages;
   next.addEventListener('click', ()=>{
     TABLE_PAGE_STATE[key] = Math.min(totalPages, current + 1);
+    persistTablePageState(key, TABLE_PAGE_STATE[key]);
     filterTable(segKey, type);
   });
   const label = document.createElement('span');
@@ -3214,26 +3274,7 @@ function sortTable(segKey,type,colIdx){
   const prev=sortState[key]||{col:-1,asc:true};
   const asc=(prev.col===colIdx)?!prev.asc:true;
   sortState[key]={col:colIdx,asc:asc};
-  const tableId={
-    category: segKey+'_category_table',
-    product: segKey+'_product_table',
-    customer: segKey+'_customer_table',
-    new: segKey+'_new_table',
-    lost: segKey+'_lost_table',
-    abnormal: segKey+'_abnormal_table'
-  }[type];
-  const table=document.getElementById(tableId);
-  const tbody=table.querySelector('tbody');
-  const rows=[...tbody.querySelectorAll('tr')];
-  rows.sort((a,b)=>{
-    const av=a.children[colIdx]?.innerText||'';
-    const bv=b.children[colIdx]?.innerText||'';
-    const an=parseNumber(av), bn=parseNumber(bv);
-    if(!isNaN(an) && !isNaN(bn)) return asc? (an-bn):(bn-an);
-    return asc? av.localeCompare(bv): bv.localeCompare(av);
-  });
-  rows.forEach(r=>tbody.appendChild(r));
-  updateSortIndicator(table, colIdx, asc);
+  persistTableSortState();
   filterTable(segKey,type);
 }
 

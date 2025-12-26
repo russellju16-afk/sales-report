@@ -43,6 +43,16 @@
     if(evidence.tab && typeof window.showTab === 'function'){
       try{ window.showTab(seg, evidence.tab); }catch(e){}
     }
+    if(window.StateManager){
+      const patch = { segment: seg, seg: seg };
+      if(evidence.filters && typeof evidence.filters === 'object'){
+        patch.filters = evidence.filters;
+      }
+      if(evidence.anchor){
+        patch.ui = { explorer_anchor: evidence.anchor };
+      }
+      StateManager.update(patch);
+    }
 
     if(evidence.tableId && evidence.filterFirstColValue !== undefined && evidence.filterFirstColValue !== null){
       const vals = [String(evidence.filterFirstColValue)];
