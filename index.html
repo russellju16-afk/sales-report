@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>经营分析&财务分析总报告</title>
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./styles.css?v=3" />
 </head>
 
 <body class="report-body" data-route="report">
@@ -27,7 +27,7 @@
 
   <div class="app-shell">
     <aside class="report-toc" id="global_toc">
-      <div class="toc-title">CFO Analysis</div>
+      <div class="toc-title">CFO 经营分析</div>
       <div class="toc-routes">
         <button class="toc-route btn-nav active" data-route="report">
           <span class="icon">📊</span> 重点摘要
@@ -44,14 +44,14 @@
       </div>
 
       <div class="toc-group" data-route="report">
-        <div class="toc-group-title">Home</div>
-        <a href="#sec-1" data-route="report" data-anchor="sec-1">Executive Summary</a>
-        <a href="#sec-risk" data-route="report" data-anchor="sec-risk">Risk Center</a>
+        <div class="toc-group-title">首页</div>
+        <a href="#sec-1" data-route="report" data-anchor="sec-1">核心摘要</a>
+        <a href="#sec-risk" data-route="report" data-anchor="sec-risk">风险中心</a>
         <a href="#sec-10" data-route="report" data-anchor="sec-10">预警中心</a>
-        <a href="#sec-11" data-route="report" data-anchor="sec-11">Action Tracker</a>
+        <a href="#sec-11" data-route="report" data-anchor="sec-11">行动追踪</a>
       </div>
       <div class="toc-group" data-route="diagnose">
-        <div class="toc-group-title">Diagnose</div>
+        <div class="toc-group-title">诊断</div>
         <a href="#sec-2" data-route="diagnose" data-anchor="sec-2">收入与毛利</a>
         <a href="#sec-3" data-route="diagnose" data-anchor="sec-3">现金流与收付</a>
         <a href="#sec-forecast" data-route="diagnose" data-anchor="sec-forecast">预测与压力</a>
@@ -60,10 +60,10 @@
         <a href="#sec-8" data-route="diagnose" data-anchor="sec-8">库存与周转</a>
       </div>
       <div class="toc-group" data-route="explorer">
-        <div class="toc-group-title">Explorer</div>
+        <div class="toc-group-title">探索</div>
         <a href="#explorer_root" data-route="explorer" data-anchor="explorer_root">总览</a>
-        <a href="#explorer_sales" data-route="explorer" data-anchor="explorer_sales">Sales Explorer</a>
-        <a href="#explorer_finance" data-route="explorer" data-anchor="explorer_finance">Finance Explorer</a>
+        <a href="#explorer_sales" data-route="explorer" data-anchor="explorer_sales">销售明细</a>
+        <a href="#explorer_finance" data-route="explorer" data-anchor="explorer_finance">财务明细</a>
       </div>
     </aside>
 
@@ -1113,13 +1113,13 @@
     </main>
     <aside class="evidence-drawer closed" id="evidence_drawer" aria-hidden="true">
       <div class="drawer-head">
-        <div>
-          <div class="drawer-title">Evidence Drawer</div>
+        <div class="drawer-header-text">
+          <div class="drawer-title">证据视图</div>
           <div class="drawer-subtitle" id="drawer_subtitle">选择结论/指标查看证据</div>
         </div>
         <div class="drawer-actions">
-          <button class="btn btn-sm" id="drawer_pin_btn">Pin</button>
-          <button class="btn btn-sm" id="drawer_close_btn">关闭</button>
+          <button class="drawer-btn-icon" id="drawer_pin_btn">固定</button>
+          <button class="drawer-btn-icon" id="drawer_close_btn">关闭</button>
         </div>
       </div>
       <div class="drawer-tabs" id="drawer_tabs"></div>
@@ -1189,20 +1189,19 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js" defer></script>
-  <script src="./charts.js" defer></script>
-  <script src="./js/modules/data_loader.js" defer></script>
-  <script src="./js/modules/state_manager.js" defer></script>
-  <script src="./js/modules/router.js" defer></script>
-  <script src="./js/modules/evidence_drawer.js" defer></script>
-  <script src="./js/modules/explorer_sales.js" defer></script>
-  <script src="./js/modules/explorer_finance.js" defer></script>
-  <script src="./js/modules/bp_view.js" defer></script>
-  <script src="./js/modules/export_center.js" defer></script>
-  <script src="./ui.js" defer></script>
-  <script src="./finance.js" defer></script>
-  <script src="./app.js" defer></script>
-  <!-- COMMENTED OUT: This script conflicts with app.js - both try to load data independently -->
-  <!-- <script src="./js/report.js" defer></script> -->
+  <script src="./charts.js?v=3" defer></script>
+  <script src="./js/modules/data_loader.js?v=3" defer></script>
+  <script src="./js/modules/state_manager.js?v=3" defer></script>
+  <script src="./js/modules/router.js?v=3" defer></script>
+  <script src="./js/modules/evidence_drawer.js?v=3" defer></script>
+  <script src="./js/modules/explorer_sales.js?v=3" defer></script>
+  <script src="./js/modules/explorer_finance.js?v=3" defer></script>
+  <script src="./js/modules/bp_view.js?v=3" defer></script>
+  <script src="./js/modules/export_center.js?v=3" defer></script>
+  <script src="./ui.js?v=3" defer></script>
+  <script src="./finance.js?v=3" defer></script>
+  <script src="./app.js?v=3" defer></script>
+  <script src="./js/report.js?v=3" defer></script>
 </body>
 
 </html>

@@ -541,3 +541,52 @@ function debounce(fn, wait) {
   };
 }
 // ===== 表头筛选 END =====
+
+// Scroll Spy & Navigation Feedback
+(function () {
+  const shell = document.querySelector('.main-scroll');
+  if (!shell) return;
+
+  let debounceTimer = null;
+  const tocLinks = document.querySelectorAll('.toc-group a');
+
+  function highlightNav() {
+    const scrollPos = shell.scrollTop;
+    const sections = document.querySelectorAll('.report-section');
+    let currentId = '';
+
+    // Find the current section
+    sections.forEach(sec => {
+      const top = sec.offsetTop;
+      const height = sec.offsetHeight;
+      // 100px offset for header
+      if (scrollPos >= (top - 120) && scrollPos < (top + height - 120)) {
+        currentId = sec.getAttribute('id');
+      }
+    });
+
+    if (!currentId && sections.length > 0 && scrollPos < 100) {
+      // If at top, highlight first
+      currentId = sections[0].getAttribute('id');
+    }
+
+    if (currentId) {
+      tocLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + currentId) {
+          link.classList.add('active');
+          // Scroll toc to keep active item in view if needed
+          // link.scrollIntoView({block: 'nearest', behavior: 'smooth'}); 
+        }
+      });
+    }
+  }
+
+  shell.addEventListener('scroll', () => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(highlightNav, 50);
+  });
+
+  // Initial check
+  setTimeout(highlightNav, 500);
+})();
