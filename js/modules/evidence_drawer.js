@@ -10,6 +10,11 @@
   const closeBtn = document.getElementById('drawer_close_btn');
   const toggleBtn = document.getElementById('drawer_toggle_btn');
 
+  const ROW_IDX = {
+    date: 0, order: 1, cust: 2, cls: 3, name: 4, spec: 5, prod: 6, cat: 7,
+    qty: 8, sales: 9, cost: 10, fee: 11, gp: 12, gpAdj: 13, unitPrice: 14
+  };
+
   let stack = [];
   let activeId = '';
   let pinned = false;
@@ -111,23 +116,111 @@
     bodyEl.appendChild(wrap);
   }
 
-  function renderDetailView(evidence) {
+  function renderRowsView(evidence) {
     if (!bodyEl) return;
     bodyEl.innerHTML = '';
-    const list = document.createElement('div');
-    list.className = 'report-list';
-    const items = [
-      ['分部', evidence.seg || '—'],
-      ['Tab', evidence.tab || '—'],
-      ['表格', evidence.tableId || '—'],
-      ['锚点', evidence.anchor || '—']
-    ];
-    items.forEach(([k, v]) => {
-      const div = document.createElement('div');
-      div.textContent = k + '：' + v;
-      list.appendChild(div);
+
+    if (!window.ReportData || !window.ReportData.segments) {
+      bodyEl.innerHTML = '<div class="report-empty">数据未加载或无权限访问原始数据</div>';
+      return;
+    }
+
+    const segKey = evidence.seg || 'total';
+    const segData = window.ReportData.segments[segKey];
+    if (!segData || !segData.rows || !segData.rows.length) {
+      bodyEl.innerHTML = '<div class="report-empty">该分部无明细数据</div>';
+      return;
+    }
+
+    // Filter logic (optional, filtering by evidence context)
+    let rows = segData.rows;
+    if (evidence.filterFirstColValue) {
+      // This is a rough filter approximation
+      const filterVal = String(evidence.filterFirstColValue);
+      rows = rows.filter(r => {
+        return String(r[ROW_IDX.cust]).includes(filterVal) ||
+          String(r[ROW_IDX.prod]).includes(filterVal) ||
+          String(r[ROW_IDX.cat]).includes(filterVal);
+      });
+    }
+
+    const count = rows.length;
+    const limit = 200;
+    const showRows = rows.slice(0, limit);
+
+    const tools = document.createElement('div');
+    tools.className = 'report-action-toolbar';
+    tools.style.justifyContent = 'space-between';
+    const info = document.createElement('div');
+    info.className = 'ctl';
+    info.textContent = `共 ${count} 条记录${count > limit ? `（仅显示前 ${limit} 条）` : ''}`;
+
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-sm';
+    btn.textContent = '导出全部 CSV';
+    btn.addEventListener('click', () => {
+      // CSV Export logic for rows
+      const headers = ['日期', '订单号', '客户', '渠道', '业务员', '规格', '产品', '品类', '数量', '销售额', '成本', '费用', '毛利', '扣费毛利'];
+      const csvContent = [headers.join(',')].concat(rows.map(r => {
+        return r.map(c => `"${String(c || '').replace(/"/g, '""')}"`).join(',');
+      })).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `details_${segKey}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     });
-    bodyEl.appendChild(list);
+
+    tools.appendChild(info);
+    tools.appendChild(btn);
+    bodyEl.appendChild(tools);
+
+    const wrap = document.createElement('div');
+    wrap.className = 'table-wrap dense-table';
+    const scroll = document.createElement('div');
+    scroll.className = 'table-scroll report-table-scroll';
+    const table = document.createElement('table');
+    table.className = 'drawer-table';
+
+    const thead = document.createElement('thead');
+    const trHead = document.createElement('tr');
+    ['日期', '订单', '客户', '产品', '品类', '销售额', '毛利', '扣费毛利'].forEach(h => {
+      const th = document.createElement('th');
+      th.textContent = h;
+      trHead.appendChild(th);
+    });
+    thead.appendChild(trHead);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    showRows.forEach(r => {
+      const tr = document.createElement('tr');
+      // Mapping keys to table columns
+      // Date, Order, Cust, Prod, Cat, Sales, GP, GPAdj
+      const cells = [
+        r[ROW_IDX.date],
+        r[ROW_IDX.order],
+        r[ROW_IDX.cust],
+        r[ROW_IDX.prod],
+        r[ROW_IDX.cat],
+        (Number(r[ROW_IDX.sales]) || 0).toFixed(2),
+        (Number(r[ROW_IDX.gp]) || 0).toFixed(2),
+        (Number(r[ROW_IDX.gpAdj]) || 0).toFixed(2)
+      ];
+      cells.forEach(c => {
+        const td = document.createElement('td');
+        td.textContent = c;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    scroll.appendChild(table);
+    wrap.appendChild(scroll);
+    bodyEl.appendChild(wrap);
   }
 
   function renderChartView() {
@@ -144,7 +237,7 @@
       subtitleEl.textContent = evidence.title || '证据视图';
     }
     const tab = (window.StateManager && StateManager.state && StateManager.state.ui && StateManager.state.ui.drawer_tab) ? StateManager.state.ui.drawer_tab : 'table';
-    if (tab === 'detail') renderDetailView(evidence);
+    if (tab === 'detail') renderRowsView(evidence);
     else if (tab === 'chart') renderChartView(evidence);
     else renderTableView(evidence);
   }

@@ -2,7 +2,7 @@ var DATA = window.DATA || null;
 var ORDER_MAP = window.ORDER_MAP || {};
 var ORDER_MAP_CATTON = window.ORDER_MAP_CATTON || {};
 var CAT_TON = window.CAT_TON || {};
-var CAT_TON_META = window.CAT_TON_META || {oil_density:0.92, fallback_bag_kg:1, missing_weight_lines:0};
+var CAT_TON_META = window.CAT_TON_META || { oil_density: 0.92, fallback_bag_kg: 1, missing_weight_lines: 0 };
 var FINANCE_DATA = window.FINANCE_DATA || null;
 var FINANCE_ERROR = window.FINANCE_ERROR || null;
 var FINANCE_LOADING = window.FINANCE_LOADING || false;
@@ -17,51 +17,51 @@ const STATE_MANAGER = window.StateManager || null;
 let BOOTSTRAP_INFLIGHT = false;
 let APP_EVENTS_BOUND = false;
 
-function getDataUrl(){
+function getDataUrl() {
   const base = window.DATA_URL || './data/latest.json';
-  if(/(?:\?|&)v=/.test(base)) return base;
+  if (/(?:\?|&)v=/.test(base)) return base;
   const joiner = base.includes('?') ? '&' : '?';
   return base + joiner + 'v=' + Date.now();
 }
 
-function getFinanceUrl(){
+function getFinanceUrl() {
   const base = window.FINANCE_URL || './data/finance_latest.json';
-  if(/(?:\?|&)v=/.test(base)) return base;
+  if (/(?:\?|&)v=/.test(base)) return base;
   const joiner = base.includes('?') ? '&' : '?';
   return base + joiner + 'v=' + Date.now();
 }
 
-function getForecastUrl(){
+function getForecastUrl() {
   const base = window.FORECAST_URL || './data/forecast_latest.json';
-  if(/(?:\?|&)v=/.test(base)) return base;
+  if (/(?:\?|&)v=/.test(base)) return base;
   const joiner = base.includes('?') ? '&' : '?';
   return base + joiner + 'v=' + Date.now();
 }
 
-function parseJsonWithNaN(text){
-  if(text.indexOf('NaN') === -1) return JSON.parse(text);
+function parseJsonWithNaN(text) {
+  if (text.indexOf('NaN') === -1) return JSON.parse(text);
   let out = '';
   let inStr = false;
   let escape = false;
-  for(let i=0;i<text.length;i++){
+  for (let i = 0; i < text.length; i++) {
     const ch = text[i];
-    if(inStr){
+    if (inStr) {
       out += ch;
-      if(escape){
+      if (escape) {
         escape = false;
-      }else if(ch === '\\'){
+      } else if (ch === '\\') {
         escape = true;
-      }else if(ch === '"'){
+      } else if (ch === '"') {
         inStr = false;
       }
       continue;
     }
-    if(ch === '"'){
+    if (ch === '"') {
       inStr = true;
       out += ch;
       continue;
     }
-    if(ch === 'N' && text.slice(i, i + 3) === 'NaN'){
+    if (ch === 'N' && text.slice(i, i + 3) === 'NaN') {
       out += 'null';
       i += 2;
       continue;
@@ -71,48 +71,48 @@ function parseJsonWithNaN(text){
   return JSON.parse(out);
 }
 
-async function loadData(){
+async function loadData() {
   const url = getDataUrl();
-  if(window.DataLoader){
+  if (window.DataLoader) {
     return DataLoader.fetchJsonCached('sales', url, JSON.parse);
   }
   const resp = await fetch(url, { cache: 'no-store' });
-  if(!resp.ok) throw new Error('销售数据文件加载失败: HTTP ' + resp.status);
+  if (!resp.ok) throw new Error('销售数据文件加载失败: HTTP ' + resp.status);
   return resp.json();
 }
 
-async function loadFinanceData(){
+async function loadFinanceData() {
   const url = getFinanceUrl();
-  if(window.DataLoader){
+  if (window.DataLoader) {
     return DataLoader.fetchJsonCached('finance', url, parseJsonWithNaN);
   }
   const resp = await fetch(url, { cache: 'no-store' });
-  if(!resp.ok) throw new Error('财务数据文件加载失败: HTTP ' + resp.status);
+  if (!resp.ok) throw new Error('财务数据文件加载失败: HTTP ' + resp.status);
   const text = await resp.text();
   return parseJsonWithNaN(text);
 }
 
-async function loadForecastData(){
+async function loadForecastData() {
   const url = getForecastUrl();
-  if(window.DataLoader){
+  if (window.DataLoader) {
     return DataLoader.fetchJsonCached('forecast', url, parseJsonWithNaN);
   }
   const resp = await fetch(url, { cache: 'no-store' });
-  if(!resp.ok) throw new Error('预测数据文件加载失败: HTTP ' + resp.status);
+  if (!resp.ok) throw new Error('预测数据文件加载失败: HTTP ' + resp.status);
   const text = await resp.text();
   return parseJsonWithNaN(text);
 }
 
-function normalizeData(raw){
+function normalizeData(raw) {
   const root = raw && raw.data ? raw.data : (raw || {});
   const segments = {};
-  ['total','store','nonstore'].forEach((key)=>{
+  ['total', 'store', 'nonstore'].forEach((key) => {
     const seg = root[key] || {};
     const rows = seg.rows || seg.raw_rows || [];
     let months = seg.months || [];
-    if(!months.length && rows.length){
-      const mset=new Set(rows.map(r=>String(r[0]||'').slice(0,7)).filter(Boolean));
-      months=[...mset].sort();
+    if (!months.length && rows.length) {
+      const mset = new Set(rows.map(r => String(r[0] || '').slice(0, 7)).filter(Boolean));
+      months = [...mset].sort();
     }
     segments[key] = {
       months,
@@ -138,10 +138,10 @@ function normalizeData(raw){
   };
 }
 
-function normalizeFinanceData(raw){
+function normalizeFinanceData(raw) {
   const root = raw && raw.data ? raw.data : (raw || {});
   const meta = (root.meta && typeof root.meta === 'object') ? root.meta : {};
-  if(!meta.generated_at){
+  if (!meta.generated_at) {
     meta.generated_at = root.generated_at || root.generatedAt || root.as_of || root.asOf || '';
   }
   return {
@@ -156,10 +156,10 @@ function normalizeFinanceData(raw){
   };
 }
 
-function normalizeForecastData(raw){
+function normalizeForecastData(raw) {
   const root = raw && raw.data ? raw.data : (raw || {});
   const meta = (root.meta && typeof root.meta === 'object') ? root.meta : {};
-  if(!meta.generated_at){
+  if (!meta.generated_at) {
     meta.generated_at = root.generated_at || root.generatedAt || root.as_of || root.asOf || '';
   }
   return {
@@ -168,81 +168,81 @@ function normalizeForecastData(raw){
   };
 }
 
-function getFinanceVersion(){
-  if(!FINANCE_DATA) return '';
+function getFinanceVersion() {
+  if (!FINANCE_DATA) return '';
   const meta = FINANCE_DATA.meta || {};
   return meta.generated_at || meta.generatedAt || FINANCE_DATA.generated_at || FINANCE_DATA.generatedAt || FINANCE_DATA.as_of || FINANCE_DATA.asOf || '';
 }
 
-function getForecastVersion(){
-  if(!FORECAST_DATA) return '';
+function getForecastVersion() {
+  if (!FORECAST_DATA) return '';
   const meta = FORECAST_DATA.meta || {};
   return meta.generated_at || meta.generatedAt || FORECAST_DATA.generated_at || FORECAST_DATA.generatedAt || FORECAST_DATA.as_of || FORECAST_DATA.asOf || '';
 }
 
-function updateDataStatusLine(){
+function updateDataStatusLine() {
   const ts = DATA_META.generatedAt ? ('数据更新时间：' + DATA_META.generatedAt) : '数据已加载';
   let msg = ts;
-  if(FINANCE_ERROR){
+  if (FINANCE_ERROR) {
     msg += ' ｜ 财务数据加载失败';
-  }else{
+  } else {
     const finVer = getFinanceVersion();
-    if(finVer) msg += ' ｜ 财务版本：' + finVer;
+    if (finVer) msg += ' ｜ 财务版本：' + finVer;
   }
-  if(FORECAST_ERROR){
+  if (FORECAST_ERROR) {
     msg += ' ｜ 预测数据加载失败';
-  }else{
+  } else {
     const forecastVer = getForecastVersion();
-    if(forecastVer) msg += ' ｜ 预测版本：' + forecastVer;
+    if (forecastVer) msg += ' ｜ 预测版本：' + forecastVer;
   }
   showDataStatus(true, msg);
 }
 
-function showDataStatus(ok, msg){
+function showDataStatus(ok, msg) {
   const el = document.getElementById('data_status');
-  if(!el) return;
+  if (!el) return;
   el.classList.toggle('err', !ok);
   el.textContent = msg;
 }
 
-function setLoadingState(show, msg){
+function setLoadingState(show, msg) {
   const el = document.getElementById('loading_state');
-  if(!el) return;
+  if (!el) return;
   el.classList.toggle('hidden', !show);
-  if(msg){
+  if (msg) {
     const msgEl = el.querySelector('.state-msg');
-    if(msgEl) msgEl.textContent = msg;
+    if (msgEl) msgEl.textContent = msg;
   }
 }
 
-function setErrorState(show, msg){
+function setErrorState(show, msg) {
   const el = document.getElementById('error_state');
-  if(!el) return;
+  if (!el) return;
   el.classList.toggle('hidden', !show);
   const msgEl = document.getElementById('error_message');
-  if(msgEl) msgEl.textContent = msg || '请检查网络或数据文件路径。';
+  if (msgEl) msgEl.textContent = msg || '请检查网络或数据文件路径。';
 }
 
-function populateSelect(el, options, placeholder){
-  if(!el) return;
+function populateSelect(el, options, placeholder) {
+  if (!el) return;
   const prev = el.value || '';
-  const values = (options || []).map(val=>String(val));
+  const values = (options || []).map(val => String(val));
   const frag = document.createDocumentFragment();
   const baseOpt = document.createElement('option');
   baseOpt.value = '';
   baseOpt.textContent = placeholder || '全部';
   frag.appendChild(baseOpt);
-  values.forEach((val)=>{
+  values.forEach((val) => {
     const opt = document.createElement('option');
     opt.value = val;
     opt.textContent = val;
     frag.appendChild(opt);
   });
   el.replaceChildren(frag);
-  if(prev && values.includes(prev)) el.value = prev;
+  if (prev && values.includes(prev)) el.value = prev;
 }
 
-function buildKpiCard(label, valueParts){
+function buildKpiCard(label, valueParts) {
   const card = document.createElement('div');
   card.className = 'card';
   const name = document.createElement('div');
@@ -250,15 +250,15 @@ function buildKpiCard(label, valueParts){
   name.textContent = label;
   const value = document.createElement('div');
   value.className = 'kpi-val';
-  if(Array.isArray(valueParts)){
-    valueParts.forEach((part)=>{
-      if(part instanceof Node){
+  if (Array.isArray(valueParts)) {
+    valueParts.forEach((part) => {
+      if (part instanceof Node) {
         value.appendChild(part);
-      }else{
+      } else {
         value.appendChild(document.createTextNode(String(part)));
       }
     });
-  }else{
+  } else {
     value.textContent = String(valueParts);
   }
   card.appendChild(name);
@@ -266,23 +266,23 @@ function buildKpiCard(label, valueParts){
   return card;
 }
 
-function setReloadButtonDisabled(disabled){
+function setReloadButtonDisabled(disabled) {
   const btn = document.getElementById('reload_btn');
-  if(!btn) return;
+  if (!btn) return;
   btn.disabled = !!disabled;
   btn.classList.toggle('disabled', !!disabled);
 }
 
-async function bootstrap(){
-  if(BOOTSTRAP_INFLIGHT) return;
+async function bootstrap() {
+  if (BOOTSTRAP_INFLIGHT) return;
   BOOTSTRAP_INFLIGHT = true;
   setReloadButtonDisabled(true);
-  try{
+  try {
     setErrorState(false, '');
     setLoadingState(true, '正在拉取经营数据 / 财务数据 / 预测数据');
     showDataStatus(true, '数据加载中…');
     const results = await Promise.allSettled([loadData(), loadFinanceData(), loadForecastData()]);
-    if(results[0].status === 'rejected'){
+    if (results[0].status === 'rejected') {
       const msg = results[0].reason && results[0].reason.message ? results[0].reason.message : '销售数据加载失败';
       throw new Error(msg);
     }
@@ -290,17 +290,17 @@ async function bootstrap(){
     const normalized = normalizeData(results[0].value);
     let financeNormalized = null;
     let forecastNormalized = null;
-    if(results[1].status === 'fulfilled'){
+    if (results[1].status === 'fulfilled') {
       financeNormalized = normalizeFinanceData(results[1].value);
       FINANCE_ERROR = null;
-    }else{
+    } else {
       const msg = results[1].reason && results[1].reason.message ? results[1].reason.message : '财务数据加载失败';
       FINANCE_ERROR = { message: msg };
     }
-    if(results[2].status === 'fulfilled'){
+    if (results[2].status === 'fulfilled') {
       forecastNormalized = normalizeForecastData(results[2].value);
       FORECAST_ERROR = null;
-    }else{
+    } else {
       const msg = results[2].reason && results[2].reason.message ? results[2].reason.message : '预测数据加载失败';
       FORECAST_ERROR = { message: msg };
     }
@@ -309,7 +309,7 @@ async function bootstrap(){
     ORDER_MAP = normalized.orderMap || {};
     ORDER_MAP_CATTON = normalized.orderMapCatTon || {};
     CAT_TON = normalized.catTon || {};
-    CAT_TON_META = Object.assign({oil_density:0.92, fallback_bag_kg:1, missing_weight_lines:0}, normalized.catTonMeta || {});
+    CAT_TON_META = Object.assign({ oil_density: 0.92, fallback_bag_kg: 1, missing_weight_lines: 0 }, normalized.catTonMeta || {});
     DATA_META.generatedAt = normalized.generatedAt;
     BP_META.latest_path = normalized.bp && normalized.bp.latest_path ? normalized.bp.latest_path : '';
     BP_META.title = normalized.bp && normalized.bp.title ? normalized.bp.title : '';
@@ -320,55 +320,64 @@ async function bootstrap(){
     window.FINANCE_ERROR = FINANCE_ERROR;
     window.FORECAST_DATA = FORECAST_DATA;
     window.FORECAST_ERROR = FORECAST_ERROR;
+
+    if (window.EvidenceTables) {
+      try {
+        EvidenceTables.init(normalized);
+      } catch (e) {
+        console.error('EvidenceTables init failed:', e);
+      }
+    }
+
     FORECAST_META.generatedAt = forecastNormalized && forecastNormalized.meta ? forecastNormalized.meta.generated_at : '';
 
     updateDataStatusLine();
     const initialState = STATE_MANAGER ? STATE_MANAGER.readState() : null;
-    if(STATE_MANAGER) STATE_MANAGER.setState(initialState);
+    if (STATE_MANAGER) STATE_MANAGER.setState(initialState);
     updatePageMeta();
     init(initialState);
     setLoadingState(false, '');
-  }catch(e){
+  } catch (e) {
     console.error(e);
     setLoadingState(false, '');
     setErrorState(true, e && e.message ? e.message : '数据加载失败');
     showDataStatus(false, '数据加载失败，请刷新重试（F5）');
-  }finally{
+  } finally {
     BOOTSTRAP_INFLIGHT = false;
     setReloadButtonDisabled(false);
   }
 }
 
-async function reloadFinanceData(){
-  if(FINANCE_LOADING) return;
+async function reloadFinanceData() {
+  if (FINANCE_LOADING) return;
   FINANCE_LOADING = true;
   window.FINANCE_LOADING = true;
-  try{
+  try {
     const raw = await loadFinanceData();
     FINANCE_DATA = normalizeFinanceData(raw);
     FINANCE_ERROR = null;
-  }catch(e){
+  } catch (e) {
     FINANCE_DATA = null;
     FINANCE_ERROR = { message: e && e.message ? e.message : '财务数据加载失败' };
-  }finally{
+  } finally {
     window.FINANCE_DATA = FINANCE_DATA;
     window.FINANCE_ERROR = FINANCE_ERROR;
     FINANCE_LOADING = false;
     window.FINANCE_LOADING = false;
     updateDataStatusLine();
-    if(typeof renderFinance === 'function'){
-      try{ renderFinance(window.currentSeg || 'total'); }catch(err){ console.error(err); }
+    if (typeof renderFinance === 'function') {
+      try { renderFinance(window.currentSeg || 'total'); } catch (err) { console.error(err); }
     }
   }
 }
 
-let currentSeg='total';
-const tabState={};
+let currentSeg = 'total';
+const tabState = {};
 window.tabState = tabState;
 window.currentSeg = currentSeg;
-const sortState={};
+const sortState = {};
 const TABLE_PAGE_STATE = {};
-const TABLE_RANGE={};
+const TABLE_RANGE = {};
 const FORECAST_STATE = {
   view: 'forecast_ar',
   page: { ar: 1, ap: 1, po: 1 },
@@ -377,133 +386,133 @@ const FORECAST_STATE = {
   pendingAnchor: ''
 };
 
-function restoreTableUiState(initialState){
-  if(!initialState || !initialState.ui) return;
+function restoreTableUiState(initialState) {
+  if (!initialState || !initialState.ui) return;
   const tableSort = initialState.ui.table_sort;
-  if(tableSort && typeof tableSort === 'object'){
-    Object.keys(tableSort).forEach((key)=>{
+  if (tableSort && typeof tableSort === 'object') {
+    Object.keys(tableSort).forEach((key) => {
       const entry = tableSort[key];
-      if(!entry || typeof entry !== 'object') return;
+      if (!entry || typeof entry !== 'object') return;
       const col = Number(entry.col);
-      if(!isFinite(col) || col < 0) return;
+      if (!isFinite(col) || col < 0) return;
       sortState[key] = { col: col, asc: !!entry.asc };
     });
   }
   const tablePage = initialState.ui.table_page;
-  if(tablePage && typeof tablePage === 'object'){
-    Object.keys(tablePage).forEach((key)=>{
+  if (tablePage && typeof tablePage === 'object') {
+    Object.keys(tablePage).forEach((key) => {
       const page = Number(tablePage[key]);
-      if(isFinite(page) && page > 0) TABLE_PAGE_STATE[key] = page;
+      if (isFinite(page) && page > 0) TABLE_PAGE_STATE[key] = page;
     });
   }
 }
 
-function persistTableSortState(){
-  if(!STATE_MANAGER) return;
+function persistTableSortState() {
+  if (!STATE_MANAGER) return;
   StateManager.update({ ui: { table_sort: Object.assign({}, sortState) } });
 }
 
-function persistTablePageState(key, page){
-  if(!STATE_MANAGER) return;
+function persistTablePageState(key, page) {
+  if (!STATE_MANAGER) return;
   const cur = (StateManager.state && StateManager.state.ui && StateManager.state.ui.table_page) ? StateManager.state.ui.table_page : {};
   const next = Object.assign({}, cur);
-  if(key) next[key] = page;
+  if (key) next[key] = page;
   StateManager.update({ ui: { table_page: next } });
 }
 
-function applySortStateForTable(table, segKey, type){
-  if(!table || !segKey || !type) return;
+function applySortStateForTable(table, segKey, type) {
+  if (!table || !segKey || !type) return;
   const key = segKey + '_' + type;
   const state = sortState[key];
-  if(!state || state.col === undefined || state.col === null || state.col < 0) return;
+  if (!state || state.col === undefined || state.col === null || state.col < 0) return;
   const colIdx = Number(state.col);
-  if(!isFinite(colIdx) || colIdx < 0) return;
+  if (!isFinite(colIdx) || colIdx < 0) return;
   const asc = !!state.asc;
   const tbody = table.querySelector('tbody');
-  if(!tbody) return;
+  if (!tbody) return;
   const rows = [...tbody.querySelectorAll('tr')];
-  rows.sort((a,b)=>{
-    const av=a.children[colIdx]?.innerText||'';
-    const bv=b.children[colIdx]?.innerText||'';
-    const an=parseNumber(av), bn=parseNumber(bv);
-    if(!isNaN(an) && !isNaN(bn)) return asc? (an-bn):(bn-an);
-    return asc? av.localeCompare(bv): bv.localeCompare(av);
+  rows.sort((a, b) => {
+    const av = a.children[colIdx]?.innerText || '';
+    const bv = b.children[colIdx]?.innerText || '';
+    const an = parseNumber(av), bn = parseNumber(bv);
+    if (!isNaN(an) && !isNaN(bn)) return asc ? (an - bn) : (bn - an);
+    return asc ? av.localeCompare(bv) : bv.localeCompare(av);
   });
-  rows.forEach(r=>tbody.appendChild(r));
+  rows.forEach(r => tbody.appendChild(r));
   updateSortIndicator(table, colIdx, asc);
 }
 
-const ROW_IDX={
-  date:0,
-  order:1,
-  cust:2,
-  cls:3,
-  name:4,
-  spec:5,
-  prod:6,
-  cat:7,
-  qty:8,
-  sales:9,
-  cost:10,
-  fee:11,
-  gp:12,
-  gpAdj:13,
-  unitPrice:14
+const ROW_IDX = {
+  date: 0,
+  order: 1,
+  cust: 2,
+  cls: 3,
+  name: 4,
+  spec: 5,
+  prod: 6,
+  cat: 7,
+  qty: 8,
+  sales: 9,
+  cost: 10,
+  fee: 11,
+  gp: 12,
+  gpAdj: 13,
+  unitPrice: 14
 };
 
-function hasRawRows(segKey){
+function hasRawRows(segKey) {
   return !!(DATA && DATA[segKey] && DATA[segKey].rows && DATA[segKey].rows.length);
 }
 
-function getRawRows(segKey){
+function getRawRows(segKey) {
   return hasRawRows(segKey) ? DATA[segKey].rows : [];
 }
 
-function fmtWan(x){const n=Number(x); if(!isFinite(n)) return ''; return (n/10000).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+' 万';}
-function fmtYi(x){const n=Number(x); if(!isFinite(n)) return ''; return (n/1e8).toFixed(3)+' 亿';}
-function fmtNum(x){const n=Number(x); if(!isFinite(n)) return ''; return n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function fmtPct(x){const n=Number(x); if(!isFinite(n)) return ''; return n.toFixed(2)+'%';}
-function parseNumber(s){if(s===null||s===undefined) return NaN; const t=String(s).replace(/,/g,'').replace(/%/g,'').trim(); const v=parseFloat(t); return isNaN(v)?NaN:v;}
-function monthInRange(m,start,end){if(!start||!end) return true; return (m>=start && m<=end);}
-function dateInRange(d,start,end){if(!start||!end) return true; return (d>=start && d<=end);}
-function _toDateStart(s){return s? new Date(s+'T00:00:00'):null;}
-function _toDateEnd(s){return s? new Date(s+'T23:59:59'):null;}
-function getMonthWeight(month,startDate,endDate){
-  if(!startDate || !endDate) return 1;
-  const s=_toDateStart(startDate);
-  const e=_toDateEnd(endDate);
-  if(!s || !e) return 1;
-  const ms=new Date(month+'-01T00:00:00');
-  const me=new Date(month+'-01T23:59:59');
-  me.setMonth(me.getMonth()+1);
+function fmtWan(x) { const n = Number(x); if (!isFinite(n)) return ''; return (n / 10000).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' 万'; }
+function fmtYi(x) { const n = Number(x); if (!isFinite(n)) return ''; return (n / 1e8).toFixed(3) + ' 亿'; }
+function fmtNum(x) { const n = Number(x); if (!isFinite(n)) return ''; return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function fmtPct(x) { const n = Number(x); if (!isFinite(n)) return ''; return n.toFixed(2) + '%'; }
+function parseNumber(s) { if (s === null || s === undefined) return NaN; const t = String(s).replace(/,/g, '').replace(/%/g, '').trim(); const v = parseFloat(t); return isNaN(v) ? NaN : v; }
+function monthInRange(m, start, end) { if (!start || !end) return true; return (m >= start && m <= end); }
+function dateInRange(d, start, end) { if (!start || !end) return true; return (d >= start && d <= end); }
+function _toDateStart(s) { return s ? new Date(s + 'T00:00:00') : null; }
+function _toDateEnd(s) { return s ? new Date(s + 'T23:59:59') : null; }
+function getMonthWeight(month, startDate, endDate) {
+  if (!startDate || !endDate) return 1;
+  const s = _toDateStart(startDate);
+  const e = _toDateEnd(endDate);
+  if (!s || !e) return 1;
+  const ms = new Date(month + '-01T00:00:00');
+  const me = new Date(month + '-01T23:59:59');
+  me.setMonth(me.getMonth() + 1);
   me.setDate(0);
-  me.setHours(23,59,59,999);
-  if(e < ms || s > me) return 0;
-  const overlapStart=Math.max(s.getTime(), ms.getTime());
-  const overlapEnd=Math.min(e.getTime(), me.getTime());
-  if(overlapEnd < overlapStart) return 0;
-  const overlapDays=Math.floor((overlapEnd - overlapStart) / 86400000) + 1;
-  const daysInMonth=me.getDate();
+  me.setHours(23, 59, 59, 999);
+  if (e < ms || s > me) return 0;
+  const overlapStart = Math.max(s.getTime(), ms.getTime());
+  const overlapEnd = Math.min(e.getTime(), me.getTime());
+  if (overlapEnd < overlapStart) return 0;
+  const overlapDays = Math.floor((overlapEnd - overlapStart) / 86400000) + 1;
+  const daysInMonth = me.getDate();
   return Math.max(0, Math.min(1, overlapDays / daysInMonth));
 }
-function getMonthWeights(startDate,endDate,months){
-  const map=new Map();
-  months.forEach(m=>{
-    if(!map.has(m)) map.set(m, getMonthWeight(m,startDate,endDate));
+function getMonthWeights(startDate, endDate, months) {
+  const map = new Map();
+  months.forEach(m => {
+    if (!map.has(m)) map.set(m, getMonthWeight(m, startDate, endDate));
   });
   return map;
 }
 
-function formatTooltipValue(name, value){
-  if(value===null || value===undefined || value==='') return '';
-  if(String(name).includes('率') || String(name).includes('%')) return fmtPct(value);
+function formatTooltipValue(name, value) {
+  if (value === null || value === undefined || value === '') return '';
+  if (String(name).includes('率') || String(name).includes('%')) return fmtPct(value);
   return fmtNum(value);
 }
 
-function makeSegHTML(segKey){
+function makeSegHTML(segKey) {
   return `
     <div class="seg-title">
-      <div>维度：${segKey==='total'?'全部':(segKey==='store'?'超群门店':'非超群门店')}（含品类 + 新增/流失）</div>
+      <div>维度：${segKey === 'total' ? '全部' : (segKey === 'store' ? '超群门店' : '非超群门店')}（含品类 + 新增/流失）</div>
       <div class="timebox-wrap">
         <div class="timebox">
           <span class="chip">时间范围筛选</span>
@@ -612,7 +621,7 @@ function makeSegHTML(segKey){
         </div>
       </div>
 
-      ${makeTableShell(segKey,'category')}
+      ${makeTableShell(segKey, 'category')}
     </div>
 
     <div class="section" id="${segKey}_product">
@@ -620,7 +629,7 @@ function makeSegHTML(segKey){
         <div class="card"><div id="${segKey}_chart_prod_top" class="plot"></div></div>
         <div class="card"><div id="${segKey}_chart_prod_margin" class="plot"></div></div>
       </div>
-      ${makeTableShell(segKey,'product')}
+      ${makeTableShell(segKey, 'product')}
     </div>
 
     <div class="section" id="${segKey}_customer">
@@ -628,7 +637,7 @@ function makeSegHTML(segKey){
         <div class="card"><div id="${segKey}_chart_cust_top" class="plot"></div></div>
         <div class="card"><div id="${segKey}_chart_cust_margin" class="plot"></div></div>
       </div>
-      ${makeTableShell(segKey,'customer')}
+      ${makeTableShell(segKey, 'customer')}
     </div>
 
     <div class="section" id="${segKey}_lifecycle">
@@ -646,8 +655,8 @@ function makeSegHTML(segKey){
         </ul>
       </div>
       <div class="grid2" style="margin-top:12px;">
-        <div class="card">${makeTableShell(segKey,'new')}</div>
-        <div class="card">${makeTableShell(segKey,'lost')}</div>
+        <div class="card">${makeTableShell(segKey, 'new')}</div>
+        <div class="card">${makeTableShell(segKey, 'lost')}</div>
       </div>
     </div>
 
@@ -666,7 +675,7 @@ function makeSegHTML(segKey){
           </ul>
         </div>
       </div>
-      ${makeTableShell(segKey,'abnormal')}
+      ${makeTableShell(segKey, 'abnormal')}
     </div>
 
     <div class="section" id="${segKey}_finance">
@@ -1092,8 +1101,8 @@ function makeSegHTML(segKey){
   `;
 }
 
-function makeTableShell(segKey,type){
-  if(type==='category'){
+function makeTableShell(segKey, type) {
+  if (type === 'category') {
     return `
     <div class="table-wrap" style="margin-top:12px;">
       <div class="controls">
@@ -1124,7 +1133,7 @@ function makeTableShell(segKey,type){
       </div>
     </div>`;
   }
-  if(type==='product'){
+  if (type === 'product') {
     return `
     <div class="table-wrap">
       <div class="controls">
@@ -1163,7 +1172,7 @@ function makeTableShell(segKey,type){
       <div class="hint">排行默认按“毛利_扣销售费”排序。</div>
     </div>`;
   }
-  if(type==='customer'){
+  if (type === 'customer') {
     return `
     <div class="table-wrap">
       <div class="controls">
@@ -1200,8 +1209,8 @@ function makeTableShell(segKey,type){
       </div>
     </div>`;
   }
-  if(type==='new' || type==='lost'){
-    const t = (type==='new')?'新增客户（本月有单且上月无单）':'流失客户（本月有单且下月无单）';
+  if (type === 'new' || type === 'lost') {
+    const t = (type === 'new') ? '新增客户（本月有单且上月无单）' : '流失客户（本月有单且下月无单）';
     return `
     <div>
       <div style="font-weight:900;margin-bottom:8px;">${t}</div>
@@ -1234,7 +1243,7 @@ function makeTableShell(segKey,type){
       </div>
     </div>`;
   }
-  if(type==='abnormal'){
+  if (type === 'abnormal') {
     return `
     <div class="table-wrap">
       <div class="controls">
@@ -1273,72 +1282,72 @@ function makeTableShell(segKey,type){
   return '';
 }
 
-function getForecastRoot(){
+function getForecastRoot() {
   return FORECAST_DATA && FORECAST_DATA.forecast ? FORECAST_DATA.forecast : {};
 }
 
-function setForecastView(segKey, view){
-  if(!view) return;
+function setForecastView(segKey, view) {
+  if (!view) return;
   FORECAST_STATE.view = view;
   const select = document.getElementById(segKey + '_forecast_view');
-  if(select) select.value = view;
+  if (select) select.value = view;
   const seg = document.getElementById('seg_' + segKey);
-  if(seg){
-    seg.querySelectorAll('.forecast-view').forEach(el=>{
+  if (seg) {
+    seg.querySelectorAll('.forecast-view').forEach(el => {
       const match = el.getAttribute('data-view') === view;
       el.classList.toggle('active', match);
       el.style.display = match ? '' : 'none';
     });
   }
-  if(STATE_MANAGER) STATE_MANAGER.queuePersist();
+  if (STATE_MANAGER) STATE_MANAGER.queuePersist();
 }
 
-function applyForecastStateFromState(segKey){
-  if(FORECAST_STATE.stateApplied) return;
+function applyForecastStateFromState(segKey) {
+  if (FORECAST_STATE.stateApplied) return;
   const state = STATE_MANAGER && STATE_MANAGER.state ? STATE_MANAGER.state : null;
-  if(!state || !state.filters) return;
+  if (!state || !state.filters) return;
   const view = state.filters.view || '';
-  if(view && String(view).indexOf('forecast_') === 0){
+  if (view && String(view).indexOf('forecast_') === 0) {
     const v = String(view);
-    if(v === 'forecast_ar' || v === 'forecast_ap' || v === 'forecast_po'){
+    if (v === 'forecast_ar' || v === 'forecast_ap' || v === 'forecast_po') {
       setForecastView(segKey, v);
-    }else{
+    } else {
       FORECAST_STATE.pendingAnchor = v;
     }
   }
   const cust = state.filters.customer || '';
   const vendor = state.filters.vendor || '';
   const supplier = state.filters.supplier || '';
-  if(cust){
+  if (cust) {
     const el = document.getElementById(segKey + '_forecast_ar_search');
-    if(el) el.value = String(cust);
+    if (el) el.value = String(cust);
   }
-  if(vendor){
+  if (vendor) {
     const el = document.getElementById(segKey + '_forecast_ap_search');
-    if(el) el.value = String(vendor);
+    if (el) el.value = String(vendor);
   }
-  if(supplier){
+  if (supplier) {
     const el = document.getElementById(segKey + '_forecast_po_search');
-    if(el) el.value = String(supplier);
+    if (el) el.value = String(supplier);
   }
   FORECAST_STATE.stateApplied = true;
 }
 
-function forecastPagePrev(segKey, type){
+function forecastPagePrev(segKey, type) {
   const key = String(type);
-  if(!FORECAST_STATE.page[key]) FORECAST_STATE.page[key] = 1;
+  if (!FORECAST_STATE.page[key]) FORECAST_STATE.page[key] = 1;
   FORECAST_STATE.page[key] = Math.max(1, FORECAST_STATE.page[key] - 1);
   renderForecast(segKey);
 }
 
-function forecastPageNext(segKey, type){
+function forecastPageNext(segKey, type) {
   const key = String(type);
-  if(!FORECAST_STATE.page[key]) FORECAST_STATE.page[key] = 1;
+  if (!FORECAST_STATE.page[key]) FORECAST_STATE.page[key] = 1;
   FORECAST_STATE.page[key] += 1;
   renderForecast(segKey);
 }
 
-function clearForecastSearch(segKey, type){
+function clearForecastSearch(segKey, type) {
   const key = String(type);
   const map = {
     ar: segKey + '_forecast_ar_search',
@@ -1346,17 +1355,17 @@ function clearForecastSearch(segKey, type){
     po: segKey + '_forecast_po_search'
   };
   const el = document.getElementById(map[key]);
-  if(el) el.value = '';
+  if (el) el.value = '';
   FORECAST_STATE.page[key] = 1;
   renderForecast(segKey);
 }
 
-function renderForecastTable(tableId, rows, columns, formatters){
+function renderForecastTable(tableId, rows, columns, formatters) {
   const table = document.getElementById(tableId);
-  if(!table || !table.tBodies || !table.tBodies[0]) return;
+  if (!table || !table.tBodies || !table.tBodies[0]) return;
   const tbody = table.tBodies[0];
   tbody.innerHTML = '';
-  if(!Array.isArray(rows) || rows.length === 0){
+  if (!Array.isArray(rows) || rows.length === 0) {
     const tr = document.createElement('tr');
     const td = document.createElement('td');
     td.colSpan = columns.length;
@@ -1365,9 +1374,9 @@ function renderForecastTable(tableId, rows, columns, formatters){
     tbody.appendChild(tr);
     return;
   }
-  rows.forEach(row=>{
+  rows.forEach(row => {
     const tr = document.createElement('tr');
-    columns.forEach((col, idx)=>{
+    columns.forEach((col, idx) => {
       const td = document.createElement('td');
       const val = row && row[col.key] !== undefined ? row[col.key] : null;
       const fmt = formatters && typeof formatters[idx] === 'function' ? formatters[idx] : null;
@@ -1378,10 +1387,10 @@ function renderForecastTable(tableId, rows, columns, formatters){
   });
 }
 
-function renderForecast(segKey){
+function renderForecast(segKey) {
   const forecast = getForecastRoot();
   const kpiEl = document.getElementById(segKey + '_forecast_kpis');
-  if(!kpiEl) return;
+  if (!kpiEl) return;
   applyForecastStateFromState(segKey);
 
   const summary = forecast && forecast.recommendations ? forecast.recommendations.summary_kpi || {} : {};
@@ -1389,46 +1398,46 @@ function renderForecast(segKey){
   const coverConfirmed = summary.cover_ratio_confirmed;
   const coverEstimated = summary.cover_ratio_estimated;
   const kpis = [
-    { label:'基准缺口', value: fmtWan(summary.base_gap_amount) },
-    { label:'基准最低余额', value: fmtWan(summary.base_min_balance) },
-    { label:'确认覆盖率', value: fmtPct(coverConfirmed === null || coverConfirmed === undefined ? null : coverConfirmed * 100) },
-    { label:'含估算覆盖率', value: fmtPct(coverEstimated === null || coverEstimated === undefined ? null : coverEstimated * 100) }
+    { label: '基准缺口', value: fmtWan(summary.base_gap_amount) },
+    { label: '基准最低余额', value: fmtWan(summary.base_min_balance) },
+    { label: '确认覆盖率', value: fmtPct(coverConfirmed === null || coverConfirmed === undefined ? null : coverConfirmed * 100) },
+    { label: '含估算覆盖率', value: fmtPct(coverEstimated === null || coverEstimated === undefined ? null : coverEstimated * 100) }
   ];
   const frag = document.createDocumentFragment();
-  kpis.forEach(item=>{
+  kpis.forEach(item => {
     frag.appendChild(buildKpiCard(item.label, item.value || '—'));
   });
   kpiEl.replaceChildren(frag);
 
   const scenarioRows = [
-    { name:'基准', data: scenarios.base || {} },
-    { name:'情景1 回款延迟', data: scenarios.s1 || {} },
-    { name:'情景2 需求下滑', data: scenarios.s2 || {} },
-    { name:'情景3 库存积压', data: scenarios.s3 || {} }
+    { name: '基准', data: scenarios.base || {} },
+    { name: '情景1 回款延迟', data: scenarios.s1 || {} },
+    { name: '情景2 需求下滑', data: scenarios.s2 || {} },
+    { name: '情景3 库存积压', data: scenarios.s3 || {} }
   ];
   renderForecastTable(segKey + '_forecast_scenario_table', scenarioRows, [
-    { key:'name' },
-    { key:'gap_amount' },
-    { key:'min_balance' },
-    { key:'gap_day' }
+    { key: 'name' },
+    { key: 'gap_amount' },
+    { key: 'min_balance' },
+    { key: 'gap_day' }
   ], [
-    (v)=>v,
-    (v, row)=>fmtWan(row.data ? row.data.gap_amount : null),
-    (v, row)=>fmtWan(row.data ? row.data.min_balance : null),
-    (v, row)=>row.data ? (row.data.gap_day || '—') : '—'
+    (v) => v,
+    (v, row) => fmtWan(row.data ? row.data.gap_amount : null),
+    (v, row) => fmtWan(row.data ? row.data.min_balance : null),
+    (v, row) => row.data ? (row.data.gap_day || '—') : '—'
   ]);
 
   const componentRows = [
-    { metric:'应收可催收（14天）', value: summary.ar_collectable_14d },
-    { metric:'应付可延付（14天）', value: summary.ap_deferrable_14d },
-    { metric:'采购可减采（30天）', value: summary.po_reducible_30d }
+    { metric: '应收可催收（14天）', value: summary.ar_collectable_14d },
+    { metric: '应付可延付（14天）', value: summary.ap_deferrable_14d },
+    { metric: '采购可减采（30天）', value: summary.po_reducible_30d }
   ];
   renderForecastTable(segKey + '_forecast_component_table', componentRows, [
-    { key:'metric' },
-    { key:'value' }
+    { key: 'metric' },
+    { key: 'value' }
   ], [
-    (v)=>v,
-    (v)=>fmtWan(v)
+    (v) => v,
+    (v) => fmtWan(v)
   ]);
 
   setForecastView(segKey, FORECAST_STATE.view);
@@ -1442,31 +1451,31 @@ function renderForecast(segKey){
   const apSearch = (document.getElementById(segKey + '_forecast_ap_search') || {}).value || '';
   const poSearch = (document.getElementById(segKey + '_forecast_po_search') || {}).value || '';
 
-  if(FORECAST_STATE.search.ar !== arSearch){
+  if (FORECAST_STATE.search.ar !== arSearch) {
     FORECAST_STATE.search.ar = arSearch;
     FORECAST_STATE.page.ar = 1;
   }
-  if(FORECAST_STATE.search.ap !== apSearch){
+  if (FORECAST_STATE.search.ap !== apSearch) {
     FORECAST_STATE.search.ap = apSearch;
     FORECAST_STATE.page.ap = 1;
   }
-  if(FORECAST_STATE.search.po !== poSearch){
+  if (FORECAST_STATE.search.po !== poSearch) {
     FORECAST_STATE.search.po = poSearch;
     FORECAST_STATE.page.po = 1;
   }
 
-  const arFiltered = arRows.filter(r=>{
-    if(!arSearch) return true;
+  const arFiltered = arRows.filter(r => {
+    if (!arSearch) return true;
     const text = `${r.customer || ''} ${r.aging_bucket || ''}`.toLowerCase();
     return text.indexOf(arSearch.toLowerCase()) !== -1;
   });
-  const apFiltered = apRows.filter(r=>{
-    if(!apSearch) return true;
+  const apFiltered = apRows.filter(r => {
+    if (!apSearch) return true;
     const text = `${r.vendor || ''}`.toLowerCase();
     return text.indexOf(apSearch.toLowerCase()) !== -1;
   });
-  const poFiltered = poRows.filter(r=>{
-    if(!poSearch) return true;
+  const poFiltered = poRows.filter(r => {
+    if (!poSearch) return true;
     const text = `${r.supplier || ''} ${r.sku_or_category || ''}`.toLowerCase();
     return text.indexOf(poSearch.toLowerCase()) !== -1;
   });
@@ -1486,92 +1495,92 @@ function renderForecast(segKey){
   const poStart = (FORECAST_STATE.page.po - 1) * pageSize;
 
   renderForecastTable(segKey + '_forecast_ar_table', arFiltered.slice(arStart, arStart + pageSize), [
-    { key:'customer' },
-    { key:'aging_bucket' },
-    { key:'open_amount' },
-    { key:'planned_date' },
-    { key:'confidence' },
-    { key:'source_id' }
+    { key: 'customer' },
+    { key: 'aging_bucket' },
+    { key: 'open_amount' },
+    { key: 'planned_date' },
+    { key: 'confidence' },
+    { key: 'source_id' }
   ], [
-    (v)=>v || '—',
-    (v)=>v || '—',
-    (v)=>fmtWan(v),
-    (v)=>v || '—',
-    (v)=>v == null ? '—' : (Number(v) * 100).toFixed(0) + '%',
-    (v)=>v || '—'
+    (v) => v || '—',
+    (v) => v || '—',
+    (v) => fmtWan(v),
+    (v) => v || '—',
+    (v) => v == null ? '—' : (Number(v) * 100).toFixed(0) + '%',
+    (v) => v || '—'
   ]);
 
   renderForecastTable(segKey + '_forecast_ap_table', apFiltered.slice(apStart, apStart + pageSize), [
-    { key:'vendor' },
-    { key:'due_date' },
-    { key:'planned_date' },
-    { key:'amount_due' },
-    { key:'confidence' },
-    { key:'source_id' }
+    { key: 'vendor' },
+    { key: 'due_date' },
+    { key: 'planned_date' },
+    { key: 'amount_due' },
+    { key: 'confidence' },
+    { key: 'source_id' }
   ], [
-    (v)=>v || '—',
-    (v)=>v || '—',
-    (v)=>v || '—',
-    (v)=>fmtWan(v),
-    (v)=>v == null ? '—' : (Number(v) * 100).toFixed(0) + '%',
-    (v)=>v || '—'
+    (v) => v || '—',
+    (v) => v || '—',
+    (v) => v || '—',
+    (v) => fmtWan(v),
+    (v) => v == null ? '—' : (Number(v) * 100).toFixed(0) + '%',
+    (v) => v || '—'
   ]);
 
   renderForecastTable(segKey + '_forecast_po_table', poFiltered.slice(poStart, poStart + pageSize), [
-    { key:'supplier' },
-    { key:'sku_or_category' },
-    { key:'po_amount_open' },
-    { key:'eta_date' },
-    { key:'planned_pay_date' },
-    { key:'confidence' },
-    { key:'source_id' }
+    { key: 'supplier' },
+    { key: 'sku_or_category' },
+    { key: 'po_amount_open' },
+    { key: 'eta_date' },
+    { key: 'planned_pay_date' },
+    { key: 'confidence' },
+    { key: 'source_id' }
   ], [
-    (v)=>v || '—',
-    (v)=>v || '—',
-    (v)=>fmtWan(v),
-    (v)=>v || '—',
-    (v)=>v || '—',
-    (v)=>v == null ? '—' : (Number(v) * 100).toFixed(0) + '%',
-    (v)=>v || '—'
+    (v) => v || '—',
+    (v) => v || '—',
+    (v) => fmtWan(v),
+    (v) => v || '—',
+    (v) => v || '—',
+    (v) => v == null ? '—' : (Number(v) * 100).toFixed(0) + '%',
+    (v) => v || '—'
   ]);
 
   const arPag = document.getElementById(segKey + '_forecast_ar_pagination');
-  if(arPag) arPag.textContent = `第 ${FORECAST_STATE.page.ar}/${arTotalPages} 页，共 ${arFiltered.length} 条`;
+  if (arPag) arPag.textContent = `第 ${FORECAST_STATE.page.ar}/${arTotalPages} 页，共 ${arFiltered.length} 条`;
   const apPag = document.getElementById(segKey + '_forecast_ap_pagination');
-  if(apPag) apPag.textContent = `第 ${FORECAST_STATE.page.ap}/${apTotalPages} 页，共 ${apFiltered.length} 条`;
+  if (apPag) apPag.textContent = `第 ${FORECAST_STATE.page.ap}/${apTotalPages} 页，共 ${apFiltered.length} 条`;
   const poPag = document.getElementById(segKey + '_forecast_po_pagination');
-  if(poPag) poPag.textContent = `第 ${FORECAST_STATE.page.po}/${poTotalPages} 页，共 ${poFiltered.length} 条`;
+  if (poPag) poPag.textContent = `第 ${FORECAST_STATE.page.po}/${poTotalPages} 页，共 ${poFiltered.length} 条`;
 
-  if(FORECAST_STATE.pendingAnchor){
+  if (FORECAST_STATE.pendingAnchor) {
     const map = {
       forecast_base: segKey + '_forecast_summary',
       forecast_components: segKey + '_forecast_components',
       forecast_scenarios: segKey + '_forecast_summary'
     };
     const targetId = map[FORECAST_STATE.pendingAnchor];
-    if(targetId){
+    if (targetId) {
       const el = document.getElementById(targetId);
-      if(el) setTimeout(()=>el.scrollIntoView({ behavior:'smooth', block:'start' }), 80);
+      if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
     }
     FORECAST_STATE.pendingAnchor = '';
   }
 }
 
-function init(initialState){
-  ['total','store','nonstore'].forEach(segKey=>{
-    const segEl = document.getElementById('seg_'+segKey);
-    if(segEl) segEl.innerHTML = makeSegHTML(segKey);
+function init(initialState) {
+  ['total', 'store', 'nonstore'].forEach(segKey => {
+    const segEl = document.getElementById('seg_' + segKey);
+    if (segEl) segEl.innerHTML = makeSegHTML(segKey);
     initDateRange(segKey);
   });
-  if(STATE_MANAGER) STATE_MANAGER.applyStateToUI(initialState, {phase:'pre'});
+  if (STATE_MANAGER) STATE_MANAGER.applyStateToUI(initialState, { phase: 'pre' });
   restoreTableUiState(initialState);
-  if(initialState && initialState.filters && initialState.filters.view){
+  if (initialState && initialState.filters && initialState.filters.view) {
     const view = String(initialState.filters.view);
-    if(view.indexOf('forecast_') === 0){
+    if (view.indexOf('forecast_') === 0) {
       const segKey = initialState.seg || 'total';
-      if(view === 'forecast_ar' || view === 'forecast_ap' || view === 'forecast_po'){
+      if (view === 'forecast_ar' || view === 'forecast_ap' || view === 'forecast_po') {
         FORECAST_STATE.view = view;
-      }else{
+      } else {
         FORECAST_STATE.pendingAnchor = view;
       }
       tabState[segKey] = 'forecast';
@@ -1579,39 +1588,39 @@ function init(initialState){
   }
   const targetSeg = (initialState && initialState.seg) ? initialState.seg : 'total';
   showSeg(targetSeg);
-  if(STATE_MANAGER) STATE_MANAGER.applyStateToUI(initialState, {phase:'post'});
+  if (STATE_MANAGER) STATE_MANAGER.applyStateToUI(initialState, { phase: 'post' });
   bindAppEventsOnce();
 }
 
-function bindAppEventsOnce(){
-  if(APP_EVENTS_BOUND) return;
+function bindAppEventsOnce() {
+  if (APP_EVENTS_BOUND) return;
   APP_EVENTS_BOUND = true;
 
   const segSwitch = document.querySelector('.seg-switch');
-  if(segSwitch){
-    segSwitch.addEventListener('click', (e)=>{
+  if (segSwitch) {
+    segSwitch.addEventListener('click', (e) => {
       const btn = e.target.closest ? e.target.closest('.segbtn') : null;
-      if(!btn || !btn.dataset) return;
+      if (!btn || !btn.dataset) return;
       const seg = btn.dataset.seg;
-      if(seg) showSeg(seg);
+      if (seg) showSeg(seg);
     });
   }
 
   const reloadBtn = document.getElementById('reload_btn');
-  if(reloadBtn){
-    reloadBtn.addEventListener('click', ()=>{
-      if(BOOTSTRAP_INFLIGHT) return;
+  if (reloadBtn) {
+    reloadBtn.addEventListener('click', () => {
+      if (BOOTSTRAP_INFLIGHT) return;
       bootstrap();
     });
   }
 
-  if(STATE_MANAGER){
-    const handler = (e)=>{
+  if (STATE_MANAGER) {
+    const handler = (e) => {
       const el = e.target;
-      if(!el || !el.id) return;
-      if(el.closest && el.closest('#order_modal')) return;
-      if(el.closest && el.closest('.filter-row')) return;
-      if(el.closest && (el.closest('.controls') || el.closest('.timebox'))){
+      if (!el || !el.id) return;
+      if (el.closest && el.closest('#order_modal')) return;
+      if (el.closest && el.closest('.filter-row')) return;
+      if (el.closest && (el.closest('.controls') || el.closest('.timebox'))) {
         STATE_MANAGER.queuePersist();
       }
     };
@@ -1620,57 +1629,57 @@ function bindAppEventsOnce(){
   }
 }
 
-function monthEndDate(month){
-  if(!month) return '';
-  const parts=month.split('-');
-  if(parts.length<2) return '';
-  const y=Number(parts[0]);
-  const m=Number(parts[1]);
-  if(!y || !m) return '';
-  const d=new Date(y, m, 0).getDate();
-  return month+'-'+String(d).padStart(2,'0');
+function monthEndDate(month) {
+  if (!month) return '';
+  const parts = month.split('-');
+  if (parts.length < 2) return '';
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  if (!y || !m) return '';
+  const d = new Date(y, m, 0).getDate();
+  return month + '-' + String(d).padStart(2, '0');
 }
 
-function deriveGlobalDateRange(){
+function deriveGlobalDateRange() {
   const seg = DATA && DATA.total ? DATA.total : null;
-  if(!seg) return {startDate:'', endDate:'', text:'—'};
+  if (!seg) return { startDate: '', endDate: '', text: '—' };
   let startDate = '';
   let endDate = '';
   const rows = seg.rows || [];
-  if(rows.length){
-    rows.forEach(r=>{
+  if (rows.length) {
+    rows.forEach(r => {
       const d = r[ROW_IDX.date];
-      if(!d) return;
-      if(!startDate || d < startDate) startDate = d;
-      if(!endDate || d > endDate) endDate = d;
+      if (!d) return;
+      if (!startDate || d < startDate) startDate = d;
+      if (!endDate || d > endDate) endDate = d;
     });
   }
-  if(!startDate || !endDate){
+  if (!startDate || !endDate) {
     const months = seg.months || [];
-    if(months.length){
+    if (months.length) {
       startDate = months[0] + '-01';
-      endDate = monthEndDate(months[months.length-1]);
+      endDate = monthEndDate(months[months.length - 1]);
     }
   }
   const text = (startDate && endDate) ? (startDate + ' 至 ' + endDate) : '—';
-  return {startDate, endDate, text};
+  return { startDate, endDate, text };
 }
 
-function updatePageMeta(){
+function updatePageMeta() {
   const range = deriveGlobalDateRange();
   const rangeEl = document.getElementById('data_range');
-  if(rangeEl) rangeEl.textContent = range.text;
+  if (rangeEl) rangeEl.textContent = range.text;
 
   const version = DATA_META.generatedAt ? String(DATA_META.generatedAt) : '';
   const verEl = document.getElementById('page_version');
-  if(verEl) verEl.textContent = version || '—';
-  if(version){
+  if (verEl) verEl.textContent = version || '—';
+  if (version) {
     const datePart = version.split(' ')[0];
-    if(datePart){
+    if (datePart) {
       const re = /v\\d{4}-\\d{2}-\\d{2}/;
-      if(re.test(document.title)){
+      if (re.test(document.title)) {
         document.title = document.title.replace(re, 'v' + datePart);
-      }else{
+      } else {
         document.title = document.title + ' v' + datePart;
       }
     }
@@ -1678,175 +1687,175 @@ function updatePageMeta(){
   updateBpEntry();
 }
 
-function updateBpEntry(){
+function updateBpEntry() {
   const entry = document.getElementById('bp_entry');
-  if(!entry) return;
+  if (!entry) return;
   const link = document.getElementById('bp_link');
   const highlights = document.getElementById('bp_highlights');
   const path = BP_META && BP_META.latest_path ? String(BP_META.latest_path).trim() : '';
 
-  if(!path){
+  if (!path) {
     entry.classList.remove('show');
-    if(link) link.removeAttribute('href');
-    if(highlights) highlights.textContent = '';
+    if (link) link.removeAttribute('href');
+    if (highlights) highlights.textContent = '';
     return;
   }
 
   entry.classList.add('show');
-  if(link){
+  if (link) {
     link.href = path;
     link.textContent = BP_META.title ? BP_META.title : '财务预算报告';
-    if(BP_META.title) link.title = BP_META.title;
+    if (BP_META.title) link.title = BP_META.title;
   }
-  if(highlights){
-    if(Array.isArray(BP_META.highlights) && BP_META.highlights.length){
+  if (highlights) {
+    if (Array.isArray(BP_META.highlights) && BP_META.highlights.length) {
       highlights.textContent = BP_META.highlights.join('｜');
-    }else{
+    } else {
       highlights.textContent = '';
     }
   }
 }
 
-function initDateRange(segKey){
-  const s=document.getElementById(segKey+'_d_start');
-  const e=document.getElementById(segKey+'_d_end');
-  if(!s || !e) return;
-  const def=getDefaultDateRange(segKey);
-  if(!def.startDate || !def.endDate) return;
-  s.min=def.startDate; s.max=def.endDate;
-  e.min=def.startDate; e.max=def.endDate;
-  s.value=def.startDate; e.value=def.endDate;
+function initDateRange(segKey) {
+  const s = document.getElementById(segKey + '_d_start');
+  const e = document.getElementById(segKey + '_d_end');
+  if (!s || !e) return;
+  const def = getDefaultDateRange(segKey);
+  if (!def.startDate || !def.endDate) return;
+  s.min = def.startDate; s.max = def.endDate;
+  e.min = def.startDate; e.max = def.endDate;
+  s.value = def.startDate; e.value = def.endDate;
 }
 
-function getRange(segKey){
-  const startDate=document.getElementById(segKey+'_d_start').value;
-  const endDate=document.getElementById(segKey+'_d_end').value;
-  const startMonth=startDate ? startDate.slice(0,7) : '';
-  const endMonth=endDate ? endDate.slice(0,7) : '';
-  return {startDate,endDate,startMonth,endMonth};
+function getRange(segKey) {
+  const startDate = document.getElementById(segKey + '_d_start').value;
+  const endDate = document.getElementById(segKey + '_d_end').value;
+  const startMonth = startDate ? startDate.slice(0, 7) : '';
+  const endMonth = endDate ? endDate.slice(0, 7) : '';
+  return { startDate, endDate, startMonth, endMonth };
 }
 
-function getDefaultDateRange(segKey){
-  if(hasRawRows(segKey)){
-    const rows=getRawRows(segKey);
-    if(rows.length){
-      const dates=rows.map(r=>r[ROW_IDX.date]).filter(Boolean).sort();
-      return {startDate:dates[0], endDate:dates[dates.length-1]};
+function getDefaultDateRange(segKey) {
+  if (hasRawRows(segKey)) {
+    const rows = getRawRows(segKey);
+    if (rows.length) {
+      const dates = rows.map(r => r[ROW_IDX.date]).filter(Boolean).sort();
+      return { startDate: dates[0], endDate: dates[dates.length - 1] };
     }
   }
-  const months=DATA[segKey].months||[];
-  if(!months.length) return {startDate:'',endDate:''};
-  return {startDate:months[0]+'-01', endDate:monthEndDate(months[months.length-1])};
+  const months = DATA[segKey].months || [];
+  if (!months.length) return { startDate: '', endDate: '' };
+  return { startDate: months[0] + '-01', endDate: monthEndDate(months[months.length - 1]) };
 }
 
-function getTableRange(segKey,type){
-  const def=getDefaultDateRange(segKey);
-  const st=(TABLE_RANGE[segKey]&&TABLE_RANGE[segKey][type])||{};
-  const startDate=st.startDate||def.startDate;
-  const endDate=st.endDate||def.endDate;
-  return {startDate,endDate,startMonth:startDate.slice(0,7),endMonth:endDate.slice(0,7)};
+function getTableRange(segKey, type) {
+  const def = getDefaultDateRange(segKey);
+  const st = (TABLE_RANGE[segKey] && TABLE_RANGE[segKey][type]) || {};
+  const startDate = st.startDate || def.startDate;
+  const endDate = st.endDate || def.endDate;
+  return { startDate, endDate, startMonth: startDate.slice(0, 7), endMonth: endDate.slice(0, 7) };
 }
 
-function syncTableRangeInputs(segKey,type){
-  const def=getDefaultDateRange(segKey);
-  if(!def.startDate || !def.endDate) return;
-  const range=getTableRange(segKey,type);
-  const s=document.getElementById(segKey+'_'+type+'_d_start');
-  const e=document.getElementById(segKey+'_'+type+'_d_end');
-  if(!s || !e) return;
-  s.min=def.startDate; s.max=def.endDate;
-  e.min=def.startDate; e.max=def.endDate;
-  s.value=range.startDate; e.value=range.endDate;
+function syncTableRangeInputs(segKey, type) {
+  const def = getDefaultDateRange(segKey);
+  if (!def.startDate || !def.endDate) return;
+  const range = getTableRange(segKey, type);
+  const s = document.getElementById(segKey + '_' + type + '_d_start');
+  const e = document.getElementById(segKey + '_' + type + '_d_end');
+  if (!s || !e) return;
+  s.min = def.startDate; s.max = def.endDate;
+  e.min = def.startDate; e.max = def.endDate;
+  s.value = range.startDate; e.value = range.endDate;
 }
 
-function setTableRange(segKey,type,startDate,endDate){
-  if(!TABLE_RANGE[segKey]) TABLE_RANGE[segKey]={};
-  TABLE_RANGE[segKey][type]={startDate,endDate};
+function setTableRange(segKey, type, startDate, endDate) {
+  if (!TABLE_RANGE[segKey]) TABLE_RANGE[segKey] = {};
+  TABLE_RANGE[segKey][type] = { startDate, endDate };
 }
 
-function rerenderTable(segKey,type){
-  if(type==='category') return renderCategory(segKey);
-  if(type==='product') return renderProducts(segKey);
-  if(type==='customer') return renderCustomers(segKey);
-  if(type==='new' || type==='lost') return renderLifecycle(segKey);
-  if(type==='abnormal') return renderAbnormal(segKey);
-  if(type==='catton') return renderCatTon(segKey);
+function rerenderTable(segKey, type) {
+  if (type === 'category') return renderCategory(segKey);
+  if (type === 'product') return renderProducts(segKey);
+  if (type === 'customer') return renderCustomers(segKey);
+  if (type === 'new' || type === 'lost') return renderLifecycle(segKey);
+  if (type === 'abnormal') return renderAbnormal(segKey);
+  if (type === 'catton') return renderCatTon(segKey);
 }
 
-function onTableTimeChange(segKey,type){
-  const sEl=document.getElementById(segKey+'_'+type+'_d_start');
-  const eEl=document.getElementById(segKey+'_'+type+'_d_end');
-  if(!sEl || !eEl) return;
-  let s=sEl.value, e=eEl.value;
-  if(s && e && s>e){ const t=s; s=e; e=t; sEl.value=s; eEl.value=e; }
-  if(!s || !e) return;
-  setTableRange(segKey,type,s,e);
-  try{ rerenderTable(segKey,type); }catch(err){ console.error(err); }
-  if(STATE_MANAGER) STATE_MANAGER.queuePersist();
+function onTableTimeChange(segKey, type) {
+  const sEl = document.getElementById(segKey + '_' + type + '_d_start');
+  const eEl = document.getElementById(segKey + '_' + type + '_d_end');
+  if (!sEl || !eEl) return;
+  let s = sEl.value, e = eEl.value;
+  if (s && e && s > e) { const t = s; s = e; e = t; sEl.value = s; eEl.value = e; }
+  if (!s || !e) return;
+  setTableRange(segKey, type, s, e);
+  try { rerenderTable(segKey, type); } catch (err) { console.error(err); }
+  if (STATE_MANAGER) STATE_MANAGER.queuePersist();
 }
 
-function resetTableRange(segKey,type){
-  const def=getDefaultDateRange(segKey);
-  if(!def.startDate || !def.endDate) return;
-  setTableRange(segKey,type,def.startDate,def.endDate);
-  syncTableRangeInputs(segKey,type);
+function resetTableRange(segKey, type) {
+  const def = getDefaultDateRange(segKey);
+  if (!def.startDate || !def.endDate) return;
+  setTableRange(segKey, type, def.startDate, def.endDate);
+  syncTableRangeInputs(segKey, type);
 }
 
-function resetSegTime(segKey){
-  const def=getDefaultDateRange(segKey);
-  if(!def.startDate || !def.endDate) return;
-  document.getElementById(segKey+'_d_start').value=def.startDate;
-  document.getElementById(segKey+'_d_end').value=def.endDate;
-  try{ updateSeg(segKey); }catch(e){ console.error(e); }
-  if(STATE_MANAGER) STATE_MANAGER.queuePersist();
+function resetSegTime(segKey) {
+  const def = getDefaultDateRange(segKey);
+  if (!def.startDate || !def.endDate) return;
+  document.getElementById(segKey + '_d_start').value = def.startDate;
+  document.getElementById(segKey + '_d_end').value = def.endDate;
+  try { updateSeg(segKey); } catch (e) { console.error(e); }
+  if (STATE_MANAGER) STATE_MANAGER.queuePersist();
 }
 
-function onSegTimeChange(segKey){
-  const s=document.getElementById(segKey+'_d_start').value;
-  const e=document.getElementById(segKey+'_d_end').value;
-  if(s && e && s>e){
-    document.getElementById(segKey+'_d_start').value=e;
-    document.getElementById(segKey+'_d_end').value=s;
+function onSegTimeChange(segKey) {
+  const s = document.getElementById(segKey + '_d_start').value;
+  const e = document.getElementById(segKey + '_d_end').value;
+  if (s && e && s > e) {
+    document.getElementById(segKey + '_d_start').value = e;
+    document.getElementById(segKey + '_d_end').value = s;
   }
-  try{ updateSeg(segKey); }catch(e){ console.error(e); }
-  if(STATE_MANAGER) STATE_MANAGER.queuePersist();
+  try { updateSeg(segKey); } catch (e) { console.error(e); }
+  if (STATE_MANAGER) STATE_MANAGER.queuePersist();
 }
 
-function showSeg(segKey){
-  currentSeg=segKey;
+function showSeg(segKey) {
+  currentSeg = segKey;
   window.currentSeg = segKey;
-  document.querySelectorAll('.seg').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.segbtn').forEach(x=>x.classList.remove('active'));
-  document.getElementById('seg_'+segKey).classList.add('active');
-  const btns=[...document.querySelectorAll('.segbtn')];
-  if(segKey==='total') btns[0].classList.add('active');
-  if(segKey==='store') btns[1].classList.add('active');
-  if(segKey==='nonstore') btns[2].classList.add('active');
+  document.querySelectorAll('.seg').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.segbtn').forEach(x => x.classList.remove('active'));
+  document.getElementById('seg_' + segKey).classList.add('active');
+  const btns = [...document.querySelectorAll('.segbtn')];
+  if (segKey === 'total') btns[0].classList.add('active');
+  if (segKey === 'store') btns[1].classList.add('active');
+  if (segKey === 'nonstore') btns[2].classList.add('active');
   showTab(segKey, tabState[segKey] || 'overview');
-  try{ updateSeg(segKey); }catch(e){ console.error(e); }
-  if(STATE_MANAGER) STATE_MANAGER.queuePersist();
+  try { updateSeg(segKey); } catch (e) { console.error(e); }
+  if (STATE_MANAGER) STATE_MANAGER.queuePersist();
 }
 
-function showTab(segKey, tabKey){
-  tabState[segKey]=tabKey;
-  const seg=document.getElementById('seg_'+segKey);
-  seg.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
-  seg.querySelectorAll('.tabbtn').forEach(x=>x.classList.remove('active'));
-  document.getElementById(segKey+'_'+tabKey).classList.add('active');
-  [...seg.querySelectorAll('.tabbtn')].find(b=>b.dataset.tab===tabKey).classList.add('active');
-  if(tabKey === 'finance' && typeof renderFinance === 'function'){
-    try{ renderFinance(segKey); }catch(e){ console.error(e); }
+function showTab(segKey, tabKey) {
+  tabState[segKey] = tabKey;
+  const seg = document.getElementById('seg_' + segKey);
+  seg.querySelectorAll('.section').forEach(x => x.classList.remove('active'));
+  seg.querySelectorAll('.tabbtn').forEach(x => x.classList.remove('active'));
+  document.getElementById(segKey + '_' + tabKey).classList.add('active');
+  [...seg.querySelectorAll('.tabbtn')].find(b => b.dataset.tab === tabKey).classList.add('active');
+  if (tabKey === 'finance' && typeof renderFinance === 'function') {
+    try { renderFinance(segKey); } catch (e) { console.error(e); }
   }
-  if(tabKey === 'forecast' && typeof renderForecast === 'function'){
-    try{ renderForecast(segKey); }catch(e){ console.error(e); }
+  if (tabKey === 'forecast' && typeof renderForecast === 'function') {
+    try { renderForecast(segKey); } catch (e) { console.error(e); }
   }
-  if(window.ChartManager){
-    setTimeout(()=>ChartManager.resizeAll(), 40);
+  if (window.ChartManager) {
+    setTimeout(() => ChartManager.resizeAll(), 40);
   }
-  if(STATE_MANAGER) STATE_MANAGER.queuePersist();
+  if (STATE_MANAGER) STATE_MANAGER.queuePersist();
 }
 
-function updateSeg(segKey){
+function updateSeg(segKey) {
   renderKPIs(segKey);
   renderOverview(segKey);
   renderCategory(segKey);
@@ -1855,42 +1864,42 @@ function updateSeg(segKey){
   renderCustomers(segKey);
   renderLifecycle(segKey);
   renderAbnormal(segKey);
-  if(tabState[segKey] === 'finance' && typeof renderFinance === 'function'){
-    try{ renderFinance(segKey); }catch(e){ console.error(e); }
+  if (tabState[segKey] === 'finance' && typeof renderFinance === 'function') {
+    try { renderFinance(segKey); } catch (e) { console.error(e); }
   }
-  if(tabState[segKey] === 'forecast' && typeof renderForecast === 'function'){
-    try{ renderForecast(segKey); }catch(e){ console.error(e); }
+  if (tabState[segKey] === 'forecast' && typeof renderForecast === 'function') {
+    try { renderForecast(segKey); } catch (e) { console.error(e); }
   }
 
-  try{ installAllHeaderFilters(segKey); }catch(e){ console.error(e); }
-  if(window.ChartManager){
-    setTimeout(()=>ChartManager.resizeAll(), 40);
+  try { installAllHeaderFilters(segKey); } catch (e) { console.error(e); }
+  if (window.ChartManager) {
+    setTimeout(() => ChartManager.resizeAll(), 40);
   }
 }
 
-function renderKPIs(segKey){
-  const {startDate,endDate,startMonth,endMonth}=getRange(segKey);
-  let sales=0,gp=0,fee=0,gpAdj=0;
-  if(hasRawRows(segKey)){
-    const rows=getRawRows(segKey);
-    rows.forEach(r=>{
-      const d=r[ROW_IDX.date];
-      if(!dateInRange(d,startDate,endDate)) return;
-      sales+=Number(r[ROW_IDX.sales])||0;
-      gp+=Number(r[ROW_IDX.gp])||0;
-      fee+=Number(r[ROW_IDX.fee])||0;
-      gpAdj+=Number(r[ROW_IDX.gpAdj])||0;
+function renderKPIs(segKey) {
+  const { startDate, endDate, startMonth, endMonth } = getRange(segKey);
+  let sales = 0, gp = 0, fee = 0, gpAdj = 0;
+  if (hasRawRows(segKey)) {
+    const rows = getRawRows(segKey);
+    rows.forEach(r => {
+      const d = r[ROW_IDX.date];
+      if (!dateInRange(d, startDate, endDate)) return;
+      sales += Number(r[ROW_IDX.sales]) || 0;
+      gp += Number(r[ROW_IDX.gp]) || 0;
+      fee += Number(r[ROW_IDX.fee]) || 0;
+      gpAdj += Number(r[ROW_IDX.gpAdj]) || 0;
     });
-  }else{
-    const rows=(DATA[segKey].monthly||[]).filter(r=>monthInRange(r[0],startMonth,endMonth));
-    rows.forEach(r=>{
-      const w=getMonthWeight(r[0],startDate,endDate);
-      if(!w) return;
-      sales+=r[1]*w; gp+=r[3]*w; fee+=r[4]*w; gpAdj+=r[5]*w;
+  } else {
+    const rows = (DATA[segKey].monthly || []).filter(r => monthInRange(r[0], startMonth, endMonth));
+    rows.forEach(r => {
+      const w = getMonthWeight(r[0], startDate, endDate);
+      if (!w) return;
+      sales += r[1] * w; gp += r[3] * w; fee += r[4] * w; gpAdj += r[5] * w;
     });
   }
-  const gm=sales? gp/sales*100 : NaN;
-  const gmAdj=sales? gpAdj/sales*100 : NaN;
+  const gm = sales ? gp / sales * 100 : NaN;
+  const gmAdj = sales ? gpAdj / sales * 100 : NaN;
   const kpiWrap = document.createElement('div');
   kpiWrap.className = 'kpis';
   const salesSub = document.createElement('span');
@@ -1901,188 +1910,188 @@ function renderKPIs(segKey){
   kpiWrap.appendChild(buildKpiCard('综合毛利率', fmtPct(gm)));
   kpiWrap.appendChild(buildKpiCard('销售费用（表内关联）', fmtWan(fee)));
   kpiWrap.appendChild(buildKpiCard('毛利-销售费', `${fmtWan(gpAdj)}（${fmtPct(gmAdj)}）`));
-  const kpiEl = document.getElementById(segKey+'_kpis');
-  if(kpiEl) kpiEl.replaceChildren(kpiWrap);
+  const kpiEl = document.getElementById(segKey + '_kpis');
+  if (kpiEl) kpiEl.replaceChildren(kpiWrap);
 }
 
-function renderOverview(segKey){
-  const {startDate,endDate,startMonth,endMonth}=getRange(segKey);
-  const months=[];
-  const cost=[],gp=[],fee=[],gpAdj=[],gm=[],gmAdj=[],active=[];
-  if(hasRawRows(segKey)){
-    const map=new Map();
-    const activeMap=new Map();
-    getRawRows(segKey).forEach(r=>{
-      const d=r[ROW_IDX.date];
-      if(!dateInRange(d,startDate,endDate)) return;
-      if(!map.has(d)) map.set(d,{sales:0,cost:0,gp:0,fee:0,gpAdj:0});
-      const o=map.get(d);
-      o.sales+=Number(r[ROW_IDX.sales])||0;
-      o.cost+=Number(r[ROW_IDX.cost])||0;
-      o.gp+=Number(r[ROW_IDX.gp])||0;
-      o.fee+=Number(r[ROW_IDX.fee])||0;
-      o.gpAdj+=Number(r[ROW_IDX.gpAdj])||0;
-      const cust=r[ROW_IDX.cust]||'';
-      if(!activeMap.has(d)) activeMap.set(d,new Set());
-      if(cust) activeMap.get(d).add(cust);
+function renderOverview(segKey) {
+  const { startDate, endDate, startMonth, endMonth } = getRange(segKey);
+  const months = [];
+  const cost = [], gp = [], fee = [], gpAdj = [], gm = [], gmAdj = [], active = [];
+  if (hasRawRows(segKey)) {
+    const map = new Map();
+    const activeMap = new Map();
+    getRawRows(segKey).forEach(r => {
+      const d = r[ROW_IDX.date];
+      if (!dateInRange(d, startDate, endDate)) return;
+      if (!map.has(d)) map.set(d, { sales: 0, cost: 0, gp: 0, fee: 0, gpAdj: 0 });
+      const o = map.get(d);
+      o.sales += Number(r[ROW_IDX.sales]) || 0;
+      o.cost += Number(r[ROW_IDX.cost]) || 0;
+      o.gp += Number(r[ROW_IDX.gp]) || 0;
+      o.fee += Number(r[ROW_IDX.fee]) || 0;
+      o.gpAdj += Number(r[ROW_IDX.gpAdj]) || 0;
+      const cust = r[ROW_IDX.cust] || '';
+      if (!activeMap.has(d)) activeMap.set(d, new Set());
+      if (cust) activeMap.get(d).add(cust);
     });
-    const dates=[...map.keys()].sort();
-    dates.forEach(d=>{
-      const o=map.get(d);
+    const dates = [...map.keys()].sort();
+    dates.forEach(d => {
+      const o = map.get(d);
       months.push(d);
       cost.push(o.cost);
       gp.push(o.gp);
       fee.push(o.fee);
       gpAdj.push(o.gpAdj);
-      gm.push(o.sales? o.gp/o.sales*100:null);
-      gmAdj.push(o.sales? o.gpAdj/o.sales*100:null);
-      active.push(activeMap.get(d)?activeMap.get(d).size:0);
+      gm.push(o.sales ? o.gp / o.sales * 100 : null);
+      gmAdj.push(o.sales ? o.gpAdj / o.sales * 100 : null);
+      active.push(activeMap.get(d) ? activeMap.get(d).size : 0);
     });
-  }else{
-    const rows=(DATA[segKey].monthly||[]).filter(r=>monthInRange(r[0],startMonth,endMonth));
-    const weightMap=getMonthWeights(startDate,endDate,rows.map(r=>r[0]));
-    rows.forEach(r=>{
-      const m=r[0];
-      const w=weightMap.get(m) || 0;
-      if(!w) return;
-      const sales=r[1]*w;
-      const costW=r[2]*w;
-      const gpW=r[3]*w;
-      const feeW=r[4]*w;
-      const gpAdjW=r[5]*w;
+  } else {
+    const rows = (DATA[segKey].monthly || []).filter(r => monthInRange(r[0], startMonth, endMonth));
+    const weightMap = getMonthWeights(startDate, endDate, rows.map(r => r[0]));
+    rows.forEach(r => {
+      const m = r[0];
+      const w = weightMap.get(m) || 0;
+      if (!w) return;
+      const sales = r[1] * w;
+      const costW = r[2] * w;
+      const gpW = r[3] * w;
+      const feeW = r[4] * w;
+      const gpAdjW = r[5] * w;
       months.push(m);
       cost.push(costW);
       gp.push(gpW);
       fee.push(feeW);
       gpAdj.push(gpAdjW);
-      gm.push(sales? gpW/sales*100:null);
-      gmAdj.push(sales? gpAdjW/sales*100:null);
-      active.push((r[7]||0)*w);
+      gm.push(sales ? gpW / sales * 100 : null);
+      gmAdj.push(sales ? gpAdjW / sales * 100 : null);
+      active.push((r[7] || 0) * w);
     });
   }
-  if(!months.length){
-    ChartManager.setEmpty(segKey+'_chart_sales', '暂无数据');
-    ChartManager.setEmpty(segKey+'_chart_fee', '暂无数据');
+  if (!months.length) {
+    ChartManager.setEmpty(segKey + '_chart_sales', '暂无数据');
+    ChartManager.setEmpty(segKey + '_chart_fee', '暂无数据');
     return;
   }
 
-  ChartManager.setOption(segKey+'_chart_sales',{
-    tooltip:{
-      trigger:'axis',
-      formatter:(params)=>{
-        const lines=[params[0]?.axisValue || ''];
-        params.forEach(p=>{
-          lines.push(`${p.marker}${p.seriesName}：${formatTooltipValue(p.seriesName,p.data)}`);
+  ChartManager.setOption(segKey + '_chart_sales', {
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params) => {
+        const lines = [params[0]?.axisValue || ''];
+        params.forEach(p => {
+          lines.push(`${p.marker}${p.seriesName}：${formatTooltipValue(p.seriesName, p.data)}`);
         });
         return lines.join('<br/>');
       }
     },
-    legend:{top:10,type:'scroll'},
-    grid:{left:50,right:90,top:60,bottom:40},
-    xAxis:{type:'category',data:months},
-    yAxis:[
-      {type:'value',name:'金额（元）'},
-      {type:'value',name:'毛利率(%)',position:'right',axisLabel:{formatter:'{value}%'}},
-      {type:'value',name:'活跃客户数',position:'right',offset:55}
+    legend: { top: 10, type: 'scroll' },
+    grid: { left: 50, right: 90, top: 60, bottom: 40 },
+    xAxis: { type: 'category', data: months },
+    yAxis: [
+      { type: 'value', name: '金额（元）' },
+      { type: 'value', name: '毛利率(%)', position: 'right', axisLabel: { formatter: '{value}%' } },
+      { type: 'value', name: '活跃客户数', position: 'right', offset: 55 }
     ],
-    series:[
-      {name:'成本',type:'bar',stack:'amount',data:cost},
-      {name:'毛利',type:'bar',stack:'amount',data:gp},
-      {name:'毛利率(%)',type:'line',yAxisIndex:1,data:gm,smooth:true},
-      {name:'活跃客户数',type:'line',yAxisIndex:2,data:active,smooth:true}
+    series: [
+      { name: '成本', type: 'bar', stack: 'amount', data: cost },
+      { name: '毛利', type: 'bar', stack: 'amount', data: gp },
+      { name: '毛利率(%)', type: 'line', yAxisIndex: 1, data: gm, smooth: true },
+      { name: '活跃客户数', type: 'line', yAxisIndex: 2, data: active, smooth: true }
     ]
   });
 
-  ChartManager.setOption(segKey+'_chart_fee',{
-    tooltip:{
-      trigger:'axis',
-      formatter:(params)=>{
-        const lines=[params[0]?.axisValue || ''];
-        params.forEach(p=>{
-          lines.push(`${p.marker}${p.seriesName}：${formatTooltipValue(p.seriesName,p.data)}`);
+  ChartManager.setOption(segKey + '_chart_fee', {
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params) => {
+        const lines = [params[0]?.axisValue || ''];
+        params.forEach(p => {
+          lines.push(`${p.marker}${p.seriesName}：${formatTooltipValue(p.seriesName, p.data)}`);
         });
         return lines.join('<br/>');
       }
     },
-    legend:{top:10,type:'scroll'},
-    grid:{left:50,right:70,top:60,bottom:40},
-    xAxis:{type:'category',data:months},
-    yAxis:[
-      {type:'value',name:'金额（元）'},
-      {type:'value',name:'毛利率(%)',position:'right',axisLabel:{formatter:'{value}%'}}
+    legend: { top: 10, type: 'scroll' },
+    grid: { left: 50, right: 70, top: 60, bottom: 40 },
+    xAxis: { type: 'category', data: months },
+    yAxis: [
+      { type: 'value', name: '金额（元）' },
+      { type: 'value', name: '毛利率(%)', position: 'right', axisLabel: { formatter: '{value}%' } }
     ],
-    series:[
-      {name:'销售费用',type:'bar',data:fee},
-      {name:'毛利-销售费',type:'line',data:gpAdj,smooth:true},
-      {name:'毛利率(扣销售费)%',type:'line',yAxisIndex:1,data:gmAdj,smooth:true}
+    series: [
+      { name: '销售费用', type: 'bar', data: fee },
+      { name: '毛利-销售费', type: 'line', data: gpAdj, smooth: true },
+      { name: '毛利率(扣销售费)%', type: 'line', yAxisIndex: 1, data: gmAdj, smooth: true }
     ]
   });
 
-  const insightsEl = document.getElementById(segKey+'_insights');
-  if(insightsEl) insightsEl.replaceChildren(computeGrowthInsights(segKey,startDate,endDate));
-  const structureEl = document.getElementById(segKey+'_structure');
-  if(structureEl) structureEl.replaceChildren(computeStructureHints(segKey,startDate,endDate));
+  const insightsEl = document.getElementById(segKey + '_insights');
+  if (insightsEl) insightsEl.replaceChildren(computeGrowthInsights(segKey, startDate, endDate));
+  const structureEl = document.getElementById(segKey + '_structure');
+  if (structureEl) structureEl.replaceChildren(computeStructureHints(segKey, startDate, endDate));
 }
 
-function computeGrowthInsights(segKey,startDate,endDate){
-  const monthsAll=DATA[segKey].months||[];
-  const first=startDate? startDate.slice(0,7):(monthsAll[0]||'');
-  const last=endDate? endDate.slice(0,7):(monthsAll[monthsAll.length-1]||'');
-  function sumByRaw(keyFn){
-    const map=new Map();
-    getRawRows(segKey).forEach(r=>{
-      const d=r[ROW_IDX.date];
-      if(!dateInRange(d,startDate,endDate)) return;
-      const m=String(d||'').slice(0,7);
-      if(m!==first && m!==last) return;
-      const k=keyFn(r);
-      if(!map.has(k)) map.set(k,{first:0,last:0});
-      const o=map.get(k);
-      const v=Number(r[ROW_IDX.gpAdj])||0;
-      if(m===first) o.first+=v;
-      if(m===last) o.last+=v;
+function computeGrowthInsights(segKey, startDate, endDate) {
+  const monthsAll = DATA[segKey].months || [];
+  const first = startDate ? startDate.slice(0, 7) : (monthsAll[0] || '');
+  const last = endDate ? endDate.slice(0, 7) : (monthsAll[monthsAll.length - 1] || '');
+  function sumByRaw(keyFn) {
+    const map = new Map();
+    getRawRows(segKey).forEach(r => {
+      const d = r[ROW_IDX.date];
+      if (!dateInRange(d, startDate, endDate)) return;
+      const m = String(d || '').slice(0, 7);
+      if (m !== first && m !== last) return;
+      const k = keyFn(r);
+      if (!map.has(k)) map.set(k, { first: 0, last: 0 });
+      const o = map.get(k);
+      const v = Number(r[ROW_IDX.gpAdj]) || 0;
+      if (m === first) o.first += v;
+      if (m === last) o.last += v;
     });
     return map;
   }
-  function sumByAgg(arr, keyFn, valIdx, monthIdx){
-    const map=new Map();
-    for(const r of arr){
-      const m=r[monthIdx];
-      if(m!==first && m!==last) continue;
-      const k=keyFn(r);
-      if(!map.has(k)) map.set(k,{first:0,last:0});
-      const o=map.get(k);
-      const w=getMonthWeight(m,startDate,endDate);
-      if(m===first) o.first+=r[valIdx]*w;
-      if(m===last) o.last+=r[valIdx]*w;
+  function sumByAgg(arr, keyFn, valIdx, monthIdx) {
+    const map = new Map();
+    for (const r of arr) {
+      const m = r[monthIdx];
+      if (m !== first && m !== last) continue;
+      const k = keyFn(r);
+      if (!map.has(k)) map.set(k, { first: 0, last: 0 });
+      const o = map.get(k);
+      const w = getMonthWeight(m, startDate, endDate);
+      if (m === first) o.first += r[valIdx] * w;
+      if (m === last) o.last += r[valIdx] * w;
     }
     return map;
   }
-  const catMap=hasRawRows(segKey)
-    ? sumByRaw(r=>r[ROW_IDX.cat])
-    : sumByAgg(DATA[segKey].cat_monthly, r=>r[1], 6, 0);
-  const prodMap=hasRawRows(segKey)
-    ? sumByRaw(r=>r[ROW_IDX.prod]+'｜'+r[ROW_IDX.cat])
-    : sumByAgg(DATA[segKey].products, r=>r[0]+'｜'+r[1], 7, 2);
-  const custMap=hasRawRows(segKey)
-    ? sumByRaw(r=>r[ROW_IDX.cust]+'｜'+r[ROW_IDX.cls])
-    : sumByAgg(DATA[segKey].customers, r=>r[0]+'｜'+r[1], 7, 2);
+  const catMap = hasRawRows(segKey)
+    ? sumByRaw(r => r[ROW_IDX.cat])
+    : sumByAgg(DATA[segKey].cat_monthly, r => r[1], 6, 0);
+  const prodMap = hasRawRows(segKey)
+    ? sumByRaw(r => r[ROW_IDX.prod] + '｜' + r[ROW_IDX.cat])
+    : sumByAgg(DATA[segKey].products, r => r[0] + '｜' + r[1], 7, 2);
+  const custMap = hasRawRows(segKey)
+    ? sumByRaw(r => r[ROW_IDX.cust] + '｜' + r[ROW_IDX.cls])
+    : sumByAgg(DATA[segKey].customers, r => r[0] + '｜' + r[1], 7, 2);
 
-  function topDelta(map,n){
-    const arr=[...map.entries()].map(([k,v])=>({k,d:v.last-v.first}));
-    arr.sort((a,b)=>b.d-a.d);
-    return arr.slice(0,n);
+  function topDelta(map, n) {
+    const arr = [...map.entries()].map(([k, v]) => ({ k, d: v.last - v.first }));
+    arr.sort((a, b) => b.d - a.d);
+    return arr.slice(0, n);
   }
-  const a=topDelta(catMap,3).map(x=>`${x.k}（+${fmtWan(x.d)}）`).join('；') || '—';
-  const b=topDelta(prodMap,3).map(x=>`${x.k}（+${fmtWan(x.d)}）`).join('；') || '—';
-  const c=topDelta(custMap,3).map(x=>`${x.k}（+${fmtWan(x.d)}）`).join('；') || '—';
+  const a = topDelta(catMap, 3).map(x => `${x.k}（+${fmtWan(x.d)}）`).join('；') || '—';
+  const b = topDelta(prodMap, 3).map(x => `${x.k}（+${fmtWan(x.d)}）`).join('；') || '—';
+  const c = topDelta(custMap, 3).map(x => `${x.k}（+${fmtWan(x.d)}）`).join('；') || '—';
   const frag = document.createDocumentFragment();
   const lines = [
-    {index:1, title:'品类毛利增量前列', text:a},
-    {index:2, title:'产品毛利增量前列', text:b},
-    {index:3, title:'客户毛利增量前列', text:c}
+    { index: 1, title: '品类毛利增量前列', text: a },
+    { index: 2, title: '产品毛利增量前列', text: b },
+    { index: 3, title: '客户毛利增量前列', text: c }
   ];
-  lines.forEach(line=>{
+  lines.forEach(line => {
     const div = document.createElement('div');
     div.appendChild(document.createTextNode(line.index + ') '));
     const strong = document.createElement('b');
@@ -2098,36 +2107,36 @@ function computeGrowthInsights(segKey,startDate,endDate){
   return frag;
 }
 
-function computeStructureHints(segKey,startDate,endDate){
-  const startMonth=startDate? startDate.slice(0,7):'';
-  const endMonth=endDate? endDate.slice(0,7):'';
-  const map=new Map();
-  if(hasRawRows(segKey)){
-    getRawRows(segKey).forEach(r=>{
-      const d=r[ROW_IDX.date];
-      if(!dateInRange(d,startDate,endDate)) return;
-      const k=r[ROW_IDX.cat];
-      if(!map.has(k)) map.set(k,{sales:0,gpAdj:0});
-      const o=map.get(k);
-      o.sales+=Number(r[ROW_IDX.sales])||0;
-      o.gpAdj+=Number(r[ROW_IDX.gpAdj])||0;
+function computeStructureHints(segKey, startDate, endDate) {
+  const startMonth = startDate ? startDate.slice(0, 7) : '';
+  const endMonth = endDate ? endDate.slice(0, 7) : '';
+  const map = new Map();
+  if (hasRawRows(segKey)) {
+    getRawRows(segKey).forEach(r => {
+      const d = r[ROW_IDX.date];
+      if (!dateInRange(d, startDate, endDate)) return;
+      const k = r[ROW_IDX.cat];
+      if (!map.has(k)) map.set(k, { sales: 0, gpAdj: 0 });
+      const o = map.get(k);
+      o.sales += Number(r[ROW_IDX.sales]) || 0;
+      o.gpAdj += Number(r[ROW_IDX.gpAdj]) || 0;
     });
-  }else{
-    const cats=DATA[segKey].cat_monthly.filter(r=>monthInRange(r[0],startMonth,endMonth));
-    for(const r of cats){
-      const k=r[1];
-      if(!map.has(k)) map.set(k,{sales:0,gpAdj:0});
-      const o=map.get(k);
-      const w=getMonthWeight(r[0],startDate,endDate);
-      if(!w) continue;
-      o.sales+=r[2]*w; o.gpAdj+=r[6]*w;
+  } else {
+    const cats = DATA[segKey].cat_monthly.filter(r => monthInRange(r[0], startMonth, endMonth));
+    for (const r of cats) {
+      const k = r[1];
+      if (!map.has(k)) map.set(k, { sales: 0, gpAdj: 0 });
+      const o = map.get(k);
+      const w = getMonthWeight(r[0], startDate, endDate);
+      if (!w) continue;
+      o.sales += r[2] * w; o.gpAdj += r[6] * w;
     }
   }
-  const arr=[...map.entries()].map(([k,v])=>({k,sales:v.sales,gpAdj:v.gpAdj,gm:v.sales? v.gpAdj/v.sales*100:null}));
-  arr.sort((a,b)=>b.gpAdj-a.gpAdj);
-  const top=arr.slice(0,3).map(x=>`${x.k}：毛利_扣费${fmtWan(x.gpAdj)}（毛利率${fmtPct(x.gm)}）`);
-  const totalSales=arr.reduce((a,x)=>a+x.sales,0);
-  const cand=arr.filter(x=>x.sales>totalSales*0.05).sort((a,b)=>(a.gm||0)-(b.gm||0))[0];
+  const arr = [...map.entries()].map(([k, v]) => ({ k, sales: v.sales, gpAdj: v.gpAdj, gm: v.sales ? v.gpAdj / v.sales * 100 : null }));
+  arr.sort((a, b) => b.gpAdj - a.gpAdj);
+  const top = arr.slice(0, 3).map(x => `${x.k}：毛利_扣费${fmtWan(x.gpAdj)}（毛利率${fmtPct(x.gm)}）`);
+  const totalSales = arr.reduce((a, x) => a + x.sales, 0);
+  const cand = arr.filter(x => x.sales > totalSales * 0.05).sort((a, b) => (a.gm || 0) - (b.gm || 0))[0];
   const frag = document.createDocumentFragment();
   const header = document.createElement('div');
   const headerStrong = document.createElement('b');
@@ -2136,13 +2145,13 @@ function computeStructureHints(segKey,startDate,endDate){
   frag.appendChild(header);
   const listWrap = document.createElement('div');
   const lines = top.length ? top : ['—'];
-  lines.forEach(line=>{
+  lines.forEach(line => {
     const lineEl = document.createElement('div');
     lineEl.textContent = line;
     listWrap.appendChild(lineEl);
   });
   frag.appendChild(listWrap);
-  if(cand){
+  if (cand) {
     const lowDiv = document.createElement('div');
     lowDiv.style.marginTop = '8px';
     lowDiv.appendChild(document.createTextNode('高销售低毛利关注：'));
@@ -2155,1061 +2164,1065 @@ function computeStructureHints(segKey,startDate,endDate){
   return frag;
 }
 
-function renderCategory(segKey){
-  const global=getRange(segKey);
-  if(hasRawRows(segKey)){
-    const rows=getRawRows(segKey).filter(r=>dateInRange(r[ROW_IDX.date],global.startDate,global.endDate));
-    const monthSet=new Set();
-    const catSet=new Set();
-    const byMonth=new Map();
-    rows.forEach(r=>{
-      const m=String(r[ROW_IDX.date]||'').slice(0,7);
-      const c=r[ROW_IDX.cat];
-      if(!m || !c) return;
+function renderCategory(segKey) {
+  const global = getRange(segKey);
+  if (hasRawRows(segKey)) {
+    const rows = getRawRows(segKey).filter(r => dateInRange(r[ROW_IDX.date], global.startDate, global.endDate));
+    const monthSet = new Set();
+    const catSet = new Set();
+    const byMonth = new Map();
+    rows.forEach(r => {
+      const m = String(r[ROW_IDX.date] || '').slice(0, 7);
+      const c = r[ROW_IDX.cat];
+      if (!m || !c) return;
       monthSet.add(m); catSet.add(c);
-      if(!byMonth.has(m)) byMonth.set(m,new Map());
-      const cm=byMonth.get(m);
-      if(!cm.has(c)) cm.set(c,{sales:0,gpAdj:0});
-      const o=cm.get(c);
-      o.sales+=Number(r[ROW_IDX.sales])||0;
-      o.gpAdj+=Number(r[ROW_IDX.gpAdj])||0;
+      if (!byMonth.has(m)) byMonth.set(m, new Map());
+      const cm = byMonth.get(m);
+      if (!cm.has(c)) cm.set(c, { sales: 0, gpAdj: 0 });
+      const o = cm.get(c);
+      o.sales += Number(r[ROW_IDX.sales]) || 0;
+      o.gpAdj += Number(r[ROW_IDX.gpAdj]) || 0;
     });
-    const months=[...monthSet].sort();
-    const cats=[...catSet].sort();
-    if(!months.length){
-      ChartManager.setEmpty(segKey+'_chart_cat_sales', '暂无数据');
-      ChartManager.setEmpty(segKey+'_chart_cat_gp', '暂无数据');
-      ChartManager.setEmpty(segKey+'_chart_cat_rank', '暂无数据');
-    }else{
-      const by={};
-      cats.forEach(c=>by[c]={sales:[],gpAdj:[]});
-      months.forEach(m=>{
-        const cm=byMonth.get(m)||new Map();
-        cats.forEach(c=>{
-          const v=cm.get(c);
-          by[c].sales.push(v?v.sales:0);
-          by[c].gpAdj.push(v?v.gpAdj:0);
+    const months = [...monthSet].sort();
+    const cats = [...catSet].sort();
+    if (!months.length) {
+      ChartManager.setEmpty(segKey + '_chart_cat_sales', '暂无数据');
+      ChartManager.setEmpty(segKey + '_chart_cat_gp', '暂无数据');
+      ChartManager.setEmpty(segKey + '_chart_cat_rank', '暂无数据');
+    } else {
+      const by = {};
+      cats.forEach(c => by[c] = { sales: [], gpAdj: [] });
+      months.forEach(m => {
+        const cm = byMonth.get(m) || new Map();
+        cats.forEach(c => {
+          const v = cm.get(c);
+          by[c].sales.push(v ? v.sales : 0);
+          by[c].gpAdj.push(v ? v.gpAdj : 0);
         });
       });
 
-      ChartManager.setOption(segKey+'_chart_cat_sales',{
-        tooltip:{trigger:'axis'},
-        legend:{top:10,type:'scroll'},
-        grid:{left:50,right:20,top:60,bottom:40},
-        xAxis:{type:'category',data:months},
-        yAxis:{type:'value',name:'销售额（元）'},
-        series: cats.map(c=>({name:c,type:'bar',stack:'sales',data:by[c].sales}))
+      ChartManager.setOption(segKey + '_chart_cat_sales', {
+        tooltip: { trigger: 'axis' },
+        legend: { top: 10, type: 'scroll' },
+        grid: { left: 50, right: 20, top: 60, bottom: 40 },
+        xAxis: { type: 'category', data: months },
+        yAxis: { type: 'value', name: '销售额（元）' },
+        series: cats.map(c => ({ name: c, type: 'bar', stack: 'sales', data: by[c].sales }))
       });
 
-      ChartManager.setOption(segKey+'_chart_cat_gp',{
-        tooltip:{trigger:'axis'},
-        legend:{top:10,type:'scroll'},
-        grid:{left:50,right:20,top:60,bottom:40},
-        xAxis:{type:'category',data:months},
-        yAxis:{type:'value',name:'毛利_扣销售费（元）'},
-        series: cats.map(c=>({name:c,type:'bar',stack:'gp',data:by[c].gpAdj}))
+      ChartManager.setOption(segKey + '_chart_cat_gp', {
+        tooltip: { trigger: 'axis' },
+        legend: { top: 10, type: 'scroll' },
+        grid: { left: 50, right: 20, top: 60, bottom: 40 },
+        xAxis: { type: 'category', data: months },
+        yAxis: { type: 'value', name: '毛利_扣销售费（元）' },
+        series: cats.map(c => ({ name: c, type: 'bar', stack: 'gp', data: by[c].gpAdj }))
       });
 
-      const agg=cats.map(c=>({cat:c,sales:by[c].sales.reduce((a,b)=>a+b,0),gpAdj:by[c].gpAdj.reduce((a,b)=>a+b,0)}));
-      agg.forEach(x=>x.gm=x.sales? x.gpAdj/x.sales*100:null);
-      agg.sort((a,b)=>b.gpAdj-a.gpAdj);
-      const top=agg.slice(0,10);
-      ChartManager.setOption(segKey+'_chart_cat_rank',{
-        tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
-        grid:{left:140,right:20,top:40,bottom:40},
-        xAxis:{type:'value',name:'毛利（元）'},
-        yAxis:{type:'category',data:top.map(x=>x.cat),inverse:true},
-        series:[{name:'毛利_扣销售费',type:'bar',data:top.map(x=>x.gpAdj)}]
+      const agg = cats.map(c => ({ cat: c, sales: by[c].sales.reduce((a, b) => a + b, 0), gpAdj: by[c].gpAdj.reduce((a, b) => a + b, 0) }));
+      agg.forEach(x => x.gm = x.sales ? x.gpAdj / x.sales * 100 : null);
+      agg.sort((a, b) => b.gpAdj - a.gpAdj);
+      const top = agg.slice(0, 10);
+      ChartManager.setOption(segKey + '_chart_cat_rank', {
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        grid: { left: 140, right: 20, top: 40, bottom: 40 },
+        xAxis: { type: 'value', name: '毛利（元）' },
+        yAxis: { type: 'category', data: top.map(x => x.cat), inverse: true },
+        series: [{ name: '毛利_扣销售费', type: 'bar', data: top.map(x => x.gpAdj) }]
       });
     }
 
-    syncTableRangeInputs(segKey,'category');
-    const tableRange=getTableRange(segKey,'category');
-    const tableRows=getRawRows(segKey).filter(r=>dateInRange(r[ROW_IDX.date],tableRange.startDate,tableRange.endDate));
-    const tbody=document.querySelector('#'+segKey+'_category_table tbody');
-    if(tbody){
-      tbody.innerHTML='';
-      const map2=new Map();
-      const orders=new Map();
-      for(const r of tableRows){
-        const k=r[ROW_IDX.cat];
-        if(!k) continue;
-        if(!map2.has(k)) map2.set(k,{sales:0,cost:0,gp:0,fee:0,gpAdj:0,qty:0});
-        const o=map2.get(k);
-        o.sales+=Number(r[ROW_IDX.sales])||0;
-        o.cost+=Number(r[ROW_IDX.cost])||0;
-        o.gp+=Number(r[ROW_IDX.gp])||0;
-        o.fee+=Number(r[ROW_IDX.fee])||0;
-        o.gpAdj+=Number(r[ROW_IDX.gpAdj])||0;
-        o.qty+=Number(r[ROW_IDX.qty])||0;
-        if(!orders.has(k)) orders.set(k,new Set());
-        const ord=r[ROW_IDX.order];
-        if(ord) orders.get(k).add(ord);
+    syncTableRangeInputs(segKey, 'category');
+    const tableRange = getTableRange(segKey, 'category');
+    const tableRows = getRawRows(segKey).filter(r => dateInRange(r[ROW_IDX.date], tableRange.startDate, tableRange.endDate));
+    const tbody = document.querySelector('#' + segKey + '_category_table tbody');
+    if (tbody) {
+      tbody.innerHTML = '';
+      const map2 = new Map();
+      const orders = new Map();
+      for (const r of tableRows) {
+        const k = r[ROW_IDX.cat];
+        if (!k) continue;
+        if (!map2.has(k)) map2.set(k, { sales: 0, cost: 0, gp: 0, fee: 0, gpAdj: 0, qty: 0 });
+        const o = map2.get(k);
+        o.sales += Number(r[ROW_IDX.sales]) || 0;
+        o.cost += Number(r[ROW_IDX.cost]) || 0;
+        o.gp += Number(r[ROW_IDX.gp]) || 0;
+        o.fee += Number(r[ROW_IDX.fee]) || 0;
+        o.gpAdj += Number(r[ROW_IDX.gpAdj]) || 0;
+        o.qty += Number(r[ROW_IDX.qty]) || 0;
+        if (!orders.has(k)) orders.set(k, new Set());
+        const ord = r[ROW_IDX.order];
+        if (ord) orders.get(k).add(ord);
       }
-      const list=[...map2.entries()].map(([k,v])=>({
+      const list = [...map2.entries()].map(([k, v]) => ({
         k,
         ...v,
-        orders:(orders.get(k)?orders.get(k).size:0),
-        gm:v.sales? v.gp/v.sales*100:null,
-        gm2:v.sales? v.gpAdj/v.sales*100:null
+        orders: (orders.get(k) ? orders.get(k).size : 0),
+        gm: v.sales ? v.gp / v.sales * 100 : null,
+        gm2: v.sales ? v.gpAdj / v.sales * 100 : null
       }));
-      list.sort((a,b)=>b.gpAdj-a.gpAdj);
-      for(const o of list){
-        const tr=document.createElement('tr');
-        const cells=[o.k,fmtNum(o.sales),fmtNum(o.gp),fmtPct(o.gm),fmtNum(o.fee),fmtNum(o.gpAdj),fmtPct(o.gm2),fmtNum(o.qty),fmtNum(o.orders)];
-        cells.forEach((c,i)=>{const td=document.createElement('td');
-          if(i===8){td.appendChild(createOrderLink(segKey,'category',`品类｜${o.k}`,{cat:o.k},c));}
-          else{td.textContent=c;}
+      list.sort((a, b) => b.gpAdj - a.gpAdj);
+      for (const o of list) {
+        const tr = document.createElement('tr');
+        const cells = [o.k, fmtNum(o.sales), fmtNum(o.gp), fmtPct(o.gm), fmtNum(o.fee), fmtNum(o.gpAdj), fmtPct(o.gm2), fmtNum(o.qty), fmtNum(o.orders)];
+        cells.forEach((c, i) => {
+          const td = document.createElement('td');
+          if (i === 8) { td.appendChild(createOrderLink(segKey, 'category', `品类｜${o.k}`, { cat: o.k }, c)); }
+          else { td.textContent = c; }
           tr.appendChild(td);
         });
         tbody.appendChild(tr);
       }
-      document.getElementById(segKey+'_category_count').innerText=String(list.length);
-      filterTable(segKey,'category');
+      document.getElementById(segKey + '_category_count').innerText = String(list.length);
+      filterTable(segKey, 'category');
     }
     return;
   }
 
-  const rows=DATA[segKey].cat_monthly.filter(r=>monthInRange(r[0],global.startMonth,global.endMonth));
-  const monthsAll=[...new Set(rows.map(r=>r[0]))].sort();
-  const weightMap=getMonthWeights(global.startDate,global.endDate,monthsAll);
-  const months=monthsAll.filter(m=>(weightMap.get(m)||0)>0);
-  const cats=[...new Set(rows.map(r=>r[1]))].sort();
-  if(!months.length){
-    ChartManager.setEmpty(segKey+'_chart_cat_sales', '暂无数据');
-    ChartManager.setEmpty(segKey+'_chart_cat_gp', '暂无数据');
-    ChartManager.setEmpty(segKey+'_chart_cat_rank', '暂无数据');
-  }else{
-    const mi=new Map(months.map((m,i)=>[m,i]));
-    const by={};
-    cats.forEach(c=>by[c]={sales:Array(months.length).fill(0), gpAdj:Array(months.length).fill(0)});
-    for(const r of rows){
-      const w=weightMap.get(r[0])||0;
-      if(!w) continue;
-      const idx=mi.get(r[0]);
-      if(idx===undefined) continue;
-      by[r[1]].sales[idx]+=r[2]*w;
-      by[r[1]].gpAdj[idx]+=r[6]*w;
+  const rows = DATA[segKey].cat_monthly.filter(r => monthInRange(r[0], global.startMonth, global.endMonth));
+  const monthsAll = [...new Set(rows.map(r => r[0]))].sort();
+  const weightMap = getMonthWeights(global.startDate, global.endDate, monthsAll);
+  const months = monthsAll.filter(m => (weightMap.get(m) || 0) > 0);
+  const cats = [...new Set(rows.map(r => r[1]))].sort();
+  if (!months.length) {
+    ChartManager.setEmpty(segKey + '_chart_cat_sales', '暂无数据');
+    ChartManager.setEmpty(segKey + '_chart_cat_gp', '暂无数据');
+    ChartManager.setEmpty(segKey + '_chart_cat_rank', '暂无数据');
+  } else {
+    const mi = new Map(months.map((m, i) => [m, i]));
+    const by = {};
+    cats.forEach(c => by[c] = { sales: Array(months.length).fill(0), gpAdj: Array(months.length).fill(0) });
+    for (const r of rows) {
+      const w = weightMap.get(r[0]) || 0;
+      if (!w) continue;
+      const idx = mi.get(r[0]);
+      if (idx === undefined) continue;
+      by[r[1]].sales[idx] += r[2] * w;
+      by[r[1]].gpAdj[idx] += r[6] * w;
     }
 
-    ChartManager.setOption(segKey+'_chart_cat_sales',{
-      tooltip:{trigger:'axis'},
-      legend:{top:10,type:'scroll'},
-      grid:{left:50,right:20,top:60,bottom:40},
-      xAxis:{type:'category',data:months},
-      yAxis:{type:'value',name:'销售额（元）'},
-      series: cats.map(c=>({name:c,type:'bar',stack:'sales',data:by[c].sales}))
+    ChartManager.setOption(segKey + '_chart_cat_sales', {
+      tooltip: { trigger: 'axis' },
+      legend: { top: 10, type: 'scroll' },
+      grid: { left: 50, right: 20, top: 60, bottom: 40 },
+      xAxis: { type: 'category', data: months },
+      yAxis: { type: 'value', name: '销售额（元）' },
+      series: cats.map(c => ({ name: c, type: 'bar', stack: 'sales', data: by[c].sales }))
     });
 
-    ChartManager.setOption(segKey+'_chart_cat_gp',{
-      tooltip:{trigger:'axis'},
-      legend:{top:10,type:'scroll'},
-      grid:{left:50,right:20,top:60,bottom:40},
-      xAxis:{type:'category',data:months},
-      yAxis:{type:'value',name:'毛利_扣销售费（元）'},
-      series: cats.map(c=>({name:c,type:'bar',stack:'gp',data:by[c].gpAdj}))
+    ChartManager.setOption(segKey + '_chart_cat_gp', {
+      tooltip: { trigger: 'axis' },
+      legend: { top: 10, type: 'scroll' },
+      grid: { left: 50, right: 20, top: 60, bottom: 40 },
+      xAxis: { type: 'category', data: months },
+      yAxis: { type: 'value', name: '毛利_扣销售费（元）' },
+      series: cats.map(c => ({ name: c, type: 'bar', stack: 'gp', data: by[c].gpAdj }))
     });
 
-    const agg=cats.map(c=>({cat:c,sales:by[c].sales.reduce((a,b)=>a+b,0),gpAdj:by[c].gpAdj.reduce((a,b)=>a+b,0)}));
-    agg.forEach(x=>x.gm=x.sales? x.gpAdj/x.sales*100:null);
-    agg.sort((a,b)=>b.gpAdj-a.gpAdj);
-    const top=agg.slice(0,10);
-    ChartManager.setOption(segKey+'_chart_cat_rank',{
-      tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
-      grid:{left:140,right:20,top:40,bottom:40},
-      xAxis:{type:'value',name:'毛利（元）'},
-      yAxis:{type:'category',data:top.map(x=>x.cat),inverse:true},
-      series:[{name:'毛利_扣销售费',type:'bar',data:top.map(x=>x.gpAdj)}]
+    const agg = cats.map(c => ({ cat: c, sales: by[c].sales.reduce((a, b) => a + b, 0), gpAdj: by[c].gpAdj.reduce((a, b) => a + b, 0) }));
+    agg.forEach(x => x.gm = x.sales ? x.gpAdj / x.sales * 100 : null);
+    agg.sort((a, b) => b.gpAdj - a.gpAdj);
+    const top = agg.slice(0, 10);
+    ChartManager.setOption(segKey + '_chart_cat_rank', {
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: 140, right: 20, top: 40, bottom: 40 },
+      xAxis: { type: 'value', name: '毛利（元）' },
+      yAxis: { type: 'category', data: top.map(x => x.cat), inverse: true },
+      series: [{ name: '毛利_扣销售费', type: 'bar', data: top.map(x => x.gpAdj) }]
     });
   }
 
-  syncTableRangeInputs(segKey,'category');
-  const tableRange=getTableRange(segKey,'category');
-  const tableRows=DATA[segKey].cat_monthly.filter(r=>monthInRange(r[0],tableRange.startMonth,tableRange.endMonth));
-  const tableWeight=getMonthWeights(tableRange.startDate,tableRange.endDate,[...new Set(tableRows.map(r=>r[0]))]);
+  syncTableRangeInputs(segKey, 'category');
+  const tableRange = getTableRange(segKey, 'category');
+  const tableRows = DATA[segKey].cat_monthly.filter(r => monthInRange(r[0], tableRange.startMonth, tableRange.endMonth));
+  const tableWeight = getMonthWeights(tableRange.startDate, tableRange.endDate, [...new Set(tableRows.map(r => r[0]))]);
 
-  const tbody=document.querySelector('#'+segKey+'_category_table tbody');
-  if(tbody){
-    tbody.innerHTML='';
-    const map2=new Map();
-    for(const r of tableRows){
-      const w=tableWeight.get(r[0])||0;
-      if(!w) continue;
-      const k=r[1];
-      if(!map2.has(k)) map2.set(k,{sales:0,cost:0,gp:0,fee:0,gpAdj:0,qty:0,orders:0});
-      const o=map2.get(k);
-      o.sales+=r[2]*w; o.cost+=r[3]*w; o.gp+=r[4]*w; o.fee+=r[5]*w; o.gpAdj+=r[6]*w; o.qty+=r[7]*w; o.orders+=r[8]*w;
+  const tbody = document.querySelector('#' + segKey + '_category_table tbody');
+  if (tbody) {
+    tbody.innerHTML = '';
+    const map2 = new Map();
+    for (const r of tableRows) {
+      const w = tableWeight.get(r[0]) || 0;
+      if (!w) continue;
+      const k = r[1];
+      if (!map2.has(k)) map2.set(k, { sales: 0, cost: 0, gp: 0, fee: 0, gpAdj: 0, qty: 0, orders: 0 });
+      const o = map2.get(k);
+      o.sales += r[2] * w; o.cost += r[3] * w; o.gp += r[4] * w; o.fee += r[5] * w; o.gpAdj += r[6] * w; o.qty += r[7] * w; o.orders += r[8] * w;
     }
-    const list=[...map2.entries()].map(([k,v])=>({k,...v,gm:v.sales? v.gp/v.sales*100:null,gm2:v.sales? v.gpAdj/v.sales*100:null}));
-    list.sort((a,b)=>b.gpAdj-a.gpAdj);
-    for(const o of list){
-      const tr=document.createElement('tr');
-      const cells=[o.k,fmtNum(o.sales),fmtNum(o.gp),fmtPct(o.gm),fmtNum(o.fee),fmtNum(o.gpAdj),fmtPct(o.gm2),fmtNum(o.qty),fmtNum(o.orders)];
-      cells.forEach((c,i)=>{const td=document.createElement('td');
-        if(i===8){td.appendChild(createOrderLink(segKey,'category',`品类｜${o.k}`,{cat:o.k},c));}
-        else{td.textContent=c;}
+    const list = [...map2.entries()].map(([k, v]) => ({ k, ...v, gm: v.sales ? v.gp / v.sales * 100 : null, gm2: v.sales ? v.gpAdj / v.sales * 100 : null }));
+    list.sort((a, b) => b.gpAdj - a.gpAdj);
+    for (const o of list) {
+      const tr = document.createElement('tr');
+      const cells = [o.k, fmtNum(o.sales), fmtNum(o.gp), fmtPct(o.gm), fmtNum(o.fee), fmtNum(o.gpAdj), fmtPct(o.gm2), fmtNum(o.qty), fmtNum(o.orders)];
+      cells.forEach((c, i) => {
+        const td = document.createElement('td');
+        if (i === 8) { td.appendChild(createOrderLink(segKey, 'category', `品类｜${o.k}`, { cat: o.k }, c)); }
+        else { td.textContent = c; }
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
     }
-    document.getElementById(segKey+'_category_count').innerText=String(list.length);
-    filterTable(segKey,'category');
+    document.getElementById(segKey + '_category_count').innerText = String(list.length);
+    filterTable(segKey, 'category');
   }
 }
 
-function _monthStartDate(m){
-  return new Date(m+'-01T00:00:00');
+function _monthStartDate(m) {
+  return new Date(m + '-01T00:00:00');
 }
-function _monthEndDate(m){
-  const d=new Date(m+'-01T00:00:00');
-  d.setMonth(d.getMonth()+1);
+function _monthEndDate(m) {
+  const d = new Date(m + '-01T00:00:00');
+  d.setMonth(d.getMonth() + 1);
   d.setDate(0);
-  d.setHours(23,59,59,999);
+  d.setHours(23, 59, 59, 999);
   return d;
 }
-function _toDate(s){
+function _toDate(s) {
   return _toDateStart(s);
 }
 
 const CATTON_STATE = {};
 
-function renderMarginDistribution(chartId, rows, title){
-  const buckets=['≤0%','0-5%','5-10%','10-20%','20-30%','>30%'];
-  const counts=new Array(buckets.length).fill(0);
-  const sales=new Array(buckets.length).fill(0);
-  rows.forEach(o=>{
-    if(o.gm2===null || o.gm2===undefined || !isFinite(o.gm2)) return;
-    const v=o.gm2;
-    let idx=0;
-    if(v<=0) idx=0;
-    else if(v<=5) idx=1;
-    else if(v<=10) idx=2;
-    else if(v<=20) idx=3;
-    else if(v<=30) idx=4;
-    else idx=5;
-    counts[idx]+=1;
-    sales[idx]+=o.sales||0;
+function renderMarginDistribution(chartId, rows, title) {
+  const buckets = ['≤0%', '0-5%', '5-10%', '10-20%', '20-30%', '>30%'];
+  const counts = new Array(buckets.length).fill(0);
+  const sales = new Array(buckets.length).fill(0);
+  rows.forEach(o => {
+    if (o.gm2 === null || o.gm2 === undefined || !isFinite(o.gm2)) return;
+    const v = o.gm2;
+    let idx = 0;
+    if (v <= 0) idx = 0;
+    else if (v <= 5) idx = 1;
+    else if (v <= 10) idx = 2;
+    else if (v <= 20) idx = 3;
+    else if (v <= 30) idx = 4;
+    else idx = 5;
+    counts[idx] += 1;
+    sales[idx] += o.sales || 0;
   });
-  const totalSales=sales.reduce((a,b)=>a+b,0);
-  const totalCount=counts.reduce((a,b)=>a+b,0);
-  if(!totalCount){
+  const totalSales = sales.reduce((a, b) => a + b, 0);
+  const totalCount = counts.reduce((a, b) => a + b, 0);
+  if (!totalCount) {
     ChartManager.setEmpty(chartId, '暂无数据');
     return;
   }
-  const shares=sales.map(v=>totalSales? +(v/totalSales*100).toFixed(2):0);
-  ChartManager.setOption(chartId,{
-    title:{text:title,left:16,top:10,textStyle:{fontSize:12,fontWeight:800,color:'#1b1a17'}},
-    tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
-    grid:{left:50,right:60,top:50,bottom:40},
-    xAxis:{type:'category',data:buckets},
-    yAxis:[
-      {type:'value',name:'数量'},
-      {type:'value',name:'销售占比',position:'right',axisLabel:{formatter:'{value}%'}}
+  const shares = sales.map(v => totalSales ? +(v / totalSales * 100).toFixed(2) : 0);
+  ChartManager.setOption(chartId, {
+    title: { text: title, left: 16, top: 10, textStyle: { fontSize: 12, fontWeight: 800, color: '#1b1a17' } },
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { left: 50, right: 60, top: 50, bottom: 40 },
+    xAxis: { type: 'category', data: buckets },
+    yAxis: [
+      { type: 'value', name: '数量' },
+      { type: 'value', name: '销售占比', position: 'right', axisLabel: { formatter: '{value}%' } }
     ],
-    series:[
-      {name:'数量',type:'bar',data:counts,barMaxWidth:36,itemStyle:{color:'#148a78'}},
-      {name:'销售占比',type:'line',yAxisIndex:1,data:shares,smooth:true,itemStyle:{color:'#f05a3e'}}
+    series: [
+      { name: '数量', type: 'bar', data: counts, barMaxWidth: 36, itemStyle: { color: '#148a78' } },
+      { name: '销售占比', type: 'line', yAxisIndex: 1, data: shares, smooth: true, itemStyle: { color: '#f05a3e' } }
     ]
   });
 }
 
-function renderCatTon(segKey){
-  const grainEl=document.getElementById(segKey+'_catton_grain');
-  if(!grainEl) return;
-  const grain=grainEl.value||'month';
-  const global=getRange(segKey);
-  syncTableRangeInputs(segKey,'catton');
-  const tableRange=getTableRange(segKey,'catton');
-  const noteEl=document.getElementById(segKey+'_catton_note');
-  if(noteEl){
+function renderCatTon(segKey) {
+  const grainEl = document.getElementById(segKey + '_catton_grain');
+  if (!grainEl) return;
+  const grain = grainEl.value || 'month';
+  const global = getRange(segKey);
+  syncTableRangeInputs(segKey, 'catton');
+  const tableRange = getTableRange(segKey, 'catton');
+  const noteEl = document.getElementById(segKey + '_catton_note');
+  if (noteEl) {
     noteEl.innerText = `口径：数量按规格折吨（油按 ${CAT_TON_META.oil_density}千克/升；袋装无规格默认${CAT_TON_META.fallback_bag_kg}千克；仍有 ${CAT_TON_META.missing_weight_lines} 行无法解析未计入吨数）`;
   }
 
-  const cats=['大米','食用油','面粉','杂粮'];
-  function getPeriodWeight(rangeStart,rangeEnd,periodStart,periodEnd){
-    if(!rangeStart || !rangeEnd) return 1;
-    const s=_toDateStart(rangeStart);
-    const e=_toDateEnd(rangeEnd);
-    const ps=_toDateStart(periodStart);
-    const pe=_toDateEnd(periodEnd);
-    if(!s || !e || !ps || !pe) return 1;
-    if(e < ps || s > pe) return 0;
-    const overlapStart=Math.max(s.getTime(), ps.getTime());
-    const overlapEnd=Math.min(e.getTime(), pe.getTime());
-    if(overlapEnd < overlapStart) return 0;
-    const overlapDays=Math.floor((overlapEnd - overlapStart) / 86400000) + 1;
-    const totalDays=Math.floor((pe.getTime() - ps.getTime()) / 86400000) + 1;
+  const cats = ['大米', '食用油', '面粉', '杂粮'];
+  function getPeriodWeight(rangeStart, rangeEnd, periodStart, periodEnd) {
+    if (!rangeStart || !rangeEnd) return 1;
+    const s = _toDateStart(rangeStart);
+    const e = _toDateEnd(rangeEnd);
+    const ps = _toDateStart(periodStart);
+    const pe = _toDateEnd(periodEnd);
+    if (!s || !e || !ps || !pe) return 1;
+    if (e < ps || s > pe) return 0;
+    const overlapStart = Math.max(s.getTime(), ps.getTime());
+    const overlapEnd = Math.min(e.getTime(), pe.getTime());
+    if (overlapEnd < overlapStart) return 0;
+    const overlapDays = Math.floor((overlapEnd - overlapStart) / 86400000) + 1;
+    const totalDays = Math.floor((pe.getTime() - ps.getTime()) / 86400000) + 1;
     return Math.max(0, Math.min(1, overlapDays / totalDays));
   }
 
-  function buildNorm(range){
-    let rowsRaw=[];
-    if(grain==='week'){
-      rowsRaw=(CAT_TON[segKey]&&CAT_TON[segKey].weekly)?CAT_TON[segKey].weekly:[];
-      const startDateObj=range.startDate ? _toDate(range.startDate) : _monthStartDate(range.startMonth);
-      const endDateObj=range.endDate ? _toDateEnd(range.endDate) : _monthEndDate(range.endMonth);
-      rowsRaw=rowsRaw.filter(r=>{
-        const ws=_toDate(r[0]);
-        const we=_toDate(r[1]);
-        return we>=startDateObj && ws<=endDateObj;
-      }).map(r=>{
-        const w=getPeriodWeight(range.startDate,range.endDate,r[0],r[1]);
-        if(!w) return null;
-        return {periodKey:r[0], period:r[2], cat:r[3], tons:r[4]*w, profit:r[5]*w, ppt:r[6], orders:r[7]*w, _t:r[0]};
+  function buildNorm(range) {
+    let rowsRaw = [];
+    if (grain === 'week') {
+      rowsRaw = (CAT_TON[segKey] && CAT_TON[segKey].weekly) ? CAT_TON[segKey].weekly : [];
+      const startDateObj = range.startDate ? _toDate(range.startDate) : _monthStartDate(range.startMonth);
+      const endDateObj = range.endDate ? _toDateEnd(range.endDate) : _monthEndDate(range.endMonth);
+      rowsRaw = rowsRaw.filter(r => {
+        const ws = _toDate(r[0]);
+        const we = _toDate(r[1]);
+        return we >= startDateObj && ws <= endDateObj;
+      }).map(r => {
+        const w = getPeriodWeight(range.startDate, range.endDate, r[0], r[1]);
+        if (!w) return null;
+        return { periodKey: r[0], period: r[2], cat: r[3], tons: r[4] * w, profit: r[5] * w, ppt: r[6], orders: r[7] * w, _t: r[0] };
       }).filter(Boolean);
-    }else{
-      rowsRaw=(CAT_TON[segKey]&&CAT_TON[segKey].monthly)?CAT_TON[segKey].monthly:[];
-      rowsRaw=rowsRaw.filter(r=>monthInRange(r[0],range.startMonth,range.endMonth));
-      const weightMap=getMonthWeights(range.startDate,range.endDate,[...new Set(rowsRaw.map(r=>r[0]))]);
-      rowsRaw=rowsRaw.map(r=>{
-        const w=weightMap.get(r[0])||0;
-        if(!w) return null;
-        return {periodKey:r[0], period:r[0], cat:r[1], tons:r[2]*w, profit:r[3]*w, ppt:r[4], orders:r[5]*w, _t:r[0]+'-01'};
+    } else {
+      rowsRaw = (CAT_TON[segKey] && CAT_TON[segKey].monthly) ? CAT_TON[segKey].monthly : [];
+      rowsRaw = rowsRaw.filter(r => monthInRange(r[0], range.startMonth, range.endMonth));
+      const weightMap = getMonthWeights(range.startDate, range.endDate, [...new Set(rowsRaw.map(r => r[0]))]);
+      rowsRaw = rowsRaw.map(r => {
+        const w = weightMap.get(r[0]) || 0;
+        if (!w) return null;
+        return { periodKey: r[0], period: r[0], cat: r[1], tons: r[2] * w, profit: r[3] * w, ppt: r[4], orders: r[5] * w, _t: r[0] + '-01' };
       }).filter(Boolean);
     }
-    return rowsRaw.filter(o=>cats.includes(o.cat));
+    return rowsRaw.filter(o => cats.includes(o.cat));
   }
 
-  const normChart=buildNorm(global);
-  const normTable=buildNorm(tableRange);
+  const normChart = buildNorm(global);
+  const normTable = buildNorm(tableRange);
 
-  const periods=[...new Set(normChart.map(o=>o.period))];
-  periods.sort((a,b)=>{
-    const oa=normChart.find(x=>x.period===a);
-    const ob=normChart.find(x=>x.period===b);
-    return String(oa?oa._t:'').localeCompare(String(ob?ob._t:''));
+  const periods = [...new Set(normChart.map(o => o.period))];
+  periods.sort((a, b) => {
+    const oa = normChart.find(x => x.period === a);
+    const ob = normChart.find(x => x.period === b);
+    return String(oa ? oa._t : '').localeCompare(String(ob ? ob._t : ''));
   });
 
-  if(!periods.length){
-    ChartManager.setEmpty(segKey+'_chart_cat_ton', '暂无数据');
-    ChartManager.setEmpty(segKey+'_chart_cat_ppt', '暂无数据');
-  }else{
-    const by={}; cats.forEach(c=>by[c]={tons:[],ppt:[]});
-    for(const p of periods){
-      for(const c of cats){
-        const hit=normChart.find(o=>o.period===p && o.cat===c);
-        by[c].tons.push(hit?hit.tons:0);
-        by[c].ppt.push(hit && isFinite(hit.ppt)?hit.ppt:null);
+  if (!periods.length) {
+    ChartManager.setEmpty(segKey + '_chart_cat_ton', '暂无数据');
+    ChartManager.setEmpty(segKey + '_chart_cat_ppt', '暂无数据');
+  } else {
+    const by = {}; cats.forEach(c => by[c] = { tons: [], ppt: [] });
+    for (const p of periods) {
+      for (const c of cats) {
+        const hit = normChart.find(o => o.period === p && o.cat === c);
+        by[c].tons.push(hit ? hit.tons : 0);
+        by[c].ppt.push(hit && isFinite(hit.ppt) ? hit.ppt : null);
       }
     }
 
-    ChartManager.setOption(segKey+'_chart_cat_ton',{
-      tooltip:{trigger:'axis'},
-      legend:{top:10,type:'scroll'},
-      grid:{left:60,right:20,top:60,bottom:70},
-      xAxis:{type:'category',data:periods,axisLabel:{rotate:30}},
-      yAxis:{type:'value',name:'吨'},
-      series: cats.map(c=>({name:c,type:'bar',stack:'tons',data:by[c].tons}))
+    ChartManager.setOption(segKey + '_chart_cat_ton', {
+      tooltip: { trigger: 'axis' },
+      legend: { top: 10, type: 'scroll' },
+      grid: { left: 60, right: 20, top: 60, bottom: 70 },
+      xAxis: { type: 'category', data: periods, axisLabel: { rotate: 30 } },
+      yAxis: { type: 'value', name: '吨' },
+      series: cats.map(c => ({ name: c, type: 'bar', stack: 'tons', data: by[c].tons }))
     });
 
-    ChartManager.setOption(segKey+'_chart_cat_ppt',{
-      tooltip:{trigger:'axis'},
-      legend:{top:10,type:'scroll'},
-      grid:{left:70,right:20,top:60,bottom:70},
-      xAxis:{type:'category',data:periods,axisLabel:{rotate:30}},
-      yAxis:{type:'value',name:'元/吨'},
-      series: cats.map(c=>({name:c,type:'line',data:by[c].ppt,connectNulls:true,smooth:true}))
+    ChartManager.setOption(segKey + '_chart_cat_ppt', {
+      tooltip: { trigger: 'axis' },
+      legend: { top: 10, type: 'scroll' },
+      grid: { left: 70, right: 20, top: 60, bottom: 70 },
+      xAxis: { type: 'category', data: periods, axisLabel: { rotate: 30 } },
+      yAxis: { type: 'value', name: '元/吨' },
+      series: cats.map(c => ({ name: c, type: 'line', data: by[c].ppt, connectNulls: true, smooth: true }))
     });
   }
 
-  CATTON_STATE[segKey]=CATTON_STATE[segKey]||{sortCol:0,sortAsc:true,rows:[],view:[]};
-  CATTON_STATE[segKey].rows=normTable;
-  CATTON_STATE[segKey].sortCol=0; CATTON_STATE[segKey].sortAsc=true;
+  CATTON_STATE[segKey] = CATTON_STATE[segKey] || { sortCol: 0, sortAsc: true, rows: [], view: [] };
+  CATTON_STATE[segKey].rows = normTable;
+  CATTON_STATE[segKey].sortCol = 0; CATTON_STATE[segKey].sortAsc = true;
   applyCatTonView(segKey);
 }
 
-function applyCatTonView(segKey){
-  const st=CATTON_STATE[segKey];
-  if(!st) return;
-  const q=(document.getElementById(segKey+'_catton_search').value||'').trim().toLowerCase();
-  let arr=st.rows.slice();
-  if(q){
-    arr=arr.filter(o=>{
+function applyCatTonView(segKey) {
+  const st = CATTON_STATE[segKey];
+  if (!st) return;
+  const q = (document.getElementById(segKey + '_catton_search').value || '').trim().toLowerCase();
+  let arr = st.rows.slice();
+  if (q) {
+    arr = arr.filter(o => {
       return (String(o.period).toLowerCase().includes(q) || String(o.cat).toLowerCase().includes(q));
     });
   }
-  const col=st.sortCol||0;
-  const asc=!!st.sortAsc;
-  const keyFn = (o)=>{
-    if(col===0) return o._t;
-    if(col===1) return o.cat;
-    if(col===2) return Number(o.tons)||0;
-    if(col===3) return Number(o.profit)||0;
-    if(col===4) return (isFinite(o.ppt)?Number(o.ppt): -1e30);
-    if(col===5) return Number(o.orders)||0;
+  const col = st.sortCol || 0;
+  const asc = !!st.sortAsc;
+  const keyFn = (o) => {
+    if (col === 0) return o._t;
+    if (col === 1) return o.cat;
+    if (col === 2) return Number(o.tons) || 0;
+    if (col === 3) return Number(o.profit) || 0;
+    if (col === 4) return (isFinite(o.ppt) ? Number(o.ppt) : -1e30);
+    if (col === 5) return Number(o.orders) || 0;
     return o._t;
   };
-  arr.sort((a,b)=>{
-    const ka=keyFn(a), kb=keyFn(b);
-    let cmp=0;
-    if(typeof ka==='string' || typeof kb==='string') cmp=String(ka).localeCompare(String(kb));
-    else cmp=(ka-kb);
-    return asc?cmp:-cmp;
+  arr.sort((a, b) => {
+    const ka = keyFn(a), kb = keyFn(b);
+    let cmp = 0;
+    if (typeof ka === 'string' || typeof kb === 'string') cmp = String(ka).localeCompare(String(kb));
+    else cmp = (ka - kb);
+    return asc ? cmp : -cmp;
   });
-  st.view=arr;
+  st.view = arr;
   renderCatTonTable(segKey);
 }
 
-function renderCatTonTable(segKey){
-  const st=CATTON_STATE[segKey];
-  const tbody=document.querySelector('#'+segKey+'_catton_table tbody');
-  if(!tbody||!st) return;
-  tbody.innerHTML='';
-  for(const o of st.view){
-    const tr=document.createElement('tr');
-    const cells=[
+function renderCatTonTable(segKey) {
+  const st = CATTON_STATE[segKey];
+  const tbody = document.querySelector('#' + segKey + '_catton_table tbody');
+  if (!tbody || !st) return;
+  tbody.innerHTML = '';
+  for (const o of st.view) {
+    const tr = document.createElement('tr');
+    const cells = [
       o.period,
       o.cat,
-      (Number(o.tons)||0).toFixed(3),
+      (Number(o.tons) || 0).toFixed(3),
       fmtNum(o.profit),
-      (isFinite(o.ppt)?Number(o.ppt).toFixed(2):''),
+      (isFinite(o.ppt) ? Number(o.ppt).toFixed(2) : ''),
       fmtNum(o.orders)
     ];
-    cells.forEach((c,i)=>{
-      const td=document.createElement('td');
-      if(i===5){
-        td.appendChild(createOrderLink(segKey,'catton',`品类｜${o.cat}｜${o.period}`,{grain:(document.getElementById(segKey+'_catton_grain').value||'month'),cat:o.cat,period:o.periodKey},c));
-      }else{
-        td.textContent=c;
+    cells.forEach((c, i) => {
+      const td = document.createElement('td');
+      if (i === 5) {
+        td.appendChild(createOrderLink(segKey, 'catton', `品类｜${o.cat}｜${o.period}`, { grain: (document.getElementById(segKey + '_catton_grain').value || 'month'), cat: o.cat, period: o.periodKey }, c));
+      } else {
+        td.textContent = c;
       }
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
   }
-  const cnt=document.getElementById(segKey+'_catton_count');
-  if(cnt) cnt.innerText=String(st.view.length);
-  const table=document.getElementById(segKey+'_catton_table');
-  if(table){
+  const cnt = document.getElementById(segKey + '_catton_count');
+  if (cnt) cnt.innerText = String(st.view.length);
+  const table = document.getElementById(segKey + '_catton_table');
+  if (table) {
     updateSortIndicator(table, st.sortCol, st.sortAsc);
   }
 }
 
-function sortCatTon(segKey,col){
-  CATTON_STATE[segKey]=CATTON_STATE[segKey]||{sortCol:0,sortAsc:true,rows:[],view:[]};
-  const st=CATTON_STATE[segKey];
-  if(st.sortCol===col) st.sortAsc=!st.sortAsc;
-  else{ st.sortCol=col; st.sortAsc=true; }
+function sortCatTon(segKey, col) {
+  CATTON_STATE[segKey] = CATTON_STATE[segKey] || { sortCol: 0, sortAsc: true, rows: [], view: [] };
+  const st = CATTON_STATE[segKey];
+  if (st.sortCol === col) st.sortAsc = !st.sortAsc;
+  else { st.sortCol = col; st.sortAsc = true; }
   applyCatTonView(segKey);
 }
 
-function filterCatTonTable(segKey){ applyCatTonView(segKey); }
+function filterCatTonTable(segKey) { applyCatTonView(segKey); }
 
-function resetCatTonTable(segKey){
-  const s=document.getElementById(segKey+'_catton_search');
-  if(s) s.value='';
-  CATTON_STATE[segKey]=CATTON_STATE[segKey]||{sortCol:0,sortAsc:true,rows:[],view:[]};
-  CATTON_STATE[segKey].sortCol=0; CATTON_STATE[segKey].sortAsc=true;
-  resetTableRange(segKey,'catton');
-  try{ renderCatTon(segKey); }catch(e){ console.error(e); }
-  if(STATE_MANAGER) STATE_MANAGER.queuePersist();
+function resetCatTonTable(segKey) {
+  const s = document.getElementById(segKey + '_catton_search');
+  if (s) s.value = '';
+  CATTON_STATE[segKey] = CATTON_STATE[segKey] || { sortCol: 0, sortAsc: true, rows: [], view: [] };
+  CATTON_STATE[segKey].sortCol = 0; CATTON_STATE[segKey].sortAsc = true;
+  resetTableRange(segKey, 'catton');
+  try { renderCatTon(segKey); } catch (e) { console.error(e); }
+  if (STATE_MANAGER) STATE_MANAGER.queuePersist();
 }
 
-function exportCatTonCSV(segKey){
-  const table=document.getElementById(segKey+'_catton_table');
-  if(!table) return;
-  const rows=[...table.querySelectorAll('tr')].filter(tr=>tr.style.display!=='none');
-  const csv=rows.map(tr=>[...tr.children].map(td=>'"'+td.innerText.replace(/"/g,'""')+'"').join(',')).join('\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const segLabel = segKey==='total' ? '全部' : (segKey==='store' ? '门店' : '非门店');
-  const a=document.createElement('a'); a.href=url; a.download=segLabel+'_品类吨数与利润.csv';
+function exportCatTonCSV(segKey) {
+  const table = document.getElementById(segKey + '_catton_table');
+  if (!table) return;
+  const rows = [...table.querySelectorAll('tr')].filter(tr => tr.style.display !== 'none');
+  const csv = rows.map(tr => [...tr.children].map(td => '"' + td.innerText.replace(/"/g, '""') + '"').join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const segLabel = segKey === 'total' ? '全部' : (segKey === 'store' ? '门店' : '非门店');
+  const a = document.createElement('a'); a.href = url; a.download = segLabel + '_品类吨数与利润.csv';
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
-function buildProductRows(segKey, range){
-  if(hasRawRows(segKey)){
-    const map=new Map();
-    const orderMap=new Map();
-    getRawRows(segKey).forEach(r=>{
-      const d=r[ROW_IDX.date];
-      if(!dateInRange(d,range.startDate,range.endDate)) return;
-      const prod=r[ROW_IDX.prod];
-      const cat=r[ROW_IDX.cat];
-      const key=prod+'||'+cat;
-      if(!map.has(key)) map.set(key,{prod,cat,sales:0,cost:0,gp:0,fee:0,gpAdj:0,qty:0,orders:0,lines:0});
-      const o=map.get(key);
-      o.sales+=Number(r[ROW_IDX.sales])||0;
-      o.cost+=Number(r[ROW_IDX.cost])||0;
-      o.gp+=Number(r[ROW_IDX.gp])||0;
-      o.fee+=Number(r[ROW_IDX.fee])||0;
-      o.gpAdj+=Number(r[ROW_IDX.gpAdj])||0;
-      o.qty+=Number(r[ROW_IDX.qty])||0;
-      o.lines+=1;
-      if(!orderMap.has(key)) orderMap.set(key,new Set());
-      const ord=r[ROW_IDX.order];
-      if(ord) orderMap.get(key).add(ord);
+function buildProductRows(segKey, range) {
+  if (hasRawRows(segKey)) {
+    const map = new Map();
+    const orderMap = new Map();
+    getRawRows(segKey).forEach(r => {
+      const d = r[ROW_IDX.date];
+      if (!dateInRange(d, range.startDate, range.endDate)) return;
+      const prod = r[ROW_IDX.prod];
+      const cat = r[ROW_IDX.cat];
+      const key = prod + '||' + cat;
+      if (!map.has(key)) map.set(key, { prod, cat, sales: 0, cost: 0, gp: 0, fee: 0, gpAdj: 0, qty: 0, orders: 0, lines: 0 });
+      const o = map.get(key);
+      o.sales += Number(r[ROW_IDX.sales]) || 0;
+      o.cost += Number(r[ROW_IDX.cost]) || 0;
+      o.gp += Number(r[ROW_IDX.gp]) || 0;
+      o.fee += Number(r[ROW_IDX.fee]) || 0;
+      o.gpAdj += Number(r[ROW_IDX.gpAdj]) || 0;
+      o.qty += Number(r[ROW_IDX.qty]) || 0;
+      o.lines += 1;
+      if (!orderMap.has(key)) orderMap.set(key, new Set());
+      const ord = r[ROW_IDX.order];
+      if (ord) orderMap.get(key).add(ord);
     });
-    const rows=[...map.entries()].map(([key,o])=>{
-      o.orders=orderMap.get(key)?orderMap.get(key).size:0;
-      o.gm=o.sales? o.gp/o.sales*100:null;
-      o.gm2=o.sales? o.gpAdj/o.sales*100:null;
+    const rows = [...map.entries()].map(([key, o]) => {
+      o.orders = orderMap.get(key) ? orderMap.get(key).size : 0;
+      o.gm = o.sales ? o.gp / o.sales * 100 : null;
+      o.gm2 = o.sales ? o.gpAdj / o.sales * 100 : null;
       return o;
     });
-    rows.sort((a,b)=>b.gpAdj-a.gpAdj);
+    rows.sort((a, b) => b.gpAdj - a.gpAdj);
     return rows;
   }
-  const arr=DATA[segKey].products.filter(r=>monthInRange(r[2],range.startMonth,range.endMonth));
-  const weightMap=getMonthWeights(range.startDate,range.endDate,[...new Set(arr.map(r=>r[2]))]);
-  const map=new Map();
-  for(const r of arr){
-    const w=weightMap.get(r[2])||0;
-    if(!w) continue;
-    const key=r[0]+'||'+r[1];
-    if(!map.has(key)) map.set(key,{prod:r[0],cat:r[1],sales:0,cost:0,gp:0,fee:0,gpAdj:0,qty:0,orders:0,lines:0});
-    const o=map.get(key);
-    o.sales+=r[3]*w; o.cost+=r[4]*w; o.gp+=r[5]*w; o.fee+=r[6]*w; o.gpAdj+=r[7]*w; o.qty+=r[8]*w; o.orders+=r[9]*w; o.lines+=r[10]*w;
+  const arr = DATA[segKey].products.filter(r => monthInRange(r[2], range.startMonth, range.endMonth));
+  const weightMap = getMonthWeights(range.startDate, range.endDate, [...new Set(arr.map(r => r[2]))]);
+  const map = new Map();
+  for (const r of arr) {
+    const w = weightMap.get(r[2]) || 0;
+    if (!w) continue;
+    const key = r[0] + '||' + r[1];
+    if (!map.has(key)) map.set(key, { prod: r[0], cat: r[1], sales: 0, cost: 0, gp: 0, fee: 0, gpAdj: 0, qty: 0, orders: 0, lines: 0 });
+    const o = map.get(key);
+    o.sales += r[3] * w; o.cost += r[4] * w; o.gp += r[5] * w; o.fee += r[6] * w; o.gpAdj += r[7] * w; o.qty += r[8] * w; o.orders += r[9] * w; o.lines += r[10] * w;
   }
-  const rows=[...map.values()];
-  rows.forEach(o=>{o.gm=o.sales? o.gp/o.sales*100:null; o.gm2=o.sales? o.gpAdj/o.sales*100:null;});
-  rows.sort((a,b)=>b.gpAdj-a.gpAdj);
+  const rows = [...map.values()];
+  rows.forEach(o => { o.gm = o.sales ? o.gp / o.sales * 100 : null; o.gm2 = o.sales ? o.gpAdj / o.sales * 100 : null; });
+  rows.sort((a, b) => b.gpAdj - a.gpAdj);
   return rows;
 }
 
-function buildCustomerRows(segKey, range){
-  if(hasRawRows(segKey)){
-    const map=new Map();
-    const orderMap=new Map();
-    getRawRows(segKey).forEach(r=>{
-      const d=r[ROW_IDX.date];
-      if(!dateInRange(d,range.startDate,range.endDate)) return;
-      const cust=r[ROW_IDX.cust];
-      const cls=r[ROW_IDX.cls];
-      const key=cust+'||'+cls;
-      if(!map.has(key)) map.set(key,{cust,cls,sales:0,gp:0,fee:0,gpAdj:0,orders:0,lines:0});
-      const o=map.get(key);
-      o.sales+=Number(r[ROW_IDX.sales])||0;
-      o.gp+=Number(r[ROW_IDX.gp])||0;
-      o.fee+=Number(r[ROW_IDX.fee])||0;
-      o.gpAdj+=Number(r[ROW_IDX.gpAdj])||0;
-      o.lines+=1;
-      if(!orderMap.has(key)) orderMap.set(key,new Set());
-      const ord=r[ROW_IDX.order];
-      if(ord) orderMap.get(key).add(ord);
+function buildCustomerRows(segKey, range) {
+  if (hasRawRows(segKey)) {
+    const map = new Map();
+    const orderMap = new Map();
+    getRawRows(segKey).forEach(r => {
+      const d = r[ROW_IDX.date];
+      if (!dateInRange(d, range.startDate, range.endDate)) return;
+      const cust = r[ROW_IDX.cust];
+      const cls = r[ROW_IDX.cls];
+      const key = cust + '||' + cls;
+      if (!map.has(key)) map.set(key, { cust, cls, sales: 0, gp: 0, fee: 0, gpAdj: 0, orders: 0, lines: 0 });
+      const o = map.get(key);
+      o.sales += Number(r[ROW_IDX.sales]) || 0;
+      o.gp += Number(r[ROW_IDX.gp]) || 0;
+      o.fee += Number(r[ROW_IDX.fee]) || 0;
+      o.gpAdj += Number(r[ROW_IDX.gpAdj]) || 0;
+      o.lines += 1;
+      if (!orderMap.has(key)) orderMap.set(key, new Set());
+      const ord = r[ROW_IDX.order];
+      if (ord) orderMap.get(key).add(ord);
     });
-    const rows=[...map.entries()].map(([key,o])=>{
-      o.orders=orderMap.get(key)?orderMap.get(key).size:0;
-      o.gm=o.sales? o.gp/o.sales*100:null;
-      o.gm2=o.sales? o.gpAdj/o.sales*100:null;
+    const rows = [...map.entries()].map(([key, o]) => {
+      o.orders = orderMap.get(key) ? orderMap.get(key).size : 0;
+      o.gm = o.sales ? o.gp / o.sales * 100 : null;
+      o.gm2 = o.sales ? o.gpAdj / o.sales * 100 : null;
       return o;
     });
-    rows.sort((a,b)=>b.gpAdj-a.gpAdj);
+    rows.sort((a, b) => b.gpAdj - a.gpAdj);
     return rows;
   }
-  const arr=DATA[segKey].customers.filter(r=>monthInRange(r[2],range.startMonth,range.endMonth));
-  const weightMap=getMonthWeights(range.startDate,range.endDate,[...new Set(arr.map(r=>r[2]))]);
-  const map=new Map();
-  for(const r of arr){
-    const w=weightMap.get(r[2])||0;
-    if(!w) continue;
-    const key=r[0]+'||'+r[1];
-    if(!map.has(key)) map.set(key,{cust:r[0],cls:r[1],sales:0,gp:0,fee:0,gpAdj:0,orders:0,lines:0});
-    const o=map.get(key);
-    o.sales+=r[3]*w; o.gp+=r[5]*w; o.fee+=r[6]*w; o.gpAdj+=r[7]*w; o.orders+=r[9]*w; o.lines+=r[10]*w;
+  const arr = DATA[segKey].customers.filter(r => monthInRange(r[2], range.startMonth, range.endMonth));
+  const weightMap = getMonthWeights(range.startDate, range.endDate, [...new Set(arr.map(r => r[2]))]);
+  const map = new Map();
+  for (const r of arr) {
+    const w = weightMap.get(r[2]) || 0;
+    if (!w) continue;
+    const key = r[0] + '||' + r[1];
+    if (!map.has(key)) map.set(key, { cust: r[0], cls: r[1], sales: 0, gp: 0, fee: 0, gpAdj: 0, orders: 0, lines: 0 });
+    const o = map.get(key);
+    o.sales += r[3] * w; o.gp += r[5] * w; o.fee += r[6] * w; o.gpAdj += r[7] * w; o.orders += r[9] * w; o.lines += r[10] * w;
   }
-  const rows=[...map.values()];
-  rows.forEach(o=>{o.gm=o.sales? o.gp/o.sales*100:null; o.gm2=o.sales? o.gpAdj/o.sales*100:null;});
-  rows.sort((a,b)=>b.gpAdj-a.gpAdj);
+  const rows = [...map.values()];
+  rows.forEach(o => { o.gm = o.sales ? o.gp / o.sales * 100 : null; o.gm2 = o.sales ? o.gpAdj / o.sales * 100 : null; });
+  rows.sort((a, b) => b.gpAdj - a.gpAdj);
   return rows;
 }
 
-function renderProducts(segKey){
-  const global=getRange(segKey);
-  const rows=buildProductRows(segKey, global);
-  const top=rows.slice(0,20);
-  if(top.length){
-    ChartManager.setOption(segKey+'_chart_prod_top',{
-      tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
-      grid:{left:220,right:20,top:40,bottom:40},
-      xAxis:{type:'value',name:'毛利（元）'},
-      yAxis:{type:'category',data:top.map(o=>o.prod+' | '+o.cat),inverse:true},
-      series:[{name:'毛利_扣销售费',type:'bar',data:top.map(o=>o.gpAdj)}]
+function renderProducts(segKey) {
+  const global = getRange(segKey);
+  const rows = buildProductRows(segKey, global);
+  const top = rows.slice(0, 20);
+  if (top.length) {
+    ChartManager.setOption(segKey + '_chart_prod_top', {
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: 220, right: 20, top: 40, bottom: 40 },
+      xAxis: { type: 'value', name: '毛利（元）' },
+      yAxis: { type: 'category', data: top.map(o => o.prod + ' | ' + o.cat), inverse: true },
+      series: [{ name: '毛利_扣销售费', type: 'bar', data: top.map(o => o.gpAdj) }]
     });
-  }else{
-    ChartManager.setEmpty(segKey+'_chart_prod_top', '暂无数据');
+  } else {
+    ChartManager.setEmpty(segKey + '_chart_prod_top', '暂无数据');
   }
-  renderMarginDistribution(segKey+'_chart_prod_margin', rows, '毛利率分布（扣费）');
+  renderMarginDistribution(segKey + '_chart_prod_margin', rows, '毛利率分布（扣费）');
 
-  syncTableRangeInputs(segKey,'product');
-  const tableRange=getTableRange(segKey,'product');
-  const tableRows=buildProductRows(segKey, tableRange);
+  syncTableRangeInputs(segKey, 'product');
+  const tableRange = getTableRange(segKey, 'product');
+  const tableRows = buildProductRows(segKey, tableRange);
 
-  const catSel=document.getElementById(segKey+'_product_cat');
-  if(catSel){
-    const cats=[...new Set(tableRows.map(o=>o.cat))].sort();
+  const catSel = document.getElementById(segKey + '_product_cat');
+  if (catSel) {
+    const cats = [...new Set(tableRows.map(o => o.cat))].sort();
     populateSelect(catSel, cats, '全部');
   }
 
-  const tbody=document.querySelector('#'+segKey+'_product_table tbody');
-  tbody.innerHTML='';
-  for(const o of tableRows){
-    const tr=document.createElement('tr');
-    const cells=[o.prod,o.cat,fmtNum(o.sales),fmtNum(o.gp),fmtPct(o.gm),fmtNum(o.fee),fmtNum(o.gpAdj),fmtPct(o.gm2),fmtNum(o.qty),fmtNum(o.orders),fmtNum(o.lines)];
-    cells.forEach((c,i)=>{const td=document.createElement('td');
-      if(i===9){td.appendChild(createOrderLink(segKey,'product',`产品｜${o.prod}｜${o.cat}`,{prod:o.prod,cat:o.cat},c));}
-      else{td.textContent=c;}
+  const tbody = document.querySelector('#' + segKey + '_product_table tbody');
+  tbody.innerHTML = '';
+  for (const o of tableRows) {
+    const tr = document.createElement('tr');
+    const cells = [o.prod, o.cat, fmtNum(o.sales), fmtNum(o.gp), fmtPct(o.gm), fmtNum(o.fee), fmtNum(o.gpAdj), fmtPct(o.gm2), fmtNum(o.qty), fmtNum(o.orders), fmtNum(o.lines)];
+    cells.forEach((c, i) => {
+      const td = document.createElement('td');
+      if (i === 9) { td.appendChild(createOrderLink(segKey, 'product', `产品｜${o.prod}｜${o.cat}`, { prod: o.prod, cat: o.cat }, c)); }
+      else { td.textContent = c; }
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
   }
-  document.getElementById(segKey+'_product_count').innerText=String(tableRows.length);
-  filterTable(segKey,'product');
+  document.getElementById(segKey + '_product_count').innerText = String(tableRows.length);
+  filterTable(segKey, 'product');
 }
 
-function renderCustomers(segKey){
-  const global=getRange(segKey);
-  const rows=buildCustomerRows(segKey, global);
-  const top=rows.slice(0,20);
-  if(top.length){
-    ChartManager.setOption(segKey+'_chart_cust_top',{
-      tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
-      grid:{left:220,right:20,top:40,bottom:40},
-      xAxis:{type:'value',name:'毛利（元）'},
-      yAxis:{type:'category',data:top.map(o=>o.cust+'｜'+o.cls),inverse:true},
-      series:[{name:'毛利_扣销售费',type:'bar',data:top.map(o=>o.gpAdj)}]
+function renderCustomers(segKey) {
+  const global = getRange(segKey);
+  const rows = buildCustomerRows(segKey, global);
+  const top = rows.slice(0, 20);
+  if (top.length) {
+    ChartManager.setOption(segKey + '_chart_cust_top', {
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+      grid: { left: 220, right: 20, top: 40, bottom: 40 },
+      xAxis: { type: 'value', name: '毛利（元）' },
+      yAxis: { type: 'category', data: top.map(o => o.cust + '｜' + o.cls), inverse: true },
+      series: [{ name: '毛利_扣销售费', type: 'bar', data: top.map(o => o.gpAdj) }]
     });
-  }else{
-    ChartManager.setEmpty(segKey+'_chart_cust_top', '暂无数据');
+  } else {
+    ChartManager.setEmpty(segKey + '_chart_cust_top', '暂无数据');
   }
-  renderMarginDistribution(segKey+'_chart_cust_margin', rows, '毛利率分布（扣费）');
+  renderMarginDistribution(segKey + '_chart_cust_margin', rows, '毛利率分布（扣费）');
 
-  syncTableRangeInputs(segKey,'customer');
-  const tableRange=getTableRange(segKey,'customer');
-  const tableRows=buildCustomerRows(segKey, tableRange);
+  syncTableRangeInputs(segKey, 'customer');
+  const tableRange = getTableRange(segKey, 'customer');
+  const tableRows = buildCustomerRows(segKey, tableRange);
 
-  const clsSel=document.getElementById(segKey+'_customer_class');
-  if(clsSel){
-    const cls=[...new Set(tableRows.map(o=>o.cls).filter(v=>v))].sort();
+  const clsSel = document.getElementById(segKey + '_customer_class');
+  if (clsSel) {
+    const cls = [...new Set(tableRows.map(o => o.cls).filter(v => v))].sort();
     populateSelect(clsSel, cls, '全部');
   }
 
-  const tbody=document.querySelector('#'+segKey+'_customer_table tbody');
-  tbody.innerHTML='';
-  for(const o of tableRows){
-    const tr=document.createElement('tr');
-    const cells=[o.cust,o.cls,fmtNum(o.sales),fmtNum(o.gp),fmtPct(o.gm),fmtNum(o.fee),fmtNum(o.gpAdj),fmtPct(o.gm2),fmtNum(o.orders),fmtNum(o.lines)];
-    cells.forEach((c,i)=>{const td=document.createElement('td');
-      if(i===8){td.appendChild(createOrderLink(segKey,'customer',`客户｜${o.cust}｜${o.cls}`,{cust:o.cust,cls:o.cls},c));}
-      else{td.textContent=c;}
+  const tbody = document.querySelector('#' + segKey + '_customer_table tbody');
+  tbody.innerHTML = '';
+  for (const o of tableRows) {
+    const tr = document.createElement('tr');
+    const cells = [o.cust, o.cls, fmtNum(o.sales), fmtNum(o.gp), fmtPct(o.gm), fmtNum(o.fee), fmtNum(o.gpAdj), fmtPct(o.gm2), fmtNum(o.orders), fmtNum(o.lines)];
+    cells.forEach((c, i) => {
+      const td = document.createElement('td');
+      if (i === 8) { td.appendChild(createOrderLink(segKey, 'customer', `客户｜${o.cust}｜${o.cls}`, { cust: o.cust, cls: o.cls }, c)); }
+      else { td.textContent = c; }
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
   }
-  document.getElementById(segKey+'_customer_count').innerText=String(tableRows.length);
-  filterTable(segKey,'customer');
+  document.getElementById(segKey + '_customer_count').innerText = String(tableRows.length);
+  filterTable(segKey, 'customer');
 }
 
-function buildLifecycleData(segKey, range){
-  if(hasRawRows(segKey)){
-    const rows=getRawRows(segKey).filter(r=>dateInRange(r[ROW_IDX.date],range.startDate,range.endDate));
-    const monthSet=new Set(rows.map(r=>String(r[ROW_IDX.date]||'').slice(0,7)).filter(Boolean));
-    const months=[...monthSet].sort();
-    const byMonth=new Map(months.map(m=>[m,new Map()]));
-    const orderMap=new Map();
-    rows.forEach(r=>{
-      const m=String(r[ROW_IDX.date]||'').slice(0,7);
-      if(!byMonth.has(m)) return;
-      const key=(r[ROW_IDX.cust]||'')+'||'+(r[ROW_IDX.cls]||'');
-      const cur=byMonth.get(m);
-      if(!cur.has(key)) cur.set(key,{cust:r[ROW_IDX.cust],cls:r[ROW_IDX.cls],sales:0,gpAdj:0,orders:0,lines:0});
-      const o=cur.get(key);
-      o.sales+=Number(r[ROW_IDX.sales])||0;
-      o.gpAdj+=Number(r[ROW_IDX.gpAdj])||0;
-      o.lines+=1;
-      const ord=r[ROW_IDX.order];
-      const okey=m+'||'+key;
-      if(!orderMap.has(okey)) orderMap.set(okey,new Set());
-      if(ord) orderMap.get(okey).add(ord);
+function buildLifecycleData(segKey, range) {
+  if (hasRawRows(segKey)) {
+    const rows = getRawRows(segKey).filter(r => dateInRange(r[ROW_IDX.date], range.startDate, range.endDate));
+    const monthSet = new Set(rows.map(r => String(r[ROW_IDX.date] || '').slice(0, 7)).filter(Boolean));
+    const months = [...monthSet].sort();
+    const byMonth = new Map(months.map(m => [m, new Map()]));
+    const orderMap = new Map();
+    rows.forEach(r => {
+      const m = String(r[ROW_IDX.date] || '').slice(0, 7);
+      if (!byMonth.has(m)) return;
+      const key = (r[ROW_IDX.cust] || '') + '||' + (r[ROW_IDX.cls] || '');
+      const cur = byMonth.get(m);
+      if (!cur.has(key)) cur.set(key, { cust: r[ROW_IDX.cust], cls: r[ROW_IDX.cls], sales: 0, gpAdj: 0, orders: 0, lines: 0 });
+      const o = cur.get(key);
+      o.sales += Number(r[ROW_IDX.sales]) || 0;
+      o.gpAdj += Number(r[ROW_IDX.gpAdj]) || 0;
+      o.lines += 1;
+      const ord = r[ROW_IDX.order];
+      const okey = m + '||' + key;
+      if (!orderMap.has(okey)) orderMap.set(okey, new Set());
+      if (ord) orderMap.get(okey).add(ord);
     });
 
-    const newArr=[], lostArr=[];
-    for(let i=0;i<months.length;i++){
-      const m=months[i];
-      const cur=byMonth.get(m)||new Map();
-      const prev=(i>0)? (byMonth.get(months[i-1])||new Map()) : new Map();
-      const next=(i<months.length-1)? (byMonth.get(months[i+1])||new Map()) : new Map();
-      for(const [key,r] of cur.entries()){
-        const sales=r.sales||0;
-        const gpAdj=r.gpAdj||0;
-        const gm2=sales? (gpAdj/sales*100):null;
-        const ordSet=orderMap.get(m+'||'+key);
-        const row=[m,r.cust,r.cls,sales,gpAdj,gm2,ordSet?ordSet.size:0,r.lines||0];
-        if(!prev.has(key)) newArr.push(row);
-        if(!next.has(key)) lostArr.push(row);
+    const newArr = [], lostArr = [];
+    for (let i = 0; i < months.length; i++) {
+      const m = months[i];
+      const cur = byMonth.get(m) || new Map();
+      const prev = (i > 0) ? (byMonth.get(months[i - 1]) || new Map()) : new Map();
+      const next = (i < months.length - 1) ? (byMonth.get(months[i + 1]) || new Map()) : new Map();
+      for (const [key, r] of cur.entries()) {
+        const sales = r.sales || 0;
+        const gpAdj = r.gpAdj || 0;
+        const gm2 = sales ? (gpAdj / sales * 100) : null;
+        const ordSet = orderMap.get(m + '||' + key);
+        const row = [m, r.cust, r.cls, sales, gpAdj, gm2, ordSet ? ordSet.size : 0, r.lines || 0];
+        if (!prev.has(key)) newArr.push(row);
+        if (!next.has(key)) lostArr.push(row);
       }
     }
-    newArr.sort((a,b)=>a[0].localeCompare(b[0]) || (b[3]-a[3]));
-    lostArr.sort((a,b)=>a[0].localeCompare(b[0]) || (b[3]-a[3]));
+    newArr.sort((a, b) => a[0].localeCompare(b[0]) || (b[3] - a[3]));
+    lostArr.sort((a, b) => a[0].localeCompare(b[0]) || (b[3] - a[3]));
 
-    const initMap=()=>new Map(months.map(m=>[m,{cnt:0,sales:0,gp:0}]));
-    const newBy=initMap(), lostBy=initMap();
-    newArr.forEach(r=>{const o=newBy.get(r[0]); if(o){o.cnt+=1;o.sales+=r[3];o.gp+=r[4];}});
-    lostArr.forEach(r=>{const o=lostBy.get(r[0]); if(o){o.cnt+=1;o.sales+=r[3];o.gp+=r[4];}});
+    const initMap = () => new Map(months.map(m => [m, { cnt: 0, sales: 0, gp: 0 }]));
+    const newBy = initMap(), lostBy = initMap();
+    newArr.forEach(r => { const o = newBy.get(r[0]); if (o) { o.cnt += 1; o.sales += r[3]; o.gp += r[4]; } });
+    lostArr.forEach(r => { const o = lostBy.get(r[0]); if (o) { o.cnt += 1; o.sales += r[3]; o.gp += r[4]; } });
 
-    return {months,newArr,lostArr,newBy,lostBy};
+    return { months, newArr, lostArr, newBy, lostBy };
   }
 
-  const months=(DATA[segKey].months||[]).filter(m=>monthInRange(m,range.startMonth,range.endMonth));
-  const weightMap=getMonthWeights(range.startDate,range.endDate,months);
-  const cuRows=DATA[segKey].customers.filter(r=>monthInRange(r[2],range.startMonth,range.endMonth));
-  const byMonth=new Map(months.map(m=>[m,new Map()]));
-  for(const r of cuRows){
-    const m=r[2];
-    if(!byMonth.has(m)) continue;
-    const key=r[0]+'||'+r[1];
-    byMonth.get(m).set(key,r);
+  const months = (DATA[segKey].months || []).filter(m => monthInRange(m, range.startMonth, range.endMonth));
+  const weightMap = getMonthWeights(range.startDate, range.endDate, months);
+  const cuRows = DATA[segKey].customers.filter(r => monthInRange(r[2], range.startMonth, range.endMonth));
+  const byMonth = new Map(months.map(m => [m, new Map()]));
+  for (const r of cuRows) {
+    const m = r[2];
+    if (!byMonth.has(m)) continue;
+    const key = r[0] + '||' + r[1];
+    byMonth.get(m).set(key, r);
   }
 
-  const newArr=[], lostArr=[];
-  for(let i=0;i<months.length;i++){
-    const m=months[i];
-    const w=weightMap.get(m)||0;
-    const cur=byMonth.get(m)||new Map();
-    const prev=(i>0)? (byMonth.get(months[i-1])||new Map()) : new Map();
-    const next=(i<months.length-1)? (byMonth.get(months[i+1])||new Map()) : new Map();
+  const newArr = [], lostArr = [];
+  for (let i = 0; i < months.length; i++) {
+    const m = months[i];
+    const w = weightMap.get(m) || 0;
+    const cur = byMonth.get(m) || new Map();
+    const prev = (i > 0) ? (byMonth.get(months[i - 1]) || new Map()) : new Map();
+    const next = (i < months.length - 1) ? (byMonth.get(months[i + 1]) || new Map()) : new Map();
 
-    for(const [key,r] of cur.entries()){
-      const sales=(r[3]||0)*w;
-      const gpAdj=(r[7]||0)*w;
-      const gm2=sales? (gpAdj/sales*100):null;
-      const row=[m,r[0],r[1],sales,gpAdj,gm2,(r[9]||0)*w,(r[10]||0)*w];
-      if(!prev.has(key)) newArr.push(row);
-      if(!next.has(key)) lostArr.push(row);
+    for (const [key, r] of cur.entries()) {
+      const sales = (r[3] || 0) * w;
+      const gpAdj = (r[7] || 0) * w;
+      const gm2 = sales ? (gpAdj / sales * 100) : null;
+      const row = [m, r[0], r[1], sales, gpAdj, gm2, (r[9] || 0) * w, (r[10] || 0) * w];
+      if (!prev.has(key)) newArr.push(row);
+      if (!next.has(key)) lostArr.push(row);
     }
   }
-  newArr.sort((a,b)=>a[0].localeCompare(b[0]) || (b[3]-a[3]));
-  lostArr.sort((a,b)=>a[0].localeCompare(b[0]) || (b[3]-a[3]));
+  newArr.sort((a, b) => a[0].localeCompare(b[0]) || (b[3] - a[3]));
+  lostArr.sort((a, b) => a[0].localeCompare(b[0]) || (b[3] - a[3]));
 
-  const initMap=()=>new Map(months.map(m=>[m,{cnt:0,sales:0,gp:0}]));
-  const newBy=initMap(), lostBy=initMap();
-  newArr.forEach(r=>{const o=newBy.get(r[0]); if(o){o.cnt+=weightMap.get(r[0])||0;o.sales+=r[3];o.gp+=r[4];}});
-  lostArr.forEach(r=>{const o=lostBy.get(r[0]); if(o){o.cnt+=weightMap.get(r[0])||0;o.sales+=r[3];o.gp+=r[4];}});
+  const initMap = () => new Map(months.map(m => [m, { cnt: 0, sales: 0, gp: 0 }]));
+  const newBy = initMap(), lostBy = initMap();
+  newArr.forEach(r => { const o = newBy.get(r[0]); if (o) { o.cnt += weightMap.get(r[0]) || 0; o.sales += r[3]; o.gp += r[4]; } });
+  lostArr.forEach(r => { const o = lostBy.get(r[0]); if (o) { o.cnt += weightMap.get(r[0]) || 0; o.sales += r[3]; o.gp += r[4]; } });
 
-  return {months,newArr,lostArr,newBy,lostBy};
+  return { months, newArr, lostArr, newBy, lostBy };
 }
 
-function renderLifecycle(segKey){
-  const global=getRange(segKey);
-  const globalData=buildLifecycleData(segKey, global);
-  const months=globalData.months;
-  if(months.length){
-    ChartManager.setOption(segKey+'_chart_newlost_cnt',{
-      tooltip:{trigger:'axis'},
-      legend:{top:10},
-      grid:{left:50,right:20,top:50,bottom:40},
-      xAxis:{type:'category',data:months},
-      yAxis:{type:'value',name:'客户数'},
-      series:[
-        {name:'新增客户数',type:'line',data:months.map(m=>globalData.newBy.get(m).cnt),smooth:true},
-        {name:'流失客户数',type:'line',data:months.map(m=>globalData.lostBy.get(m).cnt),smooth:true}
+function renderLifecycle(segKey) {
+  const global = getRange(segKey);
+  const globalData = buildLifecycleData(segKey, global);
+  const months = globalData.months;
+  if (months.length) {
+    ChartManager.setOption(segKey + '_chart_newlost_cnt', {
+      tooltip: { trigger: 'axis' },
+      legend: { top: 10 },
+      grid: { left: 50, right: 20, top: 50, bottom: 40 },
+      xAxis: { type: 'category', data: months },
+      yAxis: { type: 'value', name: '客户数' },
+      series: [
+        { name: '新增客户数', type: 'line', data: months.map(m => globalData.newBy.get(m).cnt), smooth: true },
+        { name: '流失客户数', type: 'line', data: months.map(m => globalData.lostBy.get(m).cnt), smooth: true }
       ]
     });
 
-    ChartManager.setOption(segKey+'_chart_newlost_val',{
-      tooltip:{trigger:'axis'},
-      legend:{top:10},
-      grid:{left:50,right:70,top:50,bottom:40},
-      xAxis:{type:'category',data:months},
-      yAxis:[
-        {type:'value',name:'销售额（元）'},
-        {type:'value',name:'毛利_扣销售费（元）',position:'right'}
+    ChartManager.setOption(segKey + '_chart_newlost_val', {
+      tooltip: { trigger: 'axis' },
+      legend: { top: 10 },
+      grid: { left: 50, right: 70, top: 50, bottom: 40 },
+      xAxis: { type: 'category', data: months },
+      yAxis: [
+        { type: 'value', name: '销售额（元）' },
+        { type: 'value', name: '毛利_扣销售费（元）', position: 'right' }
       ],
-      series:[
-        {name:'新增客户销售额',type:'bar',data:months.map(m=>globalData.newBy.get(m).sales)},
-        {name:'流失客户销售额',type:'bar',data:months.map(m=>globalData.lostBy.get(m).sales)},
-        {name:'新增毛利_扣费',type:'line',yAxisIndex:1,data:months.map(m=>globalData.newBy.get(m).gp),smooth:true},
-        {name:'流失毛利_扣费',type:'line',yAxisIndex:1,data:months.map(m=>globalData.lostBy.get(m).gp),smooth:true}
+      series: [
+        { name: '新增客户销售额', type: 'bar', data: months.map(m => globalData.newBy.get(m).sales) },
+        { name: '流失客户销售额', type: 'bar', data: months.map(m => globalData.lostBy.get(m).sales) },
+        { name: '新增毛利_扣费', type: 'line', yAxisIndex: 1, data: months.map(m => globalData.newBy.get(m).gp), smooth: true },
+        { name: '流失毛利_扣费', type: 'line', yAxisIndex: 1, data: months.map(m => globalData.lostBy.get(m).gp), smooth: true }
       ]
     });
-  }else{
-    ChartManager.setEmpty(segKey+'_chart_newlost_cnt', '暂无数据');
-    ChartManager.setEmpty(segKey+'_chart_newlost_val', '暂无数据');
+  } else {
+    ChartManager.setEmpty(segKey + '_chart_newlost_cnt', '暂无数据');
+    ChartManager.setEmpty(segKey + '_chart_newlost_val', '暂无数据');
   }
 
-  syncTableRangeInputs(segKey,'new');
-  syncTableRangeInputs(segKey,'lost');
-  const newData=buildLifecycleData(segKey, getTableRange(segKey,'new'));
-  const lostData=buildLifecycleData(segKey, getTableRange(segKey,'lost'));
-  fillLifecycleTables(segKey,newData,lostData);
+  syncTableRangeInputs(segKey, 'new');
+  syncTableRangeInputs(segKey, 'lost');
+  const newData = buildLifecycleData(segKey, getTableRange(segKey, 'new'));
+  const lostData = buildLifecycleData(segKey, getTableRange(segKey, 'lost'));
+  fillLifecycleTables(segKey, newData, lostData);
 }
 
-function fillLifecycleTables(segKey,newData,lostData){
-  const cls=[...new Set([...newData.newArr,...lostData.lostArr].map(r=>r[2]).filter(v=>v))].sort();
+function fillLifecycleTables(segKey, newData, lostData) {
+  const cls = [...new Set([...newData.newArr, ...lostData.lostArr].map(r => r[2]).filter(v => v))].sort();
 
-  function fillSel(id, arr){
-    const el=document.getElementById(id); if(!el) return;
+  function fillSel(id, arr) {
+    const el = document.getElementById(id); if (!el) return;
     populateSelect(el, arr, '全部');
   }
-  fillSel(segKey+'_new_month', newData.months);
-  fillSel(segKey+'_lost_month', lostData.months);
-  fillSel(segKey+'_new_class', cls);
-  fillSel(segKey+'_lost_class', cls);
+  fillSel(segKey + '_new_month', newData.months);
+  fillSel(segKey + '_lost_month', lostData.months);
+  fillSel(segKey + '_new_class', cls);
+  fillSel(segKey + '_lost_class', cls);
 
-  function fillTable(type, arr){
-    const tbody=document.querySelector('#'+segKey+'_'+type+'_table tbody');
-    tbody.innerHTML='';
-    arr.forEach(r=>{
-      const tr=document.createElement('tr');
-      const cells=[r[0],r[1],r[2],fmtNum(r[3]),fmtNum(r[4]),(r[5]==null?'':fmtPct(r[5])),fmtNum(r[6]),fmtNum(r[7])];
-      cells.forEach((c,i)=>{
-        const td=document.createElement('td');
-        if(i===6){
-          td.appendChild(createOrderLink(segKey,type,`${type==='new'?'新增':'流失'}｜${r[0]}｜${r[1]}`,{month:r[0],cust:r[1],cls:r[2]},c));
-        }else{
-          td.textContent=c;
+  function fillTable(type, arr) {
+    const tbody = document.querySelector('#' + segKey + '_' + type + '_table tbody');
+    tbody.innerHTML = '';
+    arr.forEach(r => {
+      const tr = document.createElement('tr');
+      const cells = [r[0], r[1], r[2], fmtNum(r[3]), fmtNum(r[4]), (r[5] == null ? '' : fmtPct(r[5])), fmtNum(r[6]), fmtNum(r[7])];
+      cells.forEach((c, i) => {
+        const td = document.createElement('td');
+        if (i === 6) {
+          td.appendChild(createOrderLink(segKey, type, `${type === 'new' ? '新增' : '流失'}｜${r[0]}｜${r[1]}`, { month: r[0], cust: r[1], cls: r[2] }, c));
+        } else {
+          td.textContent = c;
         }
         tr.appendChild(td);
       });
       tbody.appendChild(tr);
     });
-    document.getElementById(segKey+'_'+type+'_count').innerText=String(arr.length);
-    filterTable(segKey,type);
+    document.getElementById(segKey + '_' + type + '_count').innerText = String(arr.length);
+    filterTable(segKey, type);
   }
-  fillTable('new',newData.newArr);
-  fillTable('lost',lostData.lostArr);
+  fillTable('new', newData.newArr);
+  fillTable('lost', lostData.lostArr);
 }
 
-function renderAbnormal(segKey){
+function renderAbnormal(segKey) {
   ensureAbnormalOrders(segKey);
-  const global=getRange(segKey);
-  const arrGlobal=DATA[segKey].abnormal_orders.filter(r=>{
-    const d=r[0];
-    if(global.startDate && global.endDate) return dateInRange(d,global.startDate,global.endDate);
-    return monthInRange(d.slice(0,7),global.startMonth,global.endMonth);
+  const global = getRange(segKey);
+  const arrGlobal = DATA[segKey].abnormal_orders.filter(r => {
+    const d = r[0];
+    if (global.startDate && global.endDate) return dateInRange(d, global.startDate, global.endDate);
+    return monthInRange(d.slice(0, 7), global.startMonth, global.endMonth);
   });
-  syncTableRangeInputs(segKey,'abnormal');
-  const tableRange=getTableRange(segKey,'abnormal');
-  const arr=DATA[segKey].abnormal_orders.filter(r=>{
-    const d=r[0];
-    if(tableRange.startDate && tableRange.endDate) return dateInRange(d,tableRange.startDate,tableRange.endDate);
-    return monthInRange(d.slice(0,7),tableRange.startMonth,tableRange.endMonth);
+  syncTableRangeInputs(segKey, 'abnormal');
+  const tableRange = getTableRange(segKey, 'abnormal');
+  const arr = DATA[segKey].abnormal_orders.filter(r => {
+    const d = r[0];
+    if (tableRange.startDate && tableRange.endDate) return dateInRange(d, tableRange.startDate, tableRange.endDate);
+    return monthInRange(d.slice(0, 7), tableRange.startMonth, tableRange.endMonth);
   });
-  const clsSel=document.getElementById(segKey+'_abnormal_class');
-  if(clsSel){
-    const cls=[...new Set(arr.map(r=>r[3]).filter(v=>v))].sort();
+  const clsSel = document.getElementById(segKey + '_abnormal_class');
+  if (clsSel) {
+    const cls = [...new Set(arr.map(r => r[3]).filter(v => v))].sort();
     populateSelect(clsSel, cls, '全部');
   }
-  const reasonSel=document.getElementById(segKey+'_abnormal_reason_sel');
-  if(reasonSel){
-    const reasons=[...new Set(arr.flatMap(r=>String(r[8]||'').split('｜').map(x=>x.trim()).filter(Boolean)))].sort();
+  const reasonSel = document.getElementById(segKey + '_abnormal_reason_sel');
+  if (reasonSel) {
+    const reasons = [...new Set(arr.flatMap(r => String(r[8] || '').split('｜').map(x => x.trim()).filter(Boolean)))].sort();
     populateSelect(reasonSel, reasons, '全部');
   }
-  const tbody=document.querySelector('#'+segKey+'_abnormal_table tbody');
-  tbody.innerHTML='';
-  arr.forEach(r=>{
-    const tr=document.createElement('tr');
-    const cells=[r[0],r[1],r[2],r[3],fmtNum(r[4]),fmtNum(r[5]),(r[6]==null?'':fmtPct(r[6])),String(r[7]),r[8],String(r[9])];
-    cells.forEach(c=>{const td=document.createElement('td'); td.textContent=c; tr.appendChild(td);});
+  const tbody = document.querySelector('#' + segKey + '_abnormal_table tbody');
+  tbody.innerHTML = '';
+  arr.forEach(r => {
+    const tr = document.createElement('tr');
+    const cells = [r[0], r[1], r[2], r[3], fmtNum(r[4]), fmtNum(r[5]), (r[6] == null ? '' : fmtPct(r[6])), String(r[7]), r[8], String(r[9])];
+    cells.forEach(c => { const td = document.createElement('td'); td.textContent = c; tr.appendChild(td); });
     tbody.appendChild(tr);
   });
-  document.getElementById(segKey+'_abnormal_count').innerText=String(arr.length);
-  filterTable(segKey,'abnormal');
+  document.getElementById(segKey + '_abnormal_count').innerText = String(arr.length);
+  filterTable(segKey, 'abnormal');
   renderAbnReasonChart(segKey, arrGlobal);
 }
 
-function renderAbnReasonChart(segKey, rows){
-  const map=new Map();
-  (rows||[]).forEach(r=>{
-    const txt=String(r[8]||'');
-    txt.split('｜').map(x=>x.trim()).filter(Boolean).forEach(p=>map.set(p,(map.get(p)||0)+1));
+function renderAbnReasonChart(segKey, rows) {
+  const map = new Map();
+  (rows || []).forEach(r => {
+    const txt = String(r[8] || '');
+    txt.split('｜').map(x => x.trim()).filter(Boolean).forEach(p => map.set(p, (map.get(p) || 0) + 1));
   });
-  const arr=[...map.entries()].map(([k,v])=>({k,v})).sort((a,b)=>a.v-b.v);
-  if(!arr.length){
-    ChartManager.setEmpty(segKey+'_chart_abn_reason', '暂无数据');
+  const arr = [...map.entries()].map(([k, v]) => ({ k, v })).sort((a, b) => a.v - b.v);
+  if (!arr.length) {
+    ChartManager.setEmpty(segKey + '_chart_abn_reason', '暂无数据');
     return;
   }
-  ChartManager.setOption(segKey+'_chart_abn_reason',{
-    tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
-    grid:{left:180,right:20,top:40,bottom:40},
-    xAxis:{type:'value',name:'订单数'},
-    yAxis:{type:'category',data:arr.map(x=>x.k),inverse:true},
-    series:[{name:'订单数',type:'bar',data:arr.map(x=>x.v)}]
+  ChartManager.setOption(segKey + '_chart_abn_reason', {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { left: 180, right: 20, top: 40, bottom: 40 },
+    xAxis: { type: 'value', name: '订单数' },
+    yAxis: { type: 'category', data: arr.map(x => x.k), inverse: true },
+    series: [{ name: '订单数', type: 'bar', data: arr.map(x => x.v) }]
   });
 }
 
-function ensureAbnormalOrders(segKey){
-  if((DATA[segKey].abnormal_orders||[]).length || !hasRawRows(segKey)) return;
-  const orders=new Map();
-  const priceMap=new Map();
-  getRawRows(segKey).forEach(r=>{
-    const date=r[ROW_IDX.date];
-    const orderNo=r[ROW_IDX.order];
-    if(!date || !orderNo) return;
-    const key=date+'||'+orderNo;
-    if(!orders.has(key)){
-      orders.set(key,{
+function ensureAbnormalOrders(segKey) {
+  if ((DATA[segKey].abnormal_orders || []).length || !hasRawRows(segKey)) return;
+  const orders = new Map();
+  const priceMap = new Map();
+  getRawRows(segKey).forEach(r => {
+    const date = r[ROW_IDX.date];
+    const orderNo = r[ROW_IDX.order];
+    if (!date || !orderNo) return;
+    const key = date + '||' + orderNo;
+    if (!orders.has(key)) {
+      orders.set(key, {
         date,
         orderNo,
-        cust:r[ROW_IDX.cust]||'',
-        cls:r[ROW_IDX.cls]||'',
-        sales:0,
-        gpAdj:0,
-        lines:0,
-        qtyBad:false,
-        costBad:false,
-        priceDiff:false
+        cust: r[ROW_IDX.cust] || '',
+        cls: r[ROW_IDX.cls] || '',
+        sales: 0,
+        gpAdj: 0,
+        lines: 0,
+        qtyBad: false,
+        costBad: false,
+        priceDiff: false
       });
     }
-    const o=orders.get(key);
-    o.sales+=Number(r[ROW_IDX.sales])||0;
-    o.gpAdj+=Number(r[ROW_IDX.gpAdj])||0;
-    o.lines+=1;
-    const qty=Number(r[ROW_IDX.qty]);
-    const cost=Number(r[ROW_IDX.cost]);
-    if(!isFinite(qty) || qty<=0) o.qtyBad=true;
-    if(!isFinite(cost) || cost<=0) o.costBad=true;
+    const o = orders.get(key);
+    o.sales += Number(r[ROW_IDX.sales]) || 0;
+    o.gpAdj += Number(r[ROW_IDX.gpAdj]) || 0;
+    o.lines += 1;
+    const qty = Number(r[ROW_IDX.qty]);
+    const cost = Number(r[ROW_IDX.cost]);
+    if (!isFinite(qty) || qty <= 0) o.qtyBad = true;
+    if (!isFinite(cost) || cost <= 0) o.costBad = true;
 
-    const pkey=date+'||'+(r[ROW_IDX.cust]||'')+'||'+(r[ROW_IDX.prod]||'');
-    if(!priceMap.has(pkey)) priceMap.set(pkey,{prices:new Set(), orders:new Set()});
-    const pm=priceMap.get(pkey);
-    const price=Number(r[ROW_IDX.unitPrice]);
-    if(isFinite(price) && price>0) pm.prices.add(price);
+    const pkey = date + '||' + (r[ROW_IDX.cust] || '') + '||' + (r[ROW_IDX.prod] || '');
+    if (!priceMap.has(pkey)) priceMap.set(pkey, { prices: new Set(), orders: new Set() });
+    const pm = priceMap.get(pkey);
+    const price = Number(r[ROW_IDX.unitPrice]);
+    if (isFinite(price) && price > 0) pm.prices.add(price);
     pm.orders.add(key);
   });
 
-  priceMap.forEach(pm=>{
-    if(pm.prices.size>1){
-      pm.orders.forEach(key=>{
-        const o=orders.get(key);
-        if(o) o.priceDiff=true;
+  priceMap.forEach(pm => {
+    if (pm.prices.size > 1) {
+      pm.orders.forEach(key => {
+        const o = orders.get(key);
+        if (o) o.priceDiff = true;
       });
     }
   });
 
-  const res=[];
-  orders.forEach(o=>{
-    const reasons=[];
-    const gm2=o.sales? (o.gpAdj/o.sales*100):null;
-    if(o.gpAdj<0) reasons.push('倒挂/亏损');
-    if(gm2!==null && gm2<0.2) reasons.push('低毛利(<0.2%)');
-    if(o.qtyBad) reasons.push('数量异常');
-    if(o.costBad) reasons.push('成本异常');
-    if(o.priceDiff) reasons.push('同日同客同品不同价');
-    if(!reasons.length) return;
-    res.push([o.date,o.orderNo,o.cust,o.cls,o.sales,o.gpAdj,gm2,o.lines,reasons.join('｜'),Math.abs(o.gpAdj||0)]);
+  const res = [];
+  orders.forEach(o => {
+    const reasons = [];
+    const gm2 = o.sales ? (o.gpAdj / o.sales * 100) : null;
+    if (o.gpAdj < 0) reasons.push('倒挂/亏损');
+    if (gm2 !== null && gm2 < 0.2) reasons.push('低毛利(<0.2%)');
+    if (o.qtyBad) reasons.push('数量异常');
+    if (o.costBad) reasons.push('成本异常');
+    if (o.priceDiff) reasons.push('同日同客同品不同价');
+    if (!reasons.length) return;
+    res.push([o.date, o.orderNo, o.cust, o.cls, o.sales, o.gpAdj, gm2, o.lines, reasons.join('｜'), Math.abs(o.gpAdj || 0)]);
   });
-  DATA[segKey].abnormal_orders=res;
+  DATA[segKey].abnormal_orders = res;
 }
 
-function filterTable(segKey,type){
-  let table=null;
-  if(type==='category'){
-    const q=(document.getElementById(segKey+'_category_search').value||'').toLowerCase();
-    table=document.getElementById(segKey+'_category_table');
-    let v=0;
-    [...table.querySelectorAll('tbody tr')].forEach(tr=>{const ok=tr.innerText.toLowerCase().includes(q); tr.style.display=ok?'':'none'; if(ok) v++;});
-    document.getElementById(segKey+'_category_count').innerText=String(v);
-  }else if(type==='product'){
-    const q=(document.getElementById(segKey+'_product_search').value||'').toLowerCase();
-    const cat=(document.getElementById(segKey+'_product_cat').value||'').trim();
-    const minSales=parseNumber(document.getElementById(segKey+'_product_min_sales').value);
-    const minGm=parseNumber(document.getElementById(segKey+'_product_min_gm').value);
-    table=document.getElementById(segKey+'_product_table');
-    let v=0;
-    [...table.querySelectorAll('tbody tr')].forEach(tr=>{
-      let ok=tr.innerText.toLowerCase().includes(q);
-      if(ok && cat) ok = (tr.children[1].innerText.trim()===cat);
-      if(ok && !isNaN(minSales)) ok = parseNumber(tr.children[2].innerText)>=minSales;
-      if(ok && !isNaN(minGm)) ok = parseNumber(tr.children[4].innerText)>=minGm;
-      tr.style.display=ok?'':'none'; if(ok) v++;
+function filterTable(segKey, type) {
+  let table = null;
+  if (type === 'category') {
+    const q = (document.getElementById(segKey + '_category_search').value || '').toLowerCase();
+    table = document.getElementById(segKey + '_category_table');
+    let v = 0;
+    [...table.querySelectorAll('tbody tr')].forEach(tr => { const ok = tr.innerText.toLowerCase().includes(q); tr.style.display = ok ? '' : 'none'; if (ok) v++; });
+    document.getElementById(segKey + '_category_count').innerText = String(v);
+  } else if (type === 'product') {
+    const q = (document.getElementById(segKey + '_product_search').value || '').toLowerCase();
+    const cat = (document.getElementById(segKey + '_product_cat').value || '').trim();
+    const minSales = parseNumber(document.getElementById(segKey + '_product_min_sales').value);
+    const minGm = parseNumber(document.getElementById(segKey + '_product_min_gm').value);
+    table = document.getElementById(segKey + '_product_table');
+    let v = 0;
+    [...table.querySelectorAll('tbody tr')].forEach(tr => {
+      let ok = tr.innerText.toLowerCase().includes(q);
+      if (ok && cat) ok = (tr.children[1].innerText.trim() === cat);
+      if (ok && !isNaN(minSales)) ok = parseNumber(tr.children[2].innerText) >= minSales;
+      if (ok && !isNaN(minGm)) ok = parseNumber(tr.children[4].innerText) >= minGm;
+      tr.style.display = ok ? '' : 'none'; if (ok) v++;
     });
-    document.getElementById(segKey+'_product_count').innerText=String(v);
-  }else if(type==='customer'){
-    const q=(document.getElementById(segKey+'_customer_search').value||'').toLowerCase();
-    const cls=(document.getElementById(segKey+'_customer_class').value||'').trim();
-    const minSales=parseNumber(document.getElementById(segKey+'_customer_min_sales').value);
-    const minGm=parseNumber(document.getElementById(segKey+'_customer_min_gm').value);
-    table=document.getElementById(segKey+'_customer_table');
-    let v=0;
-    [...table.querySelectorAll('tbody tr')].forEach(tr=>{
-      let ok=tr.innerText.toLowerCase().includes(q);
-      if(ok && cls) ok = (tr.children[1].innerText.trim()===cls);
-      if(ok && !isNaN(minSales)) ok = parseNumber(tr.children[2].innerText)>=minSales;
-      if(ok && !isNaN(minGm)) ok = parseNumber(tr.children[4].innerText)>=minGm;
-      tr.style.display=ok?'':'none'; if(ok) v++;
+    document.getElementById(segKey + '_product_count').innerText = String(v);
+  } else if (type === 'customer') {
+    const q = (document.getElementById(segKey + '_customer_search').value || '').toLowerCase();
+    const cls = (document.getElementById(segKey + '_customer_class').value || '').trim();
+    const minSales = parseNumber(document.getElementById(segKey + '_customer_min_sales').value);
+    const minGm = parseNumber(document.getElementById(segKey + '_customer_min_gm').value);
+    table = document.getElementById(segKey + '_customer_table');
+    let v = 0;
+    [...table.querySelectorAll('tbody tr')].forEach(tr => {
+      let ok = tr.innerText.toLowerCase().includes(q);
+      if (ok && cls) ok = (tr.children[1].innerText.trim() === cls);
+      if (ok && !isNaN(minSales)) ok = parseNumber(tr.children[2].innerText) >= minSales;
+      if (ok && !isNaN(minGm)) ok = parseNumber(tr.children[4].innerText) >= minGm;
+      tr.style.display = ok ? '' : 'none'; if (ok) v++;
     });
-    document.getElementById(segKey+'_customer_count').innerText=String(v);
-  }else if(type==='new' || type==='lost'){
-    const m=(document.getElementById(segKey+'_'+type+'_month').value||'').trim();
-    const cls=(document.getElementById(segKey+'_'+type+'_class').value||'').trim();
-    const q=(document.getElementById(segKey+'_'+type+'_search').value||'').toLowerCase();
-    table=document.getElementById(segKey+'_'+type+'_table');
-    let v=0;
-    [...table.querySelectorAll('tbody tr')].forEach(tr=>{
-      let ok=tr.innerText.toLowerCase().includes(q);
-      if(ok && m) ok = (tr.children[0].innerText.trim()===m);
-      if(ok && cls) ok = (tr.children[2].innerText.trim()===cls);
-      tr.style.display=ok?'':'none'; if(ok) v++;
+    document.getElementById(segKey + '_customer_count').innerText = String(v);
+  } else if (type === 'new' || type === 'lost') {
+    const m = (document.getElementById(segKey + '_' + type + '_month').value || '').trim();
+    const cls = (document.getElementById(segKey + '_' + type + '_class').value || '').trim();
+    const q = (document.getElementById(segKey + '_' + type + '_search').value || '').toLowerCase();
+    table = document.getElementById(segKey + '_' + type + '_table');
+    let v = 0;
+    [...table.querySelectorAll('tbody tr')].forEach(tr => {
+      let ok = tr.innerText.toLowerCase().includes(q);
+      if (ok && m) ok = (tr.children[0].innerText.trim() === m);
+      if (ok && cls) ok = (tr.children[2].innerText.trim() === cls);
+      tr.style.display = ok ? '' : 'none'; if (ok) v++;
     });
-    document.getElementById(segKey+'_'+type+'_count').innerText=String(v);
-  }else if(type==='abnormal'){
-    const q=(document.getElementById(segKey+'_abnormal_search').value||'').toLowerCase();
-    const cls=(document.getElementById(segKey+'_abnormal_class').value||'').trim();
-    const minSales=parseNumber(document.getElementById(segKey+'_abnormal_min_sales').value);
-    const reason=(document.getElementById(segKey+'_abnormal_reason').value||'').trim();
-    const reasonSel=(document.getElementById(segKey+'_abnormal_reason_sel').value||'').trim();
-    table=document.getElementById(segKey+'_abnormal_table');
-    let v=0;
-    [...table.querySelectorAll('tbody tr')].forEach(tr=>{
-      let ok=tr.innerText.toLowerCase().includes(q);
-      if(ok && cls) ok = (tr.children[3].innerText.trim()===cls);
-      if(ok && !isNaN(minSales)) ok = parseNumber(tr.children[4].innerText)>=minSales;
-      if(ok && reasonSel) ok = tr.children[8].innerText.includes(reasonSel);
-      if(ok && reason) ok = tr.children[8].innerText.includes(reason);
-      tr.style.display=ok?'':'none'; if(ok) v++;
+    document.getElementById(segKey + '_' + type + '_count').innerText = String(v);
+  } else if (type === 'abnormal') {
+    const q = (document.getElementById(segKey + '_abnormal_search').value || '').toLowerCase();
+    const cls = (document.getElementById(segKey + '_abnormal_class').value || '').trim();
+    const minSales = parseNumber(document.getElementById(segKey + '_abnormal_min_sales').value);
+    const reason = (document.getElementById(segKey + '_abnormal_reason').value || '').trim();
+    const reasonSel = (document.getElementById(segKey + '_abnormal_reason_sel').value || '').trim();
+    table = document.getElementById(segKey + '_abnormal_table');
+    let v = 0;
+    [...table.querySelectorAll('tbody tr')].forEach(tr => {
+      let ok = tr.innerText.toLowerCase().includes(q);
+      if (ok && cls) ok = (tr.children[3].innerText.trim() === cls);
+      if (ok && !isNaN(minSales)) ok = parseNumber(tr.children[4].innerText) >= minSales;
+      if (ok && reasonSel) ok = tr.children[8].innerText.includes(reasonSel);
+      if (ok && reason) ok = tr.children[8].innerText.includes(reason);
+      tr.style.display = ok ? '' : 'none'; if (ok) v++;
     });
-    document.getElementById(segKey+'_abnormal_count').innerText=String(v);
+    document.getElementById(segKey + '_abnormal_count').innerText = String(v);
   }
 
-  try{
-    const tableId = getTableId(segKey,type);
-    if(tableId){
+  try {
+    const tableId = getTableId(segKey, type);
+    if (tableId) {
       table = table || document.getElementById(tableId);
     }
-    if(table){
+    if (table) {
       applySortStateForTable(table, segKey, type);
       syncBaseDisplay(table);
       applyHeaderFiltersForTable(table);
       applyPagination(table, segKey, type);
     }
-  }catch(e){}
+  } catch (e) { }
 
-  if(type==='abnormal'){
+  if (type === 'abnormal') {
     return;
   }
 }
 
-function getTablePageSize(){
-  if(window.StateManager && StateManager.state && StateManager.state.ui && StateManager.state.ui.page_size){
+function getTablePageSize() {
+  if (window.StateManager && StateManager.state && StateManager.state.ui && StateManager.state.ui.page_size) {
     const size = Number(StateManager.state.ui.page_size);
-    if(isFinite(size) && size > 0) return size;
+    if (isFinite(size) && size > 0) return size;
   }
   return 80;
 }
 
-function applyPagination(table, segKey, type){
-  if(!table || !segKey || !type) return;
+function applyPagination(table, segKey, type) {
+  if (!table || !segKey || !type) return;
   const key = segKey + '_' + type;
   const pageSize = getTablePageSize();
-  const rows = Array.from(table.querySelectorAll('tbody tr')).filter((tr)=>tr.style.display !== 'none');
+  const rows = Array.from(table.querySelectorAll('tbody tr')).filter((tr) => tr.style.display !== 'none');
   const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
   const current = Math.min(TABLE_PAGE_STATE[key] || 1, totalPages);
   TABLE_PAGE_STATE[key] = current;
   const start = (current - 1) * pageSize;
   const end = start + pageSize;
-  rows.forEach((row, idx)=>{
+  rows.forEach((row, idx) => {
     row.style.display = (idx >= start && idx < end) ? '' : 'none';
   });
 
   const wrap = table.closest('.table-wrap') || table.parentNode;
-  if(!wrap) return;
+  if (!wrap) return;
   let pager = wrap.querySelector('.table-pagination[data-key=\"' + key + '\"]');
-  if(!pager){
+  if (!pager) {
     pager = document.createElement('div');
     pager.className = 'table-pagination';
     pager.dataset.key = key;
     wrap.appendChild(pager);
   }
-  if(rows.length <= pageSize){
+  if (rows.length <= pageSize) {
     pager.style.display = 'none';
     return;
   }
@@ -3219,7 +3232,7 @@ function applyPagination(table, segKey, type){
   prev.className = 'btn btn-sm';
   prev.textContent = '上一页';
   prev.disabled = current <= 1;
-  prev.addEventListener('click', ()=>{
+  prev.addEventListener('click', () => {
     TABLE_PAGE_STATE[key] = Math.max(1, current - 1);
     persistTablePageState(key, TABLE_PAGE_STATE[key]);
     filterTable(segKey, type);
@@ -3228,7 +3241,7 @@ function applyPagination(table, segKey, type){
   next.className = 'btn btn-sm';
   next.textContent = '下一页';
   next.disabled = current >= totalPages;
-  next.addEventListener('click', ()=>{
+  next.addEventListener('click', () => {
     TABLE_PAGE_STATE[key] = Math.min(totalPages, current + 1);
     persistTablePageState(key, TABLE_PAGE_STATE[key]);
     filterTable(segKey, type);
@@ -3241,68 +3254,68 @@ function applyPagination(table, segKey, type){
   pager.appendChild(label);
 }
 
-function resetTable(segKey,type){
-  const ids={
-    category:[segKey+'_category_search'],
-    product:[segKey+'_product_search',segKey+'_product_cat',segKey+'_product_min_sales',segKey+'_product_min_gm'],
-    customer:[segKey+'_customer_search',segKey+'_customer_class',segKey+'_customer_min_sales',segKey+'_customer_min_gm'],
-    new:[segKey+'_new_month',segKey+'_new_class',segKey+'_new_search'],
-    lost:[segKey+'_lost_month',segKey+'_lost_class',segKey+'_lost_search'],
-    abnormal:[segKey+'_abnormal_search',segKey+'_abnormal_class',segKey+'_abnormal_min_sales',segKey+'_abnormal_reason',segKey+'_abnormal_reason_sel']
-  }[type]||[];
-  ids.forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
-  resetTableRange(segKey,type);
-  try{ rerenderTable(segKey,type); }catch(e){ console.error(e); }
-  if(STATE_MANAGER) STATE_MANAGER.queuePersist();
+function resetTable(segKey, type) {
+  const ids = {
+    category: [segKey + '_category_search'],
+    product: [segKey + '_product_search', segKey + '_product_cat', segKey + '_product_min_sales', segKey + '_product_min_gm'],
+    customer: [segKey + '_customer_search', segKey + '_customer_class', segKey + '_customer_min_sales', segKey + '_customer_min_gm'],
+    new: [segKey + '_new_month', segKey + '_new_class', segKey + '_new_search'],
+    lost: [segKey + '_lost_month', segKey + '_lost_class', segKey + '_lost_search'],
+    abnormal: [segKey + '_abnormal_search', segKey + '_abnormal_class', segKey + '_abnormal_min_sales', segKey + '_abnormal_reason', segKey + '_abnormal_reason_sel']
+  }[type] || [];
+  ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  resetTableRange(segKey, type);
+  try { rerenderTable(segKey, type); } catch (e) { console.error(e); }
+  if (STATE_MANAGER) STATE_MANAGER.queuePersist();
 }
 
-function updateSortIndicator(table, colIdx, asc){
-  if(!table || !table.tHead || !table.tHead.rows || !table.tHead.rows.length) return;
+function updateSortIndicator(table, colIdx, asc) {
+  if (!table || !table.tHead || !table.tHead.rows || !table.tHead.rows.length) return;
   const headerRow = table.tHead.rows[0];
-  [...headerRow.cells].forEach((th, i)=>{
+  [...headerRow.cells].forEach((th, i) => {
     th.classList.add('sortable');
-    th.classList.remove('sort-active','sort-asc','sort-desc');
-    if(i===colIdx){
+    th.classList.remove('sort-active', 'sort-asc', 'sort-desc');
+    if (i === colIdx) {
       th.classList.add('sort-active');
       th.classList.add(asc ? 'sort-asc' : 'sort-desc');
     }
   });
 }
 
-function sortTable(segKey,type,colIdx){
-  const key=segKey+'_'+type;
-  const prev=sortState[key]||{col:-1,asc:true};
-  const asc=(prev.col===colIdx)?!prev.asc:true;
-  sortState[key]={col:colIdx,asc:asc};
+function sortTable(segKey, type, colIdx) {
+  const key = segKey + '_' + type;
+  const prev = sortState[key] || { col: -1, asc: true };
+  const asc = (prev.col === colIdx) ? !prev.asc : true;
+  sortState[key] = { col: colIdx, asc: asc };
   persistTableSortState();
-  filterTable(segKey,type);
+  filterTable(segKey, type);
 }
 
-function exportTableCSV(segKey,type){
-  const tableId={
-    category: segKey+'_category_table',
-    product: segKey+'_product_table',
-    customer: segKey+'_customer_table',
-    new: segKey+'_new_table',
-    lost: segKey+'_lost_table',
-    abnormal: segKey+'_abnormal_table'
+function exportTableCSV(segKey, type) {
+  const tableId = {
+    category: segKey + '_category_table',
+    product: segKey + '_product_table',
+    customer: segKey + '_customer_table',
+    new: segKey + '_new_table',
+    lost: segKey + '_lost_table',
+    abnormal: segKey + '_abnormal_table'
   }[type];
-  const table=document.getElementById(tableId);
-  const rows=[...table.querySelectorAll('tr')].filter(tr=>tr.style.display!=='none');
-  const csv=rows.map(tr=>[...tr.children].map(td=>'"'+td.innerText.replace(/"/g,'""')+'"').join(',')).join('\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const segLabel = segKey==='total' ? '全部' : (segKey==='store' ? '门店' : '非门店');
+  const table = document.getElementById(tableId);
+  const rows = [...table.querySelectorAll('tr')].filter(tr => tr.style.display !== 'none');
+  const csv = rows.map(tr => [...tr.children].map(td => '"' + td.innerText.replace(/"/g, '""') + '"').join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const segLabel = segKey === 'total' ? '全部' : (segKey === 'store' ? '门店' : '非门店');
   const typeLabelMap = {
-    category:'品类',
-    product:'产品',
-    customer:'客户',
-    new:'新增客户',
-    lost:'流失客户',
-    abnormal:'异常订单'
+    category: '品类',
+    product: '产品',
+    customer: '客户',
+    new: '新增客户',
+    lost: '流失客户',
+    abnormal: '异常订单'
   };
   const typeLabel = typeLabelMap[type] || type;
-  const a=document.createElement('a'); a.href=url; a.download=segLabel + '_' + typeLabel + '_导出.csv';
+  const a = document.createElement('a'); a.href = url; a.download = segLabel + '_' + typeLabel + '_导出.csv';
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 

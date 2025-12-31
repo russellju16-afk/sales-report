@@ -707,6 +707,11 @@ select:focus {
   display: block;
 }
 
+/* Fix for BP Report: Ensure sections in BP doc are always visible */
+.bp-doc .section {
+  display: block;
+}
+
 /* Grids */
 .grid2 {
   display: grid;
